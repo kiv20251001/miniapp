@@ -13,21 +13,34 @@
     "ignoreUploadUnusedFiles": true,
     "uploadWithSourceMap": true,
     "checkSiteMap": false,
-    "bigPackageSizeSupport": true
+    "bigPackageSizeSupport": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "packOptions": {
     "ignore": [
       {
-        "type": "folder",
-        "value": "cloudfunctions"
+        "value": "cloudfunctions",
+        "type": "folder"
       },
       {
-        "type": "suffix",
-        "value": ".ts"
+        "value": ".ts",
+        "type": "suffix"
       },
       {
-        "type": "suffix",
-        "value": ".map"
+        "value": ".map",
+        "type": "suffix"
       }
     ],
     "include": []
@@ -36,5 +49,7 @@
   "projectname": "Uday家庭课表计划",
   "compileType": "miniprogram",
   "libVersion": "3.5.5",
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
 }

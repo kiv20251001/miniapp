@@ -7,7 +7,6 @@ import {
   COURSE_ICON_COLORS,
   COURSE_ICON_OPTIONS,
   COURSE_TYPE_OPTIONS,
-  WEEKDAY_SHORT,
   unusedCourseColor,
 } from '@/domain/constants'
 import type {
@@ -293,7 +292,8 @@ const monthSlots = computed(() =>
   sortedSlots.value.filter((slot) => dayjs(slot.date).isSame(calendarMonth.value, 'month')),
 )
 const calendarDays = computed(() => {
-  const start = calendarMonth.value.startOf('month').startOf('week')
+  const first = calendarMonth.value.startOf('month')
+  const start = first.subtract((first.day() + 6) % 7, 'day')
   return Array.from({ length: 42 }, (_, index) => start.add(index, 'day'))
 })
 
@@ -620,7 +620,7 @@ onBeforeUnmount(stopDragging)
           </button>
         </div>
         <div class="calendar-week">
-          <span v-for="day in WEEKDAY_SHORT" :key="day">{{ day }}</span>
+          <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label">{{ label }}</span>
         </div>
         <div class="date-grid" :class="{ dragging }">
           <button

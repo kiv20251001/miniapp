@@ -24,6 +24,7 @@ const shared = {
   platform: 'node',
   target: 'node16',
   format: 'cjs',
+  charset: 'utf8',
   external: ['wx-server-sdk'],
   plugins: [externalRemindConfig()],
   alias: {

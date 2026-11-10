@@ -51,7 +51,8 @@ const displayValue = computed(() => {
 const selectedSet = computed(() => new Set(asDates(props.modelValue)))
 
 const calendarDays = computed(() => {
-  const start = cursor.value.startOf('month').startOf('week')
+  const first = cursor.value.startOf('month')
+  const start = first.subtract((first.day() + 6) % 7, 'day')
   return Array.from({ length: 42 }, (_, index) => start.add(index, 'day'))
 })
 
@@ -123,7 +124,7 @@ function isSelected(day: dayjs.Dayjs) {
 
             <template v-else>
               <div class="week-row">
-                <span v-for="label in ['日', '一', '二', '三', '四', '五', '六']" :key="label">{{ label }}</span>
+                <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label">{{ label }}</span>
               </div>
               <div class="day-grid">
                 <button

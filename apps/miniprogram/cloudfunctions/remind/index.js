@@ -577,10 +577,10 @@ var import_remind_config = __toESM(require("./remind.config.json"));
 var REMIND_TEMPLATE_ID = import_remind_config.default.templateId;
 var REMIND_TEMPLATE_FIELDS = import_remind_config.default.fields;
 var FIELD_LABELS = {
-  title: ["\u8BA1\u5212\u540D\u79F0", "\u8BFE\u7A0B\u540D\u79F0", "\u8BFE\u7A0B\u540D"],
-  time: ["\u5F00\u59CB\u65F6\u95F4", "\u4E0A\u8BFE\u65F6\u95F4"],
-  location: ["\u5730\u70B9", "\u4E0A\u8BFE\u5730\u70B9"],
-  note: ["\u5907\u6CE8", "\u6E29\u99A8\u63D0\u793A"]
+  title: ["计划名称", "课程名称", "课程名"],
+  time: ["开始时间", "上课时间"],
+  location: ["地点", "上课地点"],
+  note: ["备注", "温馨提示"]
 };
 function clipThing(value, fallback) {
   const text = Array.from(value.replace(/[\r\n\t]/g, " ").replace(/\s+/g, " ").trim());
@@ -591,7 +591,7 @@ function remindFieldValue(key, plain, fallback, date = "", startTime = "") {
   const kind = key.replace(/\d+$/, "");
   if ((kind === "time" || kind === "date") && /^\d{4}-\d{2}-\d{2}$/.test(date) && /^\d{2}:\d{2}$/.test(startTime)) {
     const [year, month, day] = date.split("-");
-    return `${year}\u5E74${Number(month)}\u6708${Number(day)}\u65E5 ${startTime}`;
+    return `${year}年${Number(month)}月${Number(day)}日 ${startTime}`;
   }
   return clipThing(plain, fallback);
 }
@@ -713,7 +713,7 @@ async function resolveRemindTemplate() {
     templateCache = { id: only.priTmplId, fields: fallback };
     return templateCache;
   }
-  throw new FamilyActionError("TEMPLATE_MISSING", "\u8FD8\u6CA1\u6709\u53EF\u7528\u7684\u8BFE\u524D\u63D0\u9192\u6A21\u677F");
+  throw new FamilyActionError("TEMPLATE_MISSING", "还没有可用的课前提醒模板");
 }
 function rowDocId(row) {
   return row._id || reminderId(row.openid, row.courseId, row.date);
@@ -725,13 +725,26 @@ function templateOf(row, fallback) {
   }
   return fallback;
 }
-async function sendOne(template, row, title, startTime, location, note) {
+var LEGACY_TEMPORARY_NOTE = "通过快速新增创建的临时安排";
+function reminderCopy(course) {
+  const temporary = course.source === "temporary";
+  const rawNote = (course.note || "").trim();
+  const note = temporary && (!rawNote || rawNote === LEGACY_TEMPORARY_NOTE) ? "" : rawNote;
+  return {
+    title: course.title,
+    titleFallback: temporary ? "计划" : "课程",
+    location: temporary ? "" : (course.location || "").trim(),
+    locationFallback: temporary ? "无" : "地点待定",
+    note
+  };
+}
+async function sendOne(template, row, copy, startTime) {
   const value = (key, plain, fallback) => remindFieldValue(key, plain, fallback, row.date, startTime);
   const data = {
-    [template.fields.title]: { value: value(template.fields.title, title, "\u8BFE\u7A0B") },
+    [template.fields.title]: { value: value(template.fields.title, copy.title, copy.titleFallback) },
     [template.fields.time]: { value: value(template.fields.time, startTime, startTime) },
-    [template.fields.location]: { value: value(template.fields.location, location, "\u5730\u70B9\u5F85\u5B9A") },
-    [template.fields.note]: { value: value(template.fields.note, note, "\u65E0") }
+    [template.fields.location]: { value: value(template.fields.location, copy.location, copy.locationFallback) },
+    [template.fields.note]: { value: value(template.fields.note, copy.note, "无") }
   };
   const api = import_wx_server_sdk.default;
   await api.openapi.subscribeMessage.send({
@@ -771,11 +784,11 @@ async function tickReminders(options = {}) {
     if (row.date < today) {
       await skip(id, "past-date");
       skipped += 1;
-      entry.result = "skipped: \u65E5\u671F\u5DF2\u8FC7";
+      entry.result = "skipped: 日期已过";
       continue;
     }
     if (row.date > today) {
-      entry.result = "wait: \u4E0D\u662F\u4ECA\u5929";
+      entry.result = "wait: 不是今天";
       continue;
     }
     let snapshot = families.get(row.familyId);
@@ -787,7 +800,7 @@ async function tickReminders(options = {}) {
     if (!occurrence) {
       await skip(id, "occurrence-gone");
       skipped += 1;
-      entry.result = "skipped: \u8BFE\u5DF2\u53D6\u6D88\u6216\u4E0D\u5B58\u5728";
+      entry.result = "skipped: 课已取消或不存在";
       continue;
     }
     const startTime = occurrence.course.recurrence.startTime;
@@ -796,34 +809,27 @@ async function tickReminders(options = {}) {
     entry.minutesUntil = minutes;
     if (minutes > 18 && !options.force) {
       console.log("[remind] wait", row.courseId, startTime, `in ${minutes}m`);
-      entry.result = `wait: \u8FD8\u6709 ${minutes} \u5206\u949F\uFF0C\u8FDB\u5165\u8BFE\u524D 18 \u5206\u949F\u540E\u624D\u53D1`;
+      entry.result = `wait: 还有 ${minutes} 分钟，进入课前 18 分钟后才发`;
       continue;
     }
     if (minutes < 1) {
       await skip(id, "started");
       skipped += 1;
       console.log("[remind] skipped late", row.courseId, startTime, minutes);
-      entry.result = "skipped: \u5DF2\u7ECF\u5F00\u8BFE";
+      entry.result = "skipped: 已经开课";
       continue;
     }
     const template = templateOf(row, fallback);
     if (!template) {
       console.error("[remind] no template", row.courseId);
       await reminders().doc(id).update({ data: { lastError: "no template", triedAt: (/* @__PURE__ */ new Date()).toISOString() } });
-      entry.result = "error: \u6CA1\u6709\u6A21\u677F ID";
+      entry.result = "error: 没有模板 ID";
       continue;
     }
     entry.templateId = template.id;
     entry.fields = template.fields;
     try {
-      await sendOne(
-        template,
-        row,
-        occurrence.course.title,
-        startTime,
-        occurrence.course.location,
-        occurrence.course.note
-      );
+      await sendOne(template, row, reminderCopy(occurrence.course), startTime);
       await reminders().doc(id).update({ data: { status: "sent", sentAt: (/* @__PURE__ */ new Date()).toISOString() } });
       sent += 1;
       entry.result = "sent";
@@ -852,7 +858,7 @@ async function main(event) {
   try {
     return { ok: true, ...await tickReminders({ force: (event == null ? void 0 : event.force) === true }) };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "\u63D0\u9192\u626B\u63CF\u5931\u8D25";
+    const message = error instanceof Error ? error.message : "提醒扫描失败";
     console.error("[remind]", message);
     return { ok: false, message };
   }

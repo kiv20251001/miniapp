@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, ref } from 'vue'
 import dayjs from 'dayjs'
-import { WEEKDAY_SHORT } from '@server-domain/constants'
+
+const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
+
+function monthGridStart(month: dayjs.Dayjs) {
+  const first = month.startOf('month')
+  return first.subtract((first.day() + 6) % 7, 'day')
+}
 
 const props = defineProps<{
   selected: string[]
@@ -14,7 +20,7 @@ const emit = defineEmits<{
 const month = ref(dayjs().startOf('month'))
 const instance = getCurrentInstance()
 const days = computed(() => {
-  const start = month.value.startOf('month').startOf('week')
+  const start = monthGridStart(month.value)
   return Array.from({ length: 42 }, (_, index) => {
     const day = start.add(index, 'day')
     const date = day.format('YYYY-MM-DD')
@@ -114,7 +120,7 @@ defineExpose({ shift })
       <text class="press" hover-class="press-on" hover-stay-time="80" @click="shift(1)">›</text>
     </view>
     <view class="week-row">
-      <text v-for="day in WEEKDAY_SHORT" :key="day">{{ day }}</text>
+      <text v-for="label in WEEK_LABELS" :key="label">{{ label }}</text>
     </view>
     <view
       class="date-grid"

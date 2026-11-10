@@ -479,10 +479,10 @@ var COURSE_COLORS = [
   "#FFC233"
 ];
 var CHILD_AVATAR_OPTIONS = [
-  { key: "boy-blue", label: "\u84DD\u8863\u7537\u5B69", color: "#5B8DEF" },
-  { key: "boy-cap", label: "\u767D\u5E3D\u7537\u5B69", color: "#6EA0F0" },
-  { key: "girl-flower", label: "\u7C89\u8863\u5973\u5B69", color: "#FF8AAE" },
-  { key: "girl-bow", label: "\u7D2B\u8863\u5973\u5B69", color: "#B388FF" }
+  { key: "boy-blue", label: "蓝衣男孩", color: "#5B8DEF" },
+  { key: "boy-cap", label: "白帽男孩", color: "#6EA0F0" },
+  { key: "girl-flower", label: "粉衣女孩", color: "#FF8AAE" },
+  { key: "girl-bow", label: "紫衣女孩", color: "#B388FF" }
 ];
 var DEFAULT_CHILD_AVATAR = CHILD_AVATAR_OPTIONS[0];
 function childAvatarOption(key) {
@@ -545,12 +545,12 @@ var FamilyActionError = class extends Error {
 function raiseObject(result) {
   if (!result || typeof result !== "object" || !("ok" in result) || result.ok !== false) return result;
   const reason = "reason" in result ? String(result.reason) : "";
-  if (reason === "conflict") throw new FamilyActionError("SCHEDULE_CONFLICT", "\u8BE5\u5B69\u5B50\u6B64\u65F6\u5DF2\u6709\u5176\u4ED6\u8BFE\u7A0B");
-  if (reason === "duplicate") throw new FamilyActionError("OCCURRENCE_DUPLICATE", "\u6240\u9009\u65E5\u671F\u90FD\u5DF2\u6709\u8FD9\u95E8\u8BFE");
-  if (reason === "temporary") throw new FamilyActionError("INVALID_INPUT", "\u4E34\u65F6\u8BA1\u5212\u4E0D\u80FD\u52A0\u5165\u5DF2\u6709\u8BFE\u7A0B");
-  if (reason === "invalid-amount") throw new FamilyActionError("REFUND_EXCEEDS_PAYMENT", "\u9000\u6B3E\u91D1\u989D\u5E94\u5927\u4E8E 0\uFF0C\u4E14\u4E0D\u8D85\u8FC7\u5269\u4F59\u53EF\u9000\u91D1\u989D");
-  if (reason === "not-paid" || reason === "payment-missing") throw new FamilyActionError("REFUND_NOT_ALLOWED", "\u5F53\u524D\u8D26\u5355\u65E0\u6CD5\u9000\u6B3E");
-  throw new FamilyActionError("INVALID_INPUT", "\u8BF7\u5B8C\u6574\u586B\u5199\u540E\u518D\u4FDD\u5B58");
+  if (reason === "conflict") throw new FamilyActionError("SCHEDULE_CONFLICT", "该孩子此时已有其他课程");
+  if (reason === "duplicate") throw new FamilyActionError("OCCURRENCE_DUPLICATE", "所选日期都已有这门课");
+  if (reason === "temporary") throw new FamilyActionError("INVALID_INPUT", "临时计划不能加入已有课程");
+  if (reason === "invalid-amount") throw new FamilyActionError("REFUND_EXCEEDS_PAYMENT", "退款金额应大于 0，且不超过剩余可退金额");
+  if (reason === "not-paid" || reason === "payment-missing") throw new FamilyActionError("REFUND_NOT_ALLOWED", "当前账单无法退款");
+  throw new FamilyActionError("INVALID_INPUT", "请完整填写后再保存");
 }
 function raiseCode(result, map) {
   if (typeof result === "string" && map[result]) {
@@ -582,9 +582,9 @@ function applyFamilyAction(workspace, action, payload) {
     }
     case "addChild": {
       const id = workspace.addChild(String(payload.name || ""), payload.avatarKey);
-      if (id === "empty") throw new FamilyActionError("INVALID_CHILD_NAME", "\u8BF7\u5148\u586B\u5199\u5B69\u5B50\u540D\u5B57");
-      if (id === "limit") throw new FamilyActionError("CHILD_LIMIT", "\u6700\u591A\u6DFB\u52A0 4 \u4E2A\u5B69\u5B50");
-      if (id === "avatar-taken") throw new FamilyActionError("AVATAR_TAKEN", "\u8FD9\u4E2A\u5934\u50CF\u5DF2\u7ECF\u6709\u5B69\u5B50\u5728\u7528");
+      if (id === "empty") throw new FamilyActionError("INVALID_CHILD_NAME", "请先填写孩子名字");
+      if (id === "limit") throw new FamilyActionError("CHILD_LIMIT", "最多添加 4 个孩子");
+      if (id === "avatar-taken") throw new FamilyActionError("AVATAR_TAKEN", "这个头像已经有孩子在用");
       return id;
     }
     case "updateChild": {
@@ -593,19 +593,19 @@ function applyFamilyAction(workspace, action, payload) {
         name: typeof payload.name === "string" ? payload.name : void 0,
         avatarKey: payload.avatarKey
       });
-      if (updated === "not-found") throw new FamilyActionError("CHILD_NOT_FOUND", "\u8BE5\u5B69\u5B50\u5DF2\u4E0D\u5B58\u5728");
-      if (updated === "avatar-taken") throw new FamilyActionError("AVATAR_TAKEN", "\u8FD9\u4E2A\u5934\u50CF\u5DF2\u7ECF\u6709\u5B69\u5B50\u5728\u7528");
+      if (updated === "not-found") throw new FamilyActionError("CHILD_NOT_FOUND", "该孩子已不存在");
+      if (updated === "avatar-taken") throw new FamilyActionError("AVATAR_TAKEN", "这个头像已经有孩子在用");
       return null;
     }
     case "removeChild":
       return raiseCode(workspace.removeChild(String(payload.id || "")), {
-        "not-found": ["CHILD_NOT_FOUND", "\u8BE5\u5B69\u5B50\u5DF2\u4E0D\u5B58\u5728"],
-        "last-child": ["LAST_CHILD_NOT_DELETABLE", "\u81F3\u5C11\u9700\u8981\u4FDD\u7559\u4E00\u4E2A\u5B69\u5B50"]
+        "not-found": ["CHILD_NOT_FOUND", "该孩子已不存在"],
+        "last-child": ["LAST_CHILD_NOT_DELETABLE", "至少需要保留一个孩子"]
       });
     case "selectChild": {
       const childId = String(payload.childId || "");
       if (!workspace.snapshot.value.children.some((item) => item.id === childId)) {
-        throw new FamilyActionError("CHILD_NOT_FOUND", "\u5B69\u5B50\u4E0D\u5B58\u5728");
+        throw new FamilyActionError("CHILD_NOT_FOUND", "孩子不存在");
       }
       workspace.selectChild(childId);
       return childId;
@@ -613,11 +613,11 @@ function applyFamilyAction(workspace, action, payload) {
     case "saveCourse": {
       const course = payload.course;
       if (!((_a = course == null ? void 0 : course.title) == null ? void 0 : _a.trim()) || !((_c = (_b = course.recurrence) == null ? void 0 : _b.dates) == null ? void 0 : _c.length)) {
-        throw new FamilyActionError("INVALID_INPUT", "\u8BF7\u586B\u5199\u8BFE\u7A0B\u540D\u79F0\u5E76\u81F3\u5C11\u9009\u62E9\u4E00\u4E2A\u4E0A\u8BFE\u65E5\u671F");
+        throw new FamilyActionError("INVALID_INPUT", "请填写课程名称并至少选择一个上课日期");
       }
       const dates = course.recurrence.dates;
       const [conflict] = workspace.findCourseScheduleConflicts(dates, course.id, course.childIds);
-      if (conflict) throw new FamilyActionError("SCHEDULE_CONFLICT", `\u4E0E\u300C${conflict.title}\u300D\u65F6\u95F4\u91CD\u53E0`);
+      if (conflict) throw new FamilyActionError("SCHEDULE_CONFLICT", `与「${conflict.title}」时间重叠`);
       const id = workspace.upsertCourse(course);
       const paymentStatus = payload.paymentStatus === "paid" ? "paid" : "unpaid";
       workspace.syncCourseUpfrontExpense(id, paymentStatus);
@@ -630,14 +630,14 @@ function applyFamilyAction(workspace, action, payload) {
       return workspace.restoreCourse(String(payload.id || ""));
     case "removeCourse":
       return raiseCode(workspace.removeCourse(String(payload.id || "")), {
-        "not-found": ["COURSE_NOT_FOUND", "\u8BFE\u7A0B\u4E0D\u5B58\u5728"]
+        "not-found": ["COURSE_NOT_FOUND", "课程不存在"]
       });
     case "addOccurrences":
       return raiseObject(workspace.addPresetOccurrence(String(payload.courseId || ""), payload.dates));
     case "updateCourseNote":
       return raiseCode(workspace.updateCourseNote(String(payload.courseId || ""), String(payload.note ?? "")), {
-        "not-found": ["COURSE_NOT_FOUND", "\u8BFE\u7A0B\u4E0D\u5B58\u5728"],
-        "not-temporary": ["INVALID_INPUT", "\u53EA\u6709\u4E34\u65F6\u8BA1\u5212\u53EF\u4EE5\u6539\u5907\u6CE8"]
+        "not-found": ["COURSE_NOT_FOUND", "课程不存在"],
+        "not-temporary": ["INVALID_INPUT", "只有临时计划可以改备注"]
       });
     case "saveHomework":
       return raiseCode(workspace.saveHomework({
@@ -647,16 +647,16 @@ function applyFamilyAction(workspace, action, payload) {
         content: String(payload.content || ""),
         note: typeof payload.note === "string" ? payload.note : ""
       }), {
-        invalid: ["INVALID_INPUT", "\u8BF7\u586B\u5199\u4F5C\u4E1A\u79D1\u76EE\u548C\u4F5C\u4E1A\u5185\u5BB9"],
-        "not-found": ["HOMEWORK_NOT_FOUND", "\u8FD9\u6761\u4F5C\u4E1A\u5DF2\u7ECF\u4E0D\u5728\u4E86"]
+        invalid: ["INVALID_INPUT", "请填写作业科目和作业内容"],
+        "not-found": ["HOMEWORK_NOT_FOUND", "这条作业已经不在了"]
       });
     case "setHomeworkDone":
       return raiseCode(workspace.setHomeworkDone(String(payload.id || ""), Boolean(payload.done)), {
-        "not-found": ["HOMEWORK_NOT_FOUND", "\u8FD9\u6761\u4F5C\u4E1A\u5DF2\u7ECF\u4E0D\u5728\u4E86"]
+        "not-found": ["HOMEWORK_NOT_FOUND", "这条作业已经不在了"]
       });
     case "removeHomework":
       return raiseCode(workspace.removeHomework(String(payload.id || "")), {
-        "not-found": ["HOMEWORK_NOT_FOUND", "\u8FD9\u6761\u4F5C\u4E1A\u5DF2\u7ECF\u4E0D\u5728\u4E86"]
+        "not-found": ["HOMEWORK_NOT_FOUND", "这条作业已经不在了"]
       });
     case "quickArrangement":
       return raiseObject(workspace.createQuickArrangement({
@@ -697,23 +697,23 @@ function applyFamilyAction(workspace, action, payload) {
           paid: Boolean(payload.paid)
         }),
         {
-          "not-found": ["COURSE_NOT_FOUND", "\u8BFE\u7A0B\u4E0D\u5B58\u5728"],
-          "paid-immutable": ["PAID_BILL_IMMUTABLE", "\u5DF2\u652F\u4ED8\u8D26\u5355\u4E0D\u80FD\u6539\u91D1\u989D"]
+          "not-found": ["COURSE_NOT_FOUND", "课程不存在"],
+          "paid-immutable": ["PAID_BILL_IMMUTABLE", "已支付账单不能改金额"]
         }
       );
     case "upsertExpense":
       return workspace.upsertExpense(payload);
     case "generateBills": {
       const period = String(payload.period || "");
-      if (!/^\d{4}-\d{2}$/.test(period)) throw new FamilyActionError("INVALID_PERIOD", "\u8D26\u671F\u683C\u5F0F\u5E94\u4E3A YYYY-MM");
+      if (!/^\d{4}-\d{2}$/.test(period)) throw new FamilyActionError("INVALID_PERIOD", "账期格式应为 YYYY-MM");
       return workspace.generateBillingStatements(period);
     }
     case "setExpenseStatus":
       return raiseCode(
         workspace.setExpenseStatus(String(payload.id || ""), payload.status),
         {
-          "not-found": ["BILL_NOT_FOUND", "\u8D26\u5355\u4E0D\u5B58\u5728"],
-          "paid-immutable": ["PAID_BILL_IMMUTABLE", "\u5DF2\u652F\u4ED8\u8D26\u5355\u4E0D\u80FD\u6539\u56DE\u672A\u652F\u4ED8"]
+          "not-found": ["BILL_NOT_FOUND", "账单不存在"],
+          "paid-immutable": ["PAID_BILL_IMMUTABLE", "已支付账单不能改回未支付"]
         }
       );
     case "refund":
@@ -722,11 +722,11 @@ function applyFamilyAction(workspace, action, payload) {
       );
     case "removeExpense":
       return raiseCode(workspace.removeExpense(String(payload.id || "")), {
-        "not-found": ["BILL_NOT_FOUND", "\u8D26\u5355\u4E0D\u5B58\u5728"],
-        "paid-immutable": ["PAID_BILL_IMMUTABLE", "\u5DF2\u652F\u4ED8\u8D26\u5355\u4E0D\u80FD\u5220\u9664"]
+        "not-found": ["BILL_NOT_FOUND", "账单不存在"],
+        "paid-immutable": ["PAID_BILL_IMMUTABLE", "已支付账单不能删除"]
       });
     default:
-      throw new FamilyActionError("UNKNOWN_ACTION", "\u4E0D\u652F\u6301\u7684\u64CD\u4F5C");
+      throw new FamilyActionError("UNKNOWN_ACTION", "不支持的操作");
   }
 }
 
@@ -1006,9 +1006,9 @@ function statementLabel(cycle, statementKey) {
   const value = statementKey.slice(statementKey.lastIndexOf(":") + 1);
   if (cycle === "weekly") {
     const start = (0, import_dayjs5.default)(value);
-    return `${start.format("M\u6708D\u65E5")}\u2013${start.add(6, "day").format("M\u6708D\u65E5")}`;
+    return `${start.format("M月D日")}–${start.add(6, "day").format("M月D日")}`;
   }
-  return (0, import_dayjs5.default)(`${value}-01`).format("YYYY\u5E74M\u6708");
+  return (0, import_dayjs5.default)(`${value}-01`).format("YYYY年M月");
 }
 function findChargeForOccurrence(charges, occurrenceId) {
   return charges.find((charge) => charge.occurrenceId === occurrenceId && charge.status !== "reversed");
@@ -1388,7 +1388,7 @@ function createFamilyWorkspace(initial) {
     const charge = findChargeForOccurrence(snapshot.value.charges ?? [], occurrenceId);
     if ((charge == null ? void 0 : charge.status) === "unbilled") charge.status = "waived";
     else if ((charge == null ? void 0 : charge.status) === "billed") {
-      upsertBilledAdjustment(charge, -charge.amount, "\u8BFE\u6B21\u53D6\u6D88\u51B2\u51CF");
+      upsertBilledAdjustment(charge, -charge.amount, "课次取消冲减");
     }
   }
   function upsertUnbilledUsageCharge(course, date, startTime, endTime, actualMinutes) {
@@ -1405,7 +1405,7 @@ function createFamilyWorkspace(initial) {
       upsertBilledAdjustment(
         existing,
         Math.round((computed2.amount - existing.amount) * 100) / 100,
-        "\u5DF2\u51FA\u8D26\u8BFE\u6B21\u65F6\u957F\u6216\u8BA1\u4EF7\u8C03\u6574"
+        "已出账课次时长或计价调整"
       );
       return;
     }
@@ -1418,7 +1418,7 @@ function createFamilyWorkspace(initial) {
       status: "unbilled",
       source: computed2.source,
       estimated: computed2.estimated,
-      note: computed2.estimated ? "\u6309\u65F6\u957F\u4F30\u7B97\uFF0C\u786E\u8BA4\u5B9E\u9645\u5206\u949F\u540E\u53EF\u91CD\u7B97" : "\u7531\u5DF2\u5B8C\u6210\u8BFE\u6B21\u81EA\u52A8\u8BA1\u63D0"
+      note: computed2.estimated ? "按时长估算，确认实际分钟后可重算" : "由已完成课次自动计提"
     };
     if (existing) {
       const index = snapshot.value.charges.findIndex((item) => item.id === existing.id);
@@ -1635,7 +1635,7 @@ function createFamilyWorkspace(initial) {
       kind: "payment",
       amount: expense.amount,
       paidAt: expense.paidAt ?? (0, import_dayjs6.default)().format("YYYY-MM-DD"),
-      note: "\u8D26\u5355\u786E\u8BA4\u652F\u4ED8"
+      note: "账单确认支付"
     });
   }
   function upsertExpense(input) {
@@ -1719,14 +1719,14 @@ function createFamilyWorkspace(initial) {
           childId: ((_c = group.charges[0]) == null ? void 0 : _c.childId) || ((_d = group.course.childIds) == null ? void 0 : _d[0]) || group.course.childId,
           courseId: group.course.id,
           source: "course_usage",
-          title: `${group.course.title} \xB7 ${label}\u8BFE\u6B21\u8D39`,
+          title: `${group.course.title} · ${label}课次费`,
           category: group.course.type,
           billingMode: "session",
           amount,
           period,
           dueDate: billDueDate(cycle, baseKey),
           status: "unpaid",
-          note: `${group.charges.length} \u6761\u5F85\u7ED3\u7B97\u660E\u7EC6\u6C47\u603B`,
+          note: `${group.charges.length} 条待结算明细汇总`,
           chargeIds: group.charges.map((item) => item.id),
           statementKey
         });
@@ -1769,21 +1769,21 @@ function createFamilyWorkspace(initial) {
           status: "billed",
           source: "fixed_period",
           billedExpenseId: expenseId,
-          note: "\u56FA\u5B9A\u5468\u671F\u8D39\u7528"
+          note: "固定周期费用"
         });
         snapshot.value.expenses.push({
           id: expenseId,
           childId: ((_g = course.childIds) == null ? void 0 : _g[0]) ?? course.childId,
           courseId: course.id,
           source: "course_period",
-          title: `${course.title} \xB7 ${statementLabel(cycle, statementKey)}\u56FA\u5B9A\u8D39`,
+          title: `${course.title} · ${statementLabel(cycle, statementKey)}固定费`,
           category: course.type,
           billingMode: cycle === "monthly" ? "monthly" : "session",
           amount: course.amount,
           period,
           dueDate: billDueDate(cycle, statementKey),
           status: "unpaid",
-          note: "\u7531\u56FA\u5B9A\u5468\u671F\u8BA1\u8D39\u89C4\u5219\u751F\u6210",
+          note: "由固定周期计费规则生成",
           chargeIds: [chargeId],
           statementKey
         });
@@ -1945,7 +1945,7 @@ function createFamilyWorkspace(initial) {
       childId: ((_c = course.childIds) == null ? void 0 : _c[0]) ?? course.childId,
       courseId,
       source: "course_upfront",
-      title: `${course.title} \xB7 \u4E00\u6B21\u6027\u8BFE\u7A0B\u8D39`,
+      title: `${course.title} · 一次性课程费`,
       category: course.type,
       billingMode: "term",
       amount,
@@ -1953,7 +1953,7 @@ function createFamilyWorkspace(initial) {
       dueDate: paidAt ?? (0, import_dayjs6.default)().format("YYYY-MM-DD"),
       status,
       paidAt,
-      note: (existing == null ? void 0 : existing.status) === "paid" && status === "paid" ? existing.note : "\u7531\u8BFE\u7A0B\u4E00\u6B21\u6027\u652F\u4ED8\u8BBE\u7F6E\u540C\u6B65"
+      note: (existing == null ? void 0 : existing.status) === "paid" && status === "paid" ? existing.note : "由课程一次性支付设置同步"
     };
     if (existingIndex >= 0) snapshot.value.expenses[existingIndex] = next;
     else snapshot.value.expenses.push(next);
@@ -1993,7 +1993,7 @@ function createFamilyWorkspace(initial) {
         endTime,
         title: course.title,
         location: course.location,
-        note: "\u4ECE\u8BFE\u7A0B\u9884\u8BBE\u6DFB\u52A0"
+        note: "从课程预设添加"
       }, { persist: false });
       added += 1;
     }
@@ -2063,7 +2063,7 @@ function createFamilyWorkspace(initial) {
         childId: ownerChildId,
         courseId,
         source: "temporary",
-        title: `${title} \xB7 \u5355\u6B21\u8D39\u7528`,
+        title: `${title} · 单次费用`,
         category: "temporary",
         billingMode: "session",
         amount,
@@ -2071,7 +2071,7 @@ function createFamilyWorkspace(initial) {
         dueDate: startDate,
         status: input.expenseStatus,
         paidAt: input.expenseStatus === "paid" ? (0, import_dayjs6.default)().format("YYYY-MM-DD") : void 0,
-        note: "\u968F\u5FEB\u901F\u65B0\u589E\u5B89\u6392\u521B\u5EFA"
+        note: "随快速新增安排创建"
       });
       ensurePaymentForExpense(snapshot.value.expenses[snapshot.value.expenses.length - 1]);
     }
@@ -2115,14 +2115,14 @@ function createFamilyWorkspace(initial) {
         childId: course.childId,
         courseId,
         source: course.source === "temporary" ? "temporary" : "course_usage",
-        title: `${course.title} \xB7 \u5355\u6B21\u8D39\u7528`,
+        title: `${course.title} · 单次费用`,
         category: course.source === "temporary" ? "temporary" : course.type,
         billingMode: "session",
         amount,
         period: date.slice(0, 7),
         dueDate: date,
         status: "unpaid",
-        note: "\u8BFE\u6B21\u8D39\u7528",
+        note: "课次费用",
         chargeIds: (charge == null ? void 0 : charge.status) === "unbilled" ? [charge.id] : []
       };
       snapshot.value.expenses.push(expense);
@@ -2191,7 +2191,7 @@ function createFamilyWorkspace(initial) {
       amount: value,
       paidAt: (0, import_dayjs6.default)().format("YYYY-MM-DD"),
       refundOfPaymentId: payment.id,
-      note: note.trim() || "\u8D26\u5355\u9000\u6B3E"
+      note: note.trim() || "账单退款"
     };
     snapshot.value.payments.push(refund);
     let unapplied = value;
@@ -2301,10 +2301,10 @@ var import_remind_config = __toESM(require("./remind.config.json"));
 var REMIND_TEMPLATE_ID = import_remind_config.default.templateId;
 var REMIND_TEMPLATE_FIELDS = import_remind_config.default.fields;
 var FIELD_LABELS = {
-  title: ["\u8BA1\u5212\u540D\u79F0", "\u8BFE\u7A0B\u540D\u79F0", "\u8BFE\u7A0B\u540D"],
-  time: ["\u5F00\u59CB\u65F6\u95F4", "\u4E0A\u8BFE\u65F6\u95F4"],
-  location: ["\u5730\u70B9", "\u4E0A\u8BFE\u5730\u70B9"],
-  note: ["\u5907\u6CE8", "\u6E29\u99A8\u63D0\u793A"]
+  title: ["计划名称", "课程名称", "课程名"],
+  time: ["开始时间", "上课时间"],
+  location: ["地点", "上课地点"],
+  note: ["备注", "温馨提示"]
 };
 function parseTemplateContent(content) {
   const matches = [...content.matchAll(/([^:\n{：]+)[:：]\{\{(\w+)\.(?:DATA|data)\}\}/g)];
@@ -2422,7 +2422,7 @@ async function resolveRemindTemplate() {
     templateCache = { id: only.priTmplId, fields: fallback };
     return templateCache;
   }
-  throw new FamilyActionError("TEMPLATE_MISSING", "\u8FD8\u6CA1\u6709\u53EF\u7528\u7684\u8BFE\u524D\u63D0\u9192\u6A21\u677F");
+  throw new FamilyActionError("TEMPLATE_MISSING", "还没有可用的课前提醒模板");
 }
 async function listReminders(openid) {
   await ensureReminders();
@@ -2441,15 +2441,15 @@ async function subscribeReminder(user, payload) {
   const date = String(payload.date || "");
   const envVersion = String(payload.envVersion || "");
   if (!courseId || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    throw new FamilyActionError("INVALID_ACTION", "\u8BF7\u9009\u62E9\u4E00\u8282\u8BFE");
+    throw new FamilyActionError("INVALID_ACTION", "请选择一节课");
   }
   await ensureReminders();
   const snapshot = await loadSnapshot(user.familyId);
   const occurrence = snapshot ? findOccurrence(snapshot, courseId, date) : null;
-  if (!occurrence) throw new FamilyActionError("OCCURRENCE_GONE", "\u8FD9\u8282\u8BFE\u5DF2\u53D6\u6D88\u6216\u4E0D\u5B58\u5728");
+  if (!occurrence) throw new FamilyActionError("OCCURRENCE_GONE", "这节课已取消或不存在");
   const startTime = occurrence.course.recurrence.startTime;
   const minutes = minutesUntil(date, startTime);
-  if (minutes < 1) throw new FamilyActionError("ALREADY_STARTED", "\u8FD9\u8282\u8BFE\u5DF2\u7ECF\u5F00\u59CB\u4E86");
+  if (minutes < 1) throw new FamilyActionError("ALREADY_STARTED", "这节课已经开始了");
   const template = await resolveRemindTemplate().catch(() => null);
   await reminders().doc(reminderId(user.openid, courseId, date)).set({
     data: {
@@ -2469,9 +2469,9 @@ async function subscribeReminder(user, payload) {
 
 // src/domain/family-account.ts
 var FAMILY_ROLE_LABEL = {
-  owner: "\u521B\u5EFA\u8005",
-  parent: "\u5BB6\u957F",
-  viewer: "\u5BB6\u4EBA"
+  owner: "创建者",
+  parent: "家长",
+  viewer: "家人"
 };
 var INVITE_MAX_USES = 10;
 var INVITE_TTL_MS = 24 * 60 * 60 * 1e3;
@@ -2651,13 +2651,13 @@ async function findUser(openid) {
 }
 async function requireUser(openid) {
   const user = await findUser(openid);
-  if (!user) raise("NOT_MEMBER", "\u4F60\u5DF2\u4E0D\u5728\u8FD9\u4E2A\u5BB6\u5EAD\u4E2D\uFF0C\u53EF\u4EE5\u91CD\u65B0\u521B\u5EFA\u6216\u52A0\u5165\u5BB6\u5EAD");
+  if (!user) raise("NOT_MEMBER", "你已不在这个家庭中，可以重新创建或加入家庭");
   return user;
 }
 async function loadFamilyDoc(familyId) {
   const got = await families().doc(familyId).get();
   const raw = got.data;
-  if (!(raw == null ? void 0 : raw.snapshotJson)) raise("FAMILY_MISMATCH", "\u5BB6\u5EAD\u4E0D\u5B58\u5728\u6216\u65E0\u6743\u8BBF\u95EE");
+  if (!(raw == null ? void 0 : raw.snapshotJson)) raise("FAMILY_MISMATCH", "家庭不存在或无权访问");
   return raw;
 }
 async function loadFamily(familyId) {
@@ -2704,7 +2704,7 @@ async function withFamily(familyId, apply) {
     const ref = transaction.collection("families").doc(familyId);
     const got = await ref.get();
     const raw = got.data;
-    if (!(raw == null ? void 0 : raw.snapshotJson)) raise("FAMILY_MISMATCH", "\u5BB6\u5EAD\u4E0D\u5B58\u5728\u6216\u65E0\u6743\u8BBF\u95EE");
+    if (!(raw == null ? void 0 : raw.snapshotJson)) raise("FAMILY_MISMATCH", "家庭不存在或无权访问");
     const workspace = createFamilyWorkspace(JSON.parse(raw.snapshotJson));
     const result = await apply(workspace);
     const nextJson = JSON.stringify(workspace.snapshot.value);
@@ -2747,7 +2747,7 @@ async function login(openid, unionid, payload) {
   var _a;
   const existing = await findUser(openid);
   if (!existing && payload.resume === true) {
-    raise("UNAUTHENTICATED", "\u8BF7\u5148\u521B\u5EFA\u6216\u52A0\u5165\u5BB6\u5EAD");
+    raise("UNAUTHENTICATED", "请先创建或加入家庭");
   }
   if (existing) {
     const family = await loadFamilyDoc(existing.familyId);
@@ -2764,12 +2764,12 @@ async function login(openid, unionid, payload) {
     }
     return sessionOf({ ...existing, role, displayName: displayName2 }, JSON.parse(family.snapshotJson), versionOf(family));
   }
-  const childName = String(payload.childName || "").trim().slice(0, 20) || "\u5C0FU";
+  const childName = String(payload.childName || "").trim().slice(0, 20) || "小U";
   const avatarKey = typeof payload.avatarKey === "string" ? payload.avatarKey : void 0;
   const snapshot = createEmptyFamilySnapshot(childName, avatarKey);
   const created = await families().add({
     data: {
-      name: `${((_a = snapshot.children[0]) == null ? void 0 : _a.name) || "\u5C0FU"}\u7684\u5BB6\u5EAD`,
+      name: `${((_a = snapshot.children[0]) == null ? void 0 : _a.name) || "小U"}的家庭`,
       timezone: "Asia/Shanghai",
       ownerOpenid: openid,
       snapshotJson: JSON.stringify(snapshot),
@@ -2779,7 +2779,7 @@ async function login(openid, unionid, payload) {
     }
   });
   const familyId = String(created._id || created.id || "");
-  if (!familyId) raise("CLOUD_ERROR", "\u521B\u5EFA\u5BB6\u5EAD\u5931\u8D25");
+  if (!familyId) raise("CLOUD_ERROR", "创建家庭失败");
   const displayName = displayNameOf(payload, "owner");
   const nickName = nickNameOf(payload);
   const avatarUrl = normalizeAvatarUrl(payload.avatarUrl);
@@ -2819,7 +2819,7 @@ async function findInvite(code) {
 }
 async function createInvite(user, payload) {
   const role = normalizeInviteRole(payload.role);
-  if (!canInviteRole(user.role, role)) raise("INVITE_FORBIDDEN", "\u6CA1\u6709\u9080\u8BF7\u8FD9\u4E2A\u89D2\u8272\u7684\u6743\u9650");
+  if (!canInviteRole(user.role, role)) raise("INVITE_FORBIDDEN", "没有邀请这个角色的权限");
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const code = createInviteCode();
     const record = {
@@ -2852,7 +2852,7 @@ async function createInvite(user, payload) {
       throw error;
     }
   }
-  raise("CLOUD_ERROR", "\u751F\u6210\u9080\u8BF7\u7801\u5931\u8D25\uFF0C\u8BF7\u518D\u8BD5\u4E00\u6B21");
+  raise("CLOUD_ERROR", "生成邀请码失败，请再试一次");
 }
 async function listFamilyInvites(familyId) {
   const found = await invites().where({ familyId }).limit(50).get();
@@ -2891,8 +2891,8 @@ async function readableAvatarUrls(members) {
 }
 async function setAvatar(user, payload) {
   const avatarUrl = normalizeAvatarUrl(payload.avatarUrl);
-  if (!avatarUrl) raise("INVALID_INPUT", "\u8BF7\u91CD\u65B0\u9009\u62E9\u5FAE\u4FE1\u5934\u50CF");
-  if (!user._id) raise("CLOUD_ERROR", "\u6210\u5458\u8BB0\u5F55\u4E0D\u5B58\u5728");
+  if (!avatarUrl) raise("INVALID_INPUT", "请重新选择微信头像");
+  if (!user._id) raise("CLOUD_ERROR", "成员记录不存在");
   if (avatarUrl !== (user.avatarUrl || "")) {
     await users().doc(user._id).update({ data: { avatarUrl } });
   }
@@ -2910,31 +2910,31 @@ async function listMembers(user) {
 }
 async function removeMember(actor, payload) {
   const targetOpenid = String(payload.openid || "");
-  if (!targetOpenid) raise("INVALID_INPUT", "\u8BF7\u9009\u62E9\u8981\u79FB\u9664\u7684\u6210\u5458");
+  if (!targetOpenid) raise("INVALID_INPUT", "请选择要移除的成员");
   const members = await listFamilyUsers(actor.familyId);
   const target = members.find((item) => item.openid === targetOpenid);
-  if (!target) raise("MEMBER_NOT_FOUND", "\u8BE5\u6210\u5458\u5DF2\u4E0D\u5728\u5BB6\u5EAD\u4E2D");
+  if (!target) raise("MEMBER_NOT_FOUND", "该成员已不在家庭中");
   const targetRole = normalizeRole(target.role);
   if (!canRemoveMember(actor.role, targetRole, target.openid === actor.openid)) {
-    if (target.openid === actor.openid) raise("CANNOT_REMOVE_SELF", "\u4E0D\u80FD\u79FB\u9664\u81EA\u5DF1");
-    if (targetRole === "owner") raise("CANNOT_REMOVE_OWNER", "\u4E0D\u80FD\u79FB\u9664\u521B\u5EFA\u8005");
-    raise("MEMBER_REMOVE_FORBIDDEN", "\u53EA\u6709\u521B\u5EFA\u8005\u53EF\u4EE5\u79FB\u9664\u6210\u5458");
+    if (target.openid === actor.openid) raise("CANNOT_REMOVE_SELF", "不能移除自己");
+    if (targetRole === "owner") raise("CANNOT_REMOVE_OWNER", "不能移除创建者");
+    raise("MEMBER_REMOVE_FORBIDDEN", "只有创建者可以移除成员");
   }
   if (target._id) await users().doc(String(target._id)).remove();
   return null;
 }
 async function leaveFamily(user) {
-  if (!canLeaveFamily(user.role)) raise("OWNER_CANNOT_LEAVE", "\u521B\u5EFA\u8005\u4E0D\u80FD\u9000\u51FA\u5BB6\u5EAD");
+  if (!canLeaveFamily(user.role)) raise("OWNER_CANNOT_LEAVE", "创建者不能退出家庭");
   if (user._id) await users().doc(user._id).remove();
   return { left: true };
 }
 async function previewInvite(openid, payload) {
   const code = normalizeInviteCode(String(payload.code || ""));
   const invite = await findInvite(code);
-  if (!invite) raise("INVITE_INVALID", "\u9080\u8BF7\u7801\u65E0\u6548\u6216\u5DF2\u5931\u6548");
+  if (!invite) raise("INVITE_INVALID", "邀请码无效或已失效");
   if (!isInviteActive(invite)) {
-    if (Date.parse(invite.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "\u9080\u8BF7\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
-    raise("INVITE_USED_UP", "\u9080\u8BF7\u5DF2\u7528\u5B8C\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
+    if (Date.parse(invite.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "邀请已过期，请让家长重新生成");
+    raise("INVITE_USED_UP", "邀请已用完，请让家长重新生成");
   }
   const existing = await findUser(openid);
   if (!existing) return { status: "new" };
@@ -2948,10 +2948,10 @@ async function previewInvite(openid, payload) {
 async function joinFamily(openid, unionid, payload) {
   const code = normalizeInviteCode(String(payload.code || ""));
   const invite = await findInvite(code);
-  if (!invite) raise("INVITE_INVALID", "\u9080\u8BF7\u7801\u65E0\u6548\u6216\u5DF2\u5931\u6548");
+  if (!invite) raise("INVITE_INVALID", "邀请码无效或已失效");
   if (!isInviteActive(invite)) {
-    if (Date.parse(invite.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "\u9080\u8BF7\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
-    raise("INVITE_USED_UP", "\u9080\u8BF7\u5DF2\u7528\u5B8C\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
+    if (Date.parse(invite.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "邀请已过期，请让家长重新生成");
+    raise("INVITE_USED_UP", "邀请已用完，请让家长重新生成");
   }
   const existing = await findUser(openid);
   if ((existing == null ? void 0 : existing.familyId) === invite.familyId) {
@@ -2960,7 +2960,7 @@ async function joinFamily(openid, unionid, payload) {
     return sessionOf(existing, family2.snapshot, family2.version);
   }
   if (existing && existing.role === "owner" && await countFamilyMembers(existing.familyId) > 1) {
-    raise("OWNER_HAS_MEMBERS", "\u8BF7\u5148\u8BA9\u5176\u4ED6\u6210\u5458\u9000\u51FA\u540E\u518D\u52A0\u5165\u522B\u7684\u5BB6\u5EAD");
+    raise("OWNER_HAS_MEMBERS", "请先让其他成员退出后再加入别的家庭");
   }
   const role = normalizeInviteRole(invite.role);
   const keptName = existing && !["owner", "parent", "viewer"].some((item) => defaultDisplayName(item) === existing.displayName) ? existing.displayName : "";
@@ -2978,10 +2978,10 @@ async function joinFamily(openid, unionid, payload) {
     } catch {
       current = void 0;
     }
-    if (!(current == null ? void 0 : current.familyId) || !current.code) raise("INVITE_INVALID", "\u9080\u8BF7\u7801\u65E0\u6548\u6216\u5DF2\u5931\u6548");
+    if (!(current == null ? void 0 : current.familyId) || !current.code) raise("INVITE_INVALID", "邀请码无效或已失效");
     if (!isInviteActive(current)) {
-      if (Date.parse(current.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "\u9080\u8BF7\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
-      raise("INVITE_USED_UP", "\u9080\u8BF7\u5DF2\u7528\u5B8C\uFF0C\u8BF7\u8BA9\u5BB6\u957F\u91CD\u65B0\u751F\u6210");
+      if (Date.parse(current.expireAt) <= Date.now()) raise("INVITE_EXPIRED", "邀请已过期，请让家长重新生成");
+      raise("INVITE_USED_UP", "邀请已用完，请让家长重新生成");
     }
     await inviteRef.update({
       data: { usedCount: current.usedCount + 1 }
@@ -3033,7 +3033,7 @@ async function joinFamily(openid, unionid, payload) {
 }
 async function dispatchWorkspace(user, action, payload) {
   if (!canWriteFamily(user.role) && !isWorkspaceReadAction(action)) {
-    raise("SCOPE_FORBIDDEN", "\u5BB6\u4EBA\u53EA\u80FD\u67E5\u770B\u8BFE\u8868\u548C\u5730\u70B9");
+    raise("SCOPE_FORBIDDEN", "家人只能查看课表和地点");
   }
   if (!canWriteFamily(user.role) && action === "snapshot") {
     return familyMutation(user, null);
@@ -3053,7 +3053,7 @@ async function dispatchAccount(user, action, payload) {
     await removeMember(user, payload);
     return familyMutation(user, null);
   }
-  raise("INVALID_ACTION", "\u4E0D\u652F\u6301\u7684\u64CD\u4F5C");
+  raise("INVALID_ACTION", "不支持的操作");
 }
 async function handle(openid, unionid, action, payload) {
   if (action === "login") return login(openid, unionid, payload);
@@ -3073,7 +3073,7 @@ async function handle(openid, unionid, action, payload) {
 async function main(event) {
   const context = import_wx_server_sdk2.default.getWXContext();
   const openid = context.OPENID || "";
-  if (!openid) return fail("UNAUTHENTICATED", "\u8BF7\u5728\u5FAE\u4FE1\u5185\u6253\u5F00\u5C0F\u7A0B\u5E8F");
+  if (!openid) return fail("UNAUTHENTICATED", "请在微信内打开小程序");
   try {
     const action = (event == null ? void 0 : event.action) || "";
     const payload = sanitizePayload((event == null ? void 0 : event.payload) ?? {});
@@ -3087,7 +3087,7 @@ async function main(event) {
     }
   } catch (error) {
     const code = error instanceof FamilyActionError ? error.code : "CLOUD_ERROR";
-    const message = error instanceof Error ? error.message : "\u4E91\u51FD\u6570\u6267\u884C\u5931\u8D25";
+    const message = error instanceof Error ? error.message : "云函数执行失败";
     return fail(code, message);
   }
 }

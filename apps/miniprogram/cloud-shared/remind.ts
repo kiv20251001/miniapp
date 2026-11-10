@@ -208,14 +208,35 @@ function templateOf(row: ReminderRow, fallback: RemindTemplate | null) {
   return fallback
 }
 
-async function sendOne(template: RemindTemplate, row: ReminderRow, title: string, startTime: string, location: string, note: string) {
+const LEGACY_TEMPORARY_NOTE = '通过快速新增创建的临时安排'
+
+/** 课程带地点；临时计划没有地址，地点栏只能填「无」，微信模板不允许少一个字段。 */
+function reminderCopy(course: { source?: string; title: string; location?: string; note?: string }) {
+  const temporary = course.source === 'temporary'
+  const rawNote = (course.note || '').trim()
+  const note = temporary && (!rawNote || rawNote === LEGACY_TEMPORARY_NOTE) ? '' : rawNote
+  return {
+    title: course.title,
+    titleFallback: temporary ? '计划' : '课程',
+    location: temporary ? '' : (course.location || '').trim(),
+    locationFallback: temporary ? '无' : '地点待定',
+    note,
+  }
+}
+
+async function sendOne(
+  template: RemindTemplate,
+  row: ReminderRow,
+  copy: ReturnType<typeof reminderCopy>,
+  startTime: string,
+) {
   const value = (key: string, plain: string, fallback: string) =>
     remindFieldValue(key, plain, fallback, row.date, startTime)
   const data: Record<string, { value: string }> = {
-    [template.fields.title]: { value: value(template.fields.title, title, '课程') },
+    [template.fields.title]: { value: value(template.fields.title, copy.title, copy.titleFallback) },
     [template.fields.time]: { value: value(template.fields.time, startTime, startTime) },
-    [template.fields.location]: { value: value(template.fields.location, location, '地点待定') },
-    [template.fields.note]: { value: value(template.fields.note, note, '无') },
+    [template.fields.location]: { value: value(template.fields.location, copy.location, copy.locationFallback) },
+    [template.fields.note]: { value: value(template.fields.note, copy.note, '无') },
   }
   const api = cloud as unknown as {
     openapi: { subscribeMessage: { send: (input: Record<string, unknown>) => Promise<unknown> } }
@@ -308,14 +329,7 @@ export async function tickReminders(options: { force?: boolean } = {}) {
     entry.templateId = template.id
     entry.fields = template.fields
     try {
-      await sendOne(
-        template,
-        row,
-        occurrence.course.title,
-        startTime,
-        occurrence.course.location,
-        occurrence.course.note,
-      )
+      await sendOne(template, row, reminderCopy(occurrence.course), startTime)
       await reminders().doc(id).update({ data: { status: 'sent', sentAt: new Date().toISOString() } })
       sent += 1
       entry.result = 'sent'

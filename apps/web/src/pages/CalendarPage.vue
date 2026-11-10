@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/stores/app'
 import { occurrencesInRange } from '@/services/schedule'
-import { WEEKDAY_SHORT } from '@/domain/constants'
 import type { DayOccurrence } from '@/domain/types'
 import { courseScheduleProgress } from '@/services/courseSchedule'
 import PageHeader from '@/components/PageHeader.vue'
@@ -26,7 +25,8 @@ useViewRefresh(() => ({
   to: monthStart.value.endOf('month').format('YYYY-MM-DD'),
 }))
 const grid = computed(() => {
-  const start = monthStart.value.startOf('week')
+  const first = monthStart.value
+  const start = first.subtract((first.day() + 6) % 7, 'day')
   return Array.from({ length: 42 }, (_, i) => start.add(i, 'day'))
 })
 
@@ -119,7 +119,7 @@ function pick(date: dayjs.Dayjs) {
 
     <section class="card cal">
       <div class="week">
-        <span v-for="d in WEEKDAY_SHORT" :key="d">{{ d }}</span>
+        <span v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label">{{ label }}</span>
       </div>
       <div class="days">
         <button
