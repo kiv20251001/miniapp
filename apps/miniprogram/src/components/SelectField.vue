@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { t } from '@/i18n'
 
 const props = defineProps<{
   modelValue: string
@@ -11,7 +12,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const labels = computed(() => props.options.map((item) => item.label))
+const labels = computed(() => props.options.map((item) => t(item.label)))
 const index = computed(() => Math.max(0, props.options.findIndex((item) => item.value === props.modelValue)))
 const current = computed(() => props.options.find((item) => item.value === props.modelValue)?.label)
 
@@ -23,6 +24,6 @@ function onChange(event: { detail: { value: number | string } }) {
 
 <template>
   <picker mode="selector" :range="labels" :value="index" @change="onChange">
-    <view class="control press" hover-class="press-on" hover-stay-time="80">{{ current || placeholder || '请选择' }}</view>
+    <view class="control press" hover-class="press-on" hover-stay-time="80">{{ t(current || placeholder || '请选择') }}</view>
   </picker>
 </template>

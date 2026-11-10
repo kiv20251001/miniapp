@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import dayjs from 'dayjs'
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { appShare, momentsShare } from '@/utils/share'
 import { COURSE_TYPE_LABEL } from '@server-domain/constants'
@@ -13,6 +12,7 @@ import { cardBackground, tileBackground } from '@/utils/color'
 import AppIcon from '@/components/AppIcon.vue'
 import EmptyHint from '@/components/EmptyHint.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { fmt, t } from '@/i18n'
 
 const store = useFamilyPage()
 const themeClass = useThemePage()
@@ -45,45 +45,45 @@ function openBill(expenseId?: string) {
 
 function subOf(day: { startTime?: string; endTime?: string; kind?: string }) {
   if (day.startTime && day.endTime) return `${day.startTime}–${day.endTime}`
-  return day.kind === 'period' ? '结算账单' : '一次性账单'
+  return t(day.kind === 'period' ? '结算账单' : '一次性账单')
 }
 </script>
 
 <template>
   <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
   <view class="theme-root page edit sub" :class="themeClass">
-    <PageHeader safe show-back title="课程账单" :caption="course ? COURSE_TYPE_LABEL[course.type] + ' · ' + course.title : ''" />
-    <view v-if="!course" class="empty">课程不存在</view>
+    <PageHeader safe show-back :title="t('课程账单')" :caption="course ? t(COURSE_TYPE_LABEL[course.type]) + ' · ' + course.title : ''" />
+    <view v-if="!course" class="empty">{{ t('课程不存在') }}</view>
     <template v-else-if="ledger">
       <view class="hero" :style="{ background: cardBackground(course.color) }">
         <view class="hero-icon" :style="{ background: tileBackground(course.color) }">
           <AppIcon :name="course.icon || 'generic'" tone="white" :size="22" />
         </view>
         <view>
-          <text class="muted">{{ COURSE_TYPE_LABEL[course.type] }}</text>
+          <text class="muted">{{ t(COURSE_TYPE_LABEL[course.type]) }}</text>
           <text class="hero-title">{{ course.title }}</text>
         </view>
       </view>
       <view class="card stats">
-        <view class="mini"><text class="muted">总金额</text><text class="strong">{{ money(ledger.total) }}</text></view>
-        <view class="mini"><text class="muted">已支付</text><text class="strong pay-paid">{{ money(ledger.paid) }}</text></view>
-        <view class="mini"><text class="muted">未支付</text><text class="strong pay-unpaid">{{ money(ledger.unpaid) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('总金额') }}</text><text class="strong">{{ money(ledger.total) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('已支付') }}</text><text class="strong pay-paid">{{ money(ledger.paid) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('未支付') }}</text><text class="strong pay-unpaid">{{ money(ledger.unpaid) }}</text></view>
       </view>
       <view class="list-title">
-        <text class="muted">按上课日</text>
-        <text class="h2">{{ ledger.days.length }} 次记录</text>
+        <text class="muted">{{ t('按上课日') }}</text>
+        <text class="h2">{{ t('{n} 次记录', { n: ledger.days.length }) }}</text>
       </view>
       <view v-if="!ledger.days.length" class="card">
-        <EmptyHint icon="calendar" label="还没有记录" />
+        <EmptyHint icon="calendar" :label="t('还没有记录')" />
       </view>
       <view v-for="day in ledger.days" :key="day.key" class="day-row press" hover-class="press-on" hover-stay-time="80" @click="openBill(day.expenseId)">
         <view class="day-copy">
-          <text class="day-title">{{ dayjs(day.date).format('M月D日') }} {{ day.weekdayLabel }}</text>
+          <text class="day-title">{{ fmt(day.date, 'M月D日') }} {{ t(day.weekdayLabel) }}</text>
           <text class="muted">{{ subOf(day) }}</text>
         </view>
         <view class="day-fee">
-          <text class="day-amount">{{ day.amountLabel }}</text>
-          <text :class="day.payState === 'paid' ? 'pay-paid' : 'pay-unpaid'">{{ day.payLabel }}</text>
+          <text class="day-amount">{{ t(day.amountLabel) }}</text>
+          <text :class="day.payState === 'paid' ? 'pay-paid' : 'pay-unpaid'">{{ t(day.payLabel) }}</text>
         </view>
         <text v-if="day.expenseId" class="arrow">›</text>
       </view>

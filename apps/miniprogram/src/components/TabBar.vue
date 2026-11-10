@@ -5,6 +5,7 @@ import { useFamilyStore } from '@/stores/family'
 import { useThemeStore } from '@/utils/wx-theme'
 import { useUiStore } from '@/stores/ui'
 import { openTab, type TabKey } from '@/utils/nav'
+import { t } from '@/i18n'
 const props = defineProps<{
   /** 子页面里高亮哪个 tab；主页面不传，直接跟着 ui.tab。 */
   active?: TabKey
@@ -117,30 +118,30 @@ onMounted(measureSoon)
     <button hover-class="press-on" hover-stay-time="80" class="quick-item" @click="quick('add')">
       <view class="quick-badge accent"><text class="badge-glyph">＋</text></view>
       <view>
-        <text class="title">快速新增计划</text>
-        <text class="desc">已有课程、临时计划或课堂作业</text>
+        <text class="title">{{ t('快速新增计划') }}</text>
+        <text class="desc">{{ t('已有课程、临时计划或课堂作业') }}</text>
       </view>
     </button>
     <button hover-class="press-on" hover-stay-time="80" class="quick-item" @click="quick('/subpages/course-edit/index')">
       <view class="quick-badge amber"><AppIcon name="book" tone="white" :size="20" /></view>
       <view>
-        <text class="title">新增课程</text>
-        <text class="desc">建立新的课程预设</text>
+        <text class="title">{{ t('新增课程') }}</text>
+        <text class="desc">{{ t('建立新的课程预设') }}</text>
       </view>
     </button>
     <button hover-class="press-on" hover-stay-time="80" class="quick-item" @click="quick('/subpages/expense-edit/index')">
       <view class="quick-badge teal"><text class="badge-glyph yen">¥</text></view>
       <view>
-        <text class="title">记一笔账单</text>
-        <text class="desc">登记一次课程费用</text>
+        <text class="title">{{ t('记一笔账单') }}</text>
+        <text class="desc">{{ t('登记一次课程费用') }}</text>
       </view>
     </button>
     </template>
     <button hover-class="press-on" hover-stay-time="80" class="quick-item" @click="openFamily">
       <view class="quick-badge violet"><AppIcon name="family" tone="white" :size="22" /></view>
       <view>
-        <text class="title">{{ family.canWrite ? '邀请家人' : '家庭成员' }}</text>
-        <text class="desc">{{ family.canWrite ? '邀请家长或家人一起看课表' : '查看我的身份和家庭成员' }}</text>
+        <text class="title">{{ t(family.canWrite ? '邀请家人' : '家庭成员') }}</text>
+        <text class="desc">{{ t(family.canWrite ? '邀请家长或家人一起看课表' : '查看我的身份和家庭成员') }}</text>
       </view>
     </button>
   </view>
@@ -158,7 +159,7 @@ onMounted(measureSoon)
       @click="go(tab.key)"
     >
       <AppIcon :name="tab.icon" :tone="tab.key === ui.tab ? 'accent' : 'muted'" :size="21" />
-      <text class="tab-label">{{ tab.label }}</text>
+      <text class="tab-label">{{ t(tab.label) }}</text>
     </view>
     <view class="tabbar-center">
       <button hover-class="press-on" hover-stay-time="80" class="tabbar-fab" :class="{ open }" @click="toggleFab">
@@ -176,7 +177,7 @@ onMounted(measureSoon)
       @click="go(tab.key)"
     >
       <AppIcon :name="tab.icon" :tone="tab.key === ui.tab ? 'accent' : 'muted'" :size="21" />
-      <text class="tab-label">{{ tab.label }}</text>
+      <text class="tab-label">{{ t(tab.label) }}</text>
     </view>
   </view>
   </view>
@@ -269,7 +270,7 @@ onMounted(measureSoon)
 }
 
 .tab.active .tab-label {
-  max-width: 42px;
+  max-width: 54px;
   margin-left: 6px;
   opacity: 1;
 }

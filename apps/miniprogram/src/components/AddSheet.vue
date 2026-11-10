@@ -19,6 +19,7 @@ import type { Homework } from '@server-domain/types'
 import AppIcon from './AppIcon.vue'
 import DateDragGrid from './DateDragGrid.vue'
 import TimeField from './TimeField.vue'
+import { isEn, t } from '@/i18n'
 
 const props = defineProps<{
   open: boolean
@@ -70,12 +71,15 @@ const busyIntervals = computed(() =>
 const conflict = computed(() => findBusyConflict(busyIntervals.value, startTime.value, endTime.value))
 const dateLabel = computed(() => {
   const dates = sortedDates.value
-  if (!dates.length) return '选择上课日期'
+  if (!dates.length) return t('选择上课日期')
   const first = dayjs(dates[0])
   const last = dayjs(dates[dates.length - 1])
-  if (dates.length === 1) return first.format('YYYY年M月D日')
-  if (first.isSame(last, 'year')) return `${first.format('YYYY年M月D日')}–${last.format('M月D日')}`
-  return `${first.format('YYYY年M月D日')}–${last.format('YYYY年M月D日')}`
+  if (dates.length === 1) return first.format(t('YYYY年M月D日'))
+  if (first.isSame(last, 'year')) {
+    if (isEn()) return `${first.format('MMM D')}–${last.format('MMM D, YYYY')}`
+    return `${first.format('YYYY年M月D日')}–${last.format('M月D日')}`
+  }
+  return `${first.format(t('YYYY年M月D日'))}–${last.format(t('YYYY年M月D日'))}`
 })
 
 function courseScheduledOnAllDates(id: string) {
@@ -153,7 +157,7 @@ function removeHomework() {
   if (!existing || saving.value) return
   uni.showModal({
     title: '删除作业',
-    content: `删除「${existing.subject}」这条作业？`,
+    content: t('删除「{subject}」这条作业？', { subject: t(existing.subject) }),
     confirmText: '删除',
     confirmColor: '#e5484d',
     success: async (res) => {
@@ -256,7 +260,7 @@ async function submit() {
       return
     }
     if (conflict.value) {
-      formTip(`所选日期中「${conflict.value.title}」已占用该时间段`)
+      formTip(t('所选日期中「{title}」已占用该时间段', { title: conflict.value.title }))
       return
     }
     const amountProblem = amountError(amount.value, '费用')
@@ -298,55 +302,55 @@ async function submit() {
           <AppIcon :name="mode === 'homework' ? 'homework' : 'plus'" tone="white" :size="22" />
         </view>
         <view class="add-copy">
-          <text class="add-title">{{ editingHomework ? '编辑作业' : '新增计划' }}</text>
-          <text class="add-caption">{{ mode === 'homework' ? '把老师在群里布置的作业贴进来' : '选一门已有课程，或临时加一项安排' }}</text>
+          <text class="add-title">{{ t(editingHomework ? '编辑作业' : '新增计划') }}</text>
+          <text class="add-caption">{{ t(mode === 'homework' ? '把老师在群里布置的作业贴进来' : '选一门已有课程，或临时加一项安排') }}</text>
         </view>
         <text class="close press" hover-class="press-on" hover-stay-time="80" @click="emit('close')">×</text>
       </view>
 
       <scroll-view scroll-y class="sheet-scroll" :show-scrollbar="false">
         <view class="field">
-          <text class="field-label">{{ mode === 'homework' ? '作业日期' : '上课日期' }}<text class="req">*</text></text>
+          <text class="field-label">{{ t(mode === 'homework' ? '作业日期' : '上课日期') }}<text class="req">*</text></text>
           <view class="date-trigger press" hover-class="press-on" hover-stay-time="80" @click="pickerOpen = true">
             <text class="date-text">{{ dateLabel }}</text>
-            <text class="date-count">{{ sortedDates.length && mode !== 'homework' ? `${sortedDates.length} 天` : '' }}</text>
+            <text class="date-count">{{ sortedDates.length && mode !== 'homework' ? t('{n} 天', { n: sortedDates.length }) : '' }}</text>
           </view>
         </view>
 
         <view v-if="!editingHomework" class="mode-tabs">
           <view class="mode-thumb" :style="{ transform: `translateX(${MODE_INDEX[mode] * 100}%)` }" />
-          <text class="mode-tab press" :class="{ on: mode === 'preset' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('preset')">选择已有课程</text>
-          <text class="mode-tab press" :class="{ on: mode === 'temporary' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('temporary')">新增临时计划</text>
-          <text class="mode-tab press" :class="{ on: mode === 'homework' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('homework')">课堂作业</text>
+          <text class="mode-tab press" :class="{ on: mode === 'preset' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('preset')">{{ t('选择已有课程') }}</text>
+          <text class="mode-tab press" :class="{ on: mode === 'temporary' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('temporary')">{{ t('新增临时计划') }}</text>
+          <text class="mode-tab press" :class="{ on: mode === 'homework' }" hover-class="press-on" hover-stay-time="80" @click="switchMode('homework')">{{ t('课堂作业') }}</text>
         </view>
 
         <template v-if="mode === 'homework'">
           <view class="field">
-            <text class="field-label">作业科目<text class="req">*</text></text>
-            <input v-model="subject" :maxlength="TEXT_LIMIT.homeworkSubject" placeholder="请输入相应的作业类型" placeholder-class="ph" />
+            <text class="field-label">{{ t('作业科目') }}<text class="req">*</text></text>
+            <input v-model="subject" :maxlength="TEXT_LIMIT.homeworkSubject" :placeholder="t('请输入相应的作业类型')" placeholder-class="ph" />
             <view class="subject-picks">
               <text
                 v-for="item in SUBJECT_PICKS"
                 :key="item"
                 class="subject-pick press"
-                :class="{ on: subject === item }"
+                :class="{ on: subject === t(item) }"
                 hover-class="press-on"
                 hover-stay-time="80"
-                @click="subject = item"
-              >{{ item }}</text>
+                @click="subject = t(item)"
+              >{{ t(item) }}</text>
             </view>
           </view>
           <view class="field">
             <view class="field-label-row">
-              <text class="field-label">作业内容<text class="req">*</text></text>
-              <text class="paste press" hover-class="press-on" hover-stay-time="80" @click="pasteContent">粘贴群消息</text>
+              <text class="field-label">{{ t('作业内容') }}<text class="req">*</text></text>
+              <text class="paste press" hover-class="press-on" hover-stay-time="80" @click="pasteContent">{{ t('粘贴群消息') }}</text>
             </view>
             <view class="homework-box">
               <textarea
                 :value="content"
                 class="homework-content"
                 :maxlength="TEXT_LIMIT.homeworkContent"
-                placeholder="输入或粘贴作业具体内容"
+                :placeholder="t('输入或粘贴作业具体内容')"
                 placeholder-class="ph"
                 :show-confirm-bar="false"
                 :disable-default-padding="true"
@@ -356,8 +360,8 @@ async function submit() {
             </view>
           </view>
           <view class="field">
-            <text class="field-label">备注</text>
-            <input v-model="homeworkNote" :maxlength="TEXT_LIMIT.note" placeholder="例如 周五前交、需要家长签字" placeholder-class="ph" />
+            <text class="field-label">{{ t('备注') }}</text>
+            <input v-model="homeworkNote" :maxlength="TEXT_LIMIT.note" :placeholder="t('例如 周五前交、需要家长签字')" placeholder-class="ph" />
           </view>
         </template>
 
@@ -375,32 +379,32 @@ async function submit() {
               <view class="dot" :style="{ background: course.color }" />
               <view class="preset-copy">
                 <text class="preset-name">{{ course.title }}</text>
-                <text class="preset-meta">{{ course.recurrence.startTime }}–{{ course.recurrence.endTime }} · {{ course.teacher || '老师待定' }}</text>
+                <text class="preset-meta">{{ course.recurrence.startTime }}–{{ course.recurrence.endTime }} · {{ course.teacher || t('老师待定') }}</text>
               </view>
-              <text class="preset-mark">{{ courseScheduledOnAllDates(course.id) ? '已计划' : (courseId === course.id ? '✓' : '') }}</text>
+              <text class="preset-mark">{{ courseScheduledOnAllDates(course.id) ? t('已计划') : (courseId === course.id ? '✓' : '') }}</text>
             </view>
           </view>
           <view v-else class="empty-course">
-            <button hover-class="press-on" hover-stay-time="80" class="btn outline" @click="goCreateCourse">新增课程</button>
+            <button hover-class="press-on" hover-stay-time="80" class="btn outline" @click="goCreateCourse">{{ t('新增课程') }}</button>
           </view>
         </template>
 
         <template v-else-if="mode === 'temporary'">
           <view class="field">
-            <text class="field-label">计划名称<text class="req">*</text></text>
-            <input v-model="title" :maxlength="TEXT_LIMIT.courseTitle" placeholder="请输入计划名称" placeholder-class="ph" />
+            <text class="field-label">{{ t('计划名称') }}<text class="req">*</text></text>
+            <input v-model="title" :maxlength="TEXT_LIMIT.courseTitle" :placeholder="t('请输入计划名称')" placeholder-class="ph" />
           </view>
           <view class="field">
-            <text class="field-label">备注</text>
-            <input v-model="note" :maxlength="TEXT_LIMIT.note" placeholder="请输入备注信息" placeholder-class="ph" />
+            <text class="field-label">{{ t('备注') }}</text>
+            <input v-model="note" :maxlength="TEXT_LIMIT.note" :placeholder="t('请输入备注信息')" placeholder-class="ph" />
           </view>
           <view class="row">
             <view class="field" style="flex: 1">
-              <text class="field-label">开始时间</text>
+              <text class="field-label">{{ t('开始时间') }}</text>
               <TimeField :model-value="startTime" @update:model-value="setStart" />
             </view>
             <view class="field" style="flex: 1">
-              <text class="field-label">结束时间</text>
+              <text class="field-label">{{ t('结束时间') }}</text>
               <TimeField v-model="endTime" />
             </view>
           </view>
@@ -408,14 +412,14 @@ async function submit() {
             <text v-for="busy in busyIntervals" :key="`${busy.start}-${busy.title}`">{{ busy.start }}–{{ busy.end }} {{ busy.title }}</text>
           </view>
           <view class="field">
-            <text class="field-label">费用</text>
+            <text class="field-label">{{ t('费用') }}</text>
             <view class="money">
               <text>¥</text>
               <input v-model="amount" type="digit" :maxlength="TEXT_LIMIT.amount" placeholder="0" placeholder-class="ph" />
             </view>
           </view>
           <view class="row pay-row">
-            <text>是否已支付</text>
+            <text>{{ t('是否已支付') }}</text>
             <switch :checked="paid" color="#ff7a45" @change="paid = Boolean($event.detail.value)" />
           </view>
         </template>
@@ -429,21 +433,21 @@ async function submit() {
           class="btn ghost block delete-btn"
           :disabled="saving"
           @click="removeHomework"
-        >删除这条作业</button>
-        <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="submit">{{ saving ? '保存中…' : '确认' }}</button>
+        >{{ t('删除这条作业') }}</button>
+        <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="submit">{{ t(saving ? '保存中…' : '确认') }}</button>
       </view>
     </view>
   </view>
   <view v-if="pickerOpen" class="mask picker-mask" @click="pickerOpen = false">
     <view class="sheet picker-sheet" @click.stop>
       <view class="sheet-head">
-        <text class="sheet-title">{{ mode === 'homework' ? '选择作业日期' : '选择上课日期' }}</text>
+        <text class="sheet-title">{{ t(mode === 'homework' ? '选择作业日期' : '选择上课日期') }}</text>
         <text class="close press" hover-class="press-on" hover-stay-time="80" @click="pickerOpen = false">×</text>
       </view>
-      <text class="tip">{{ mode === 'homework' ? '作业记在一天上，点选哪天就是哪天。' : '点选或按住滑动，可连续多选、取消。' }}</text>
+      <text class="tip">{{ t(mode === 'homework' ? '作业记在一天上，点选哪天就是哪天。' : '点选或按住滑动，可连续多选、取消。') }}</text>
       <DateDragGrid :selected="dates" @update:selected="pickDates" />
       <view class="sheet-foot">
-        <button hover-class="press-on" hover-stay-time="80" class="btn block" @click="pickerOpen = false">{{ mode === 'homework' ? '完成' : `完成 · ${dates.length} 天` }}</button>
+        <button hover-class="press-on" hover-stay-time="80" class="btn block" @click="pickerOpen = false">{{ mode === 'homework' ? t('完成') : t('完成 · {n} 天', { n: dates.length }) }}</button>
       </view>
     </view>
   </view>

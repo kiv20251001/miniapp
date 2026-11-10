@@ -19,6 +19,7 @@ import AppIcon from '@/components/AppIcon.vue'
 import DateField from '@/components/DateField.vue'
 import SelectField from '@/components/SelectField.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { t } from '@/i18n'
 
 const store = useFamilyPage()
 const themeClass = useThemePage()
@@ -67,14 +68,14 @@ const course = computed(() => store.snapshot.courses.find((item) => item.id === 
 const titleParts = computed(() => {
   const [name, ...rest] = (existing.value?.title || '').split(/\s*·\s*/)
   return {
-    name: name || '账单',
-    sub: rest.join(' · ') || (existing.value ? CATEGORY_LABEL[existing.value.category] : ''),
+    name: name || t('账单'),
+    sub: t(rest.join(' · ') || (existing.value ? CATEGORY_LABEL[existing.value.category] : '')),
   }
 })
 const statusLabel = computed(() => {
   if (!existing.value) return ''
-  if (!paid.value) return '未支付'
-  return refundedTotal.value >= existing.value.amount ? '已退完' : '已支付'
+  if (!paid.value) return t('未支付')
+  return t(refundedTotal.value >= existing.value.amount ? '已退完' : '已支付')
 })
 const heroStyle = computed(() => {
   const tint = course.value?.color || '#FF7A45'
@@ -139,7 +140,7 @@ async function refund() {
   }
   const value = Number(refundAmount.value) || 0
   if (value > refundable.value) {
-    formTip(`退款金额不能超过 ${money(refundable.value)}`)
+    formTip(t('退款金额不能超过 {amount}', { amount: money(refundable.value) }))
     return
   }
   try {
@@ -173,26 +174,26 @@ function remove() {
 <template>
   <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
   <view class="theme-root page edit sub" :class="themeClass">
-    <PageHeader safe show-back :title="expenseId ? '账单详情' : '记一笔支出'" />
+    <PageHeader safe show-back :title="t(expenseId ? '账单详情' : '记一笔支出')" />
     <template v-if="!expenseId">
-      <text class="muted">记到当前孩子 {{ store.child?.name || '' }}，并直接记为已支付。</text>
+      <text class="muted">{{ t('记到当前孩子 {name}，并直接记为已支付。', { name: store.child?.name || '' }) }}</text>
       <view class="field">
-        <text class="field-label">名称<text class="req">*</text></text>
-        <input v-model="form.title" :maxlength="TEXT_LIMIT.expenseTitle" placeholder="例如：买书" placeholder-class="ph" />
+        <text class="field-label">{{ t('名称') }}<text class="req">*</text></text>
+        <input v-model="form.title" :maxlength="TEXT_LIMIT.expenseTitle" :placeholder="t('例如：买书')" placeholder-class="ph" />
       </view>
       <view class="field">
-        <text class="field-label">类型</text>
+        <text class="field-label">{{ t('类型') }}</text>
         <SelectField v-model="form.category" :options="categoryOptions" />
       </view>
       <view class="field">
-        <text class="field-label">金额<text class="req">*</text></text>
+        <text class="field-label">{{ t('金额') }}<text class="req">*</text></text>
         <input v-model="form.amount" type="digit" :maxlength="TEXT_LIMIT.amount" placeholder="0" placeholder-class="ph" />
       </view>
       <view class="field">
-        <text class="field-label">日期<text class="req">*</text></text>
+        <text class="field-label">{{ t('日期') }}<text class="req">*</text></text>
         <DateField v-model="form.date" />
       </view>
-      <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="create">保存</button>
+      <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="create">{{ t('保存') }}</button>
     </template>
 
     <template v-else-if="existing">
@@ -207,26 +208,26 @@ function remove() {
           </view>
           <text class="status-pill" :class="paid ? 'paid' : 'unpaid'">{{ statusLabel }}</text>
         </view>
-        <text class="hero-label">{{ paid ? '实际支付' : '待支付' }}</text>
+        <text class="hero-label">{{ t(paid ? '实际支付' : '待支付') }}</text>
         <text class="hero-amount">{{ money(paid ? netPaid : existing.amount) }}</text>
       </view>
       <view class="card detail-card">
-        <view class="detail-row"><text class="detail-key">账单金额</text><text class="detail-val">{{ money(existing.amount) }}</text></view>
+        <view class="detail-row"><text class="detail-key">{{ t('账单金额') }}</text><text class="detail-val">{{ money(existing.amount) }}</text></view>
         <view v-if="refundedTotal" class="detail-row">
-          <text class="detail-key">已退金额</text>
+          <text class="detail-key">{{ t('已退金额') }}</text>
           <text class="detail-val refund-amount">−{{ money(refundedTotal) }}</text>
         </view>
-        <view class="detail-row"><text class="detail-key">账单日期</text><text class="detail-val">{{ existing.dueDate }}</text></view>
-        <view class="detail-row"><text class="detail-key">类型</text><text class="detail-val">{{ CATEGORY_LABEL[existing.category] }}</text></view>
-        <view v-if="course" class="detail-row"><text class="detail-key">所属课程</text><text class="detail-val">{{ course.title }}</text></view>
+        <view class="detail-row"><text class="detail-key">{{ t('账单日期') }}</text><text class="detail-val">{{ existing.dueDate }}</text></view>
+        <view class="detail-row"><text class="detail-key">{{ t('类型') }}</text><text class="detail-val">{{ t(CATEGORY_LABEL[existing.category]) }}</text></view>
+        <view v-if="course" class="detail-row"><text class="detail-key">{{ t('所属课程') }}</text><text class="detail-val">{{ course.title }}</text></view>
       </view>
-      <button hover-class="press-on" hover-stay-time="80" v-if="!paid" class="btn block" @click="markPaid">标记已支付</button>
+      <button hover-class="press-on" hover-stay-time="80" v-if="!paid" class="btn block" @click="markPaid">{{ t('标记已支付') }}</button>
       <view v-else class="card refund-card">
-        <text class="section">支付与退款</text>
+        <text class="section">{{ t('支付与退款') }}</text>
         <view v-if="payments.length" class="history">
           <view v-for="item in payments" :key="item.id" class="history-row">
             <view class="history-copy">
-              <text>{{ item.kind === 'payment' ? '支付' : '退款' }}</text>
+              <text>{{ t(item.kind === 'payment' ? '支付' : '退款') }}</text>
               <text class="muted">{{ item.paidAt }}{{ item.note && item.kind === 'refund' ? ' · ' + item.note : '' }}</text>
             </view>
             <text :class="item.kind === 'refund' ? 'refund-amount' : 'pay-paid'">
@@ -235,28 +236,28 @@ function remove() {
           </view>
         </view>
         <view class="row remain">
-          <text>剩余可退</text>
+          <text>{{ t('剩余可退') }}</text>
           <text class="refundable">{{ money(refundable) }}</text>
         </view>
         <template v-if="refundable > 0">
           <view class="field">
-            <text class="field-label">退款金额<text class="req">*</text></text>
+            <text class="field-label">{{ t('退款金额') }}<text class="req">*</text></text>
             <view class="money">
               <text>¥</text>
               <input v-model="refundAmount" type="digit" :maxlength="TEXT_LIMIT.amount" placeholder="0" placeholder-class="ph" />
             </view>
           </view>
           <view class="field">
-            <text class="field-label">备注</text>
-            <input v-model="refundNote" :maxlength="TEXT_LIMIT.refundNote" placeholder="选填" placeholder-class="ph" />
+            <text class="field-label">{{ t('备注') }}</text>
+            <input v-model="refundNote" :maxlength="TEXT_LIMIT.refundNote" :placeholder="t('选填')" placeholder-class="ph" />
           </view>
-          <button hover-class="press-on" hover-stay-time="80" class="btn ghost block refund-btn" @click="refund">记录退款</button>
+          <button hover-class="press-on" hover-stay-time="80" class="btn ghost block refund-btn" @click="refund">{{ t('记录退款') }}</button>
         </template>
-        <text v-else class="muted tip">该账单已全部退款，实际消费已扣减。</text>
+        <text v-else class="muted tip">{{ t('该账单已全部退款，实际消费已扣减。') }}</text>
       </view>
-      <button hover-class="press-on" hover-stay-time="80" v-if="!paid" class="btn danger block" style="margin-top: 16rpx" @click="remove">删除未付账单</button>
+      <button hover-class="press-on" hover-stay-time="80" v-if="!paid" class="btn danger block" style="margin-top: 16rpx" @click="remove">{{ t('删除未付账单') }}</button>
     </template>
-    <view v-else class="empty">账单不存在</view>
+    <view v-else class="empty">{{ t('账单不存在') }}</view>
   </view>
 </template>
 

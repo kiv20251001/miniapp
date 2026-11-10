@@ -8,7 +8,8 @@
     "build:mp-weixin:dev": "node scripts/use-env.mjs development build && uni build -p mp-weixin --mode development && node scripts/report-size.mjs",
     "dev:mp-toutiao": "uni -p mp-toutiao",
     "build:mp-toutiao": "uni build -p mp-toutiao",
-    "build:cloud": "node scripts/build-cloud.mjs"
+    "build:cloud": "node scripts/build-cloud.mjs",
+    "check:i18n": "node scripts/i18n-keys.mjs"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-alpha-5030120260930001",

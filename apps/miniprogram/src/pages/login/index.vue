@@ -16,6 +16,7 @@ import { openTab } from '@/utils/nav'
 import { capsuleBox, statusBarHeight } from '@/utils/system'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import WechatProfileField from '@/components/WechatProfileField.vue'
+import { t, toggleLocale } from '@/i18n'
 
 const store = useFamilyStore()
 const themeClass = useThemePage()
@@ -45,7 +46,7 @@ const booting = ref(!store.ready)
 let resuming = false
 /** 选头像等系统页返回也会触发 onShow，同一个邀请码只向云端确认一次。 */
 let checkedInvite = ''
-const childPlaceholder = computed(() => avatarDefaultName(avatarKey.value))
+const childPlaceholder = computed(() => t(avatarDefaultName(avatarKey.value)))
 
 onLoad((query) => {
   const invite = typeof query?.invite === 'string' ? normalizeInviteCode(query.invite) : ''
@@ -246,7 +247,7 @@ async function submit() {
       <ThemeToggle />
     </view>
     <view class="stage">
-      <view class="mark"><image class="mark-glyph" src="/static/logo-u.svg" mode="aspectFit" /></view>
+      <view class="mark" @click="toggleLocale"><image class="mark-glyph" src="/static/logo-u.svg" mode="aspectFit" /></view>
       <view class="word">Uday</view>
       <view class="slogan">Plan Your Day. Grow Your Way.</view>
     </view>
@@ -259,19 +260,19 @@ async function submit() {
         </view>
         <view class="sk sk-line boot-label" />
         <view class="sk boot-field" />
-        <view class="sk boot-submit"><text class="boot-text">正在进入…</text></view>
+        <view class="sk boot-submit"><text class="boot-text">{{ t('正在进入…') }}</text></view>
       </view>
     </view>
     <view v-else class="panel">
       <view class="modes">
         <view class="mode-thumb" :class="{ join: mode === 'join' }" />
-        <view class="mode-tab press" :class="{ on: mode === 'create' }" hover-class="press-on" hover-stay-time="80" @click="showCreate">创建家庭</view>
-        <view class="mode-tab press" :class="{ on: mode === 'join' }" hover-class="press-on" hover-stay-time="80" @click="showJoin">加入家庭</view>
+        <view class="mode-tab press" :class="{ on: mode === 'create' }" hover-class="press-on" hover-stay-time="80" @click="showCreate">{{ t('创建家庭') }}</view>
+        <view class="mode-tab press" :class="{ on: mode === 'join' }" hover-class="press-on" hover-stay-time="80" @click="showJoin">{{ t('加入家庭') }}</view>
       </view>
 
       <view class="forms">
         <view v-if="mode === 'create'" class="form">
-          <view class="field-label">孩子头像</view>
+          <view class="field-label">{{ t('孩子头像') }}</view>
           <view class="picks">
             <view
               v-for="option in avatarOptions"
@@ -286,34 +287,34 @@ async function submit() {
             </view>
           </view>
           <view class="field">
-            <view class="field-label">孩子名字</view>
+            <view class="field-label">{{ t('孩子名字') }}</view>
             <input v-model="childName" :maxlength="TEXT_LIMIT.childName" :placeholder="childPlaceholder" placeholder-class="ph" />
           </view>
           <WechatProfileField v-model:enabled="useWechat" v-model:avatar="userAvatar" v-model:nick-name="nickName" />
           <view class="submit press" :class="{ busy: submitting }" hover-class="press-on" hover-stay-time="80" @click="submit">
-            <text class="submit-label">{{ submitting ? '进入中…' : '创建并进入' }}</text>
+            <text class="submit-label">{{ t(submitting ? '进入中…' : '创建并进入') }}</text>
           </view>
           <view class="cancel press" hover-class="press-on" hover-stay-time="80" @click="cancel">
-            <text class="cancel-label">取消创建</text>
+            <text class="cancel-label">{{ t('取消创建') }}</text>
           </view>
         </view>
 
         <view v-else class="form join-form">
           <view class="field">
-            <view class="field-label">邀请码<text class="req">*</text></view>
-            <input :value="inviteCode" :maxlength="TEXT_LIMIT.inviteCode" placeholder="例如 AB12CD" placeholder-class="ph" @input="onCodeInput" />
+            <view class="field-label">{{ t('邀请码') }}<text class="req">*</text></view>
+            <input :value="inviteCode" :maxlength="TEXT_LIMIT.inviteCode" :placeholder="t('例如 AB12CD')" placeholder-class="ph" @input="onCodeInput" />
           </view>
           <view class="field">
-            <view class="field-label">你的称呼</view>
-            <input v-model="displayName" :maxlength="TEXT_LIMIT.displayName" placeholder="爸爸/妈妈/爷爷/奶奶" placeholder-class="ph" />
+            <view class="field-label">{{ t('你的称呼') }}</view>
+            <input v-model="displayName" :maxlength="TEXT_LIMIT.displayName" :placeholder="t('爸爸/妈妈/爷爷/奶奶')" placeholder-class="ph" />
           </view>
           <WechatProfileField v-model:enabled="useWechat" v-model:avatar="userAvatar" v-model:nick-name="nickName" />
           <view class="submit press" :class="{ busy: submitting }" hover-class="press-on" hover-stay-time="80" @click="submit">
-            <text class="submit-label">{{ submitting ? '加入中…' : '加入家庭' }}</text>
+            <text class="submit-label">{{ t(submitting ? '加入中…' : '加入家庭') }}</text>
           </view>
-          <text v-if="store.ready || hasLocalSession()" class="stay" @click="stayHome">回到我的课表</text>
+          <text v-if="store.ready || hasLocalSession()" class="stay" @click="stayHome">{{ t('回到我的课表') }}</text>
           <view v-else class="cancel press" hover-class="press-on" hover-stay-time="80" @click="cancel">
-            <text class="cancel-label">暂不加入</text>
+            <text class="cancel-label">{{ t('暂不加入') }}</text>
           </view>
         </view>
       </view>

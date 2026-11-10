@@ -6,7 +6,7 @@
 
 - **H5 UI / 路由 / Pinia**：`apps/web/`，技术栈保持 Vue3 + Vite + TS + Pinia + Vue Router。业务数据走 `/api`，不要再写 `myhome.v1`。
 - **NestJS API**：`server/`，本地 SQLite，`npm run dev:server`。
-- **微信小程序**：`apps/miniprogram/`。页面用 uni-app，登录和数据走微信云开发，不要改成调用 Nest API。上线步骤见 `docs/miniprogram-launch.md`，日常打包与体验版 / 正式版发布见 `docs/miniprogram-deploy.md`。课前 15 分钟提醒在课程色块的「设置提醒」上，部署定时云函数见 `docs/miniprogram-remind.md`。二级页面放 `src/subpages/` 分包，主包限制 2MB。云环境 ID 和 AppID 写在 `apps/miniprogram/.env`（开发版、体验版连 `VITE_CLOUD_ENV_DEV`，正式版连 `VITE_CLOUD_ENV_PROD`，运行时自动选择），不要手改 `project.config.json` 的 `miniprogramRoot`。
+- **微信小程序**：`apps/miniprogram/`。页面用 uni-app，登录和数据走微信云开发，不要改成调用 Nest API。上线步骤见 `docs/miniprogram-launch.md`，日常打包与体验版 / 正式版发布见 `docs/miniprogram-deploy.md`。课前 15 分钟提醒在课程色块的「设置提醒」上，部署定时云函数见 `docs/miniprogram-remind.md`。二级页面放 `src/subpages/` 分包，主包限制 2MB。云环境 ID 和 AppID 写在 `apps/miniprogram/.env`（开发版、体验版连 `VITE_CLOUD_ENV_DEV`，正式版连 `VITE_CLOUD_ENV_PROD`，运行时自动选择），不要手改 `project.config.json` 的 `miniprogramRoot`。小程序支持中英文，点左上角 logo 切换：页面文案用 `src/i18n` 的 `t('中文原文')` 包起来，英文写在 `src/i18n/en.ts`，改完跑 `npm run check:i18n -w @myhome/miniprogram` 查漏翻；toast / 弹窗文案在出口统一翻译。
 - **项目是什么、用户怎么走**：`.cursor/skills/myhome-project/`（`SKILL.md` 入口，`flows.md` 是小程序流程）。
 - **业务规则、能力地图、账号与接口**：`.cursor/skills/myhome-backend-contracts/`（`SKILL.md` 入口；`capability-map.md` / `product-map.md` / `account-model.md` / `data-and-api.md` / `backend-contracts.md` / `billing-model-v2.md` / `gaps-and-backlog.md`）。
 - **产品与口径说明**：`docs/prd/`、`docs/domain/`、`docs/design/`、`docs/architecture.md`。

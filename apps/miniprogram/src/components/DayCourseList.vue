@@ -16,6 +16,7 @@ import { loadRemindTemplate } from '@/utils/remind'
 import { occurrenceExpense, temporaryRemark } from '@/utils/view'
 import { EMPTY_DAY_LINES, EMPTY_DAY_LINES_VIEWER, SCHEDULE_LOADING, SCHEDULE_OFFLINE, pickDailyLine } from '@/domain/copy'
 import { storeToRefs } from 'pinia'
+import { isEn, t } from '@/i18n'
 import { useThemeStore } from '@/utils/wx-theme'
 import { cardBackground, currentMixBase, deepTone, mix, tileBackground } from '@/utils/color'
 import AppIcon from '@/components/AppIcon.vue'
@@ -311,11 +312,11 @@ const rows = computed(() => {
     <view class="schedule-head">
       <view class="schedule-title-wrap">
         <text class="schedule-title">{{ title }}</text>
-        <text v-if="store.syncing" class="syncing">{{ store.stale ? '上次课表' : '同步中' }}</text>
+        <text v-if="store.syncing" class="syncing">{{ t(store.stale ? '上次课表' : '同步中') }}</text>
       </view>
       <button hover-class="press-on" hover-stay-time="80" v-if="!readonly && !store.booting" class="add" @click="emit('add')">
         <AppIcon name="plus" tone="accent" :size="14" />
-        <text>{{ actionLabel }}</text>
+        <text>{{ t(actionLabel) }}</text>
       </button>
     </view>
 
@@ -338,7 +339,7 @@ const rows = computed(() => {
         <view class="lesson-card" :style="row.cardStyle">
           <view v-if="row.finished" class="done-seal">
             <view class="done-ring">
-              <view class="done-inner"><text>已完成</text></view>
+              <view class="done-inner"><text>{{ t('已完成') }}</text></view>
             </view>
           </view>
           <view class="lesson-body">
@@ -352,19 +353,19 @@ const rows = computed(() => {
                 @click.stop="subscribe(row.item)"
               >
                 <AppIcon name="alarm" tone="white" :size="13" />
-                <text>{{ store.remindKeys.includes(row.item.id) ? '已提醒' : '设置提醒' }}</text>
+                <text>{{ t(store.remindKeys.includes(row.item.id) ? '已提醒' : '设置提醒') }}</text>
               </button>
               <AppIcon :key="row.icon" :name="row.icon" tone="white" :size="26" />
             </view>
             <view class="lesson-copy">
-              <text class="lesson-type" :style="row.typeStyle">{{ row.temporary ? '临时计划' : COURSE_TYPE_LABEL[row.item.course.type] }}</text>
+              <text class="lesson-type" :style="row.typeStyle">{{ t(row.temporary ? '临时计划' : COURSE_TYPE_LABEL[row.item.course.type]) }}</text>
               <text class="lesson-name">{{ row.item.course.title }}</text>
               <view class="lesson-meta">
                 <text v-if="row.temporary" class="remark">{{ row.remark }}</text>
                 <template v-else>
-                  <text>{{ row.item.course.teacher || '老师待定' }}</text>
+                  <text>{{ row.item.course.teacher || t('老师待定') }}</text>
                   <view class="dot" />
-                  <text>{{ row.item.course.location || '地点待定' }}</text>
+                  <text>{{ row.item.course.location || t('地点待定') }}</text>
                 </template>
               </view>
               <view class="lesson-period">
@@ -375,7 +376,7 @@ const rows = computed(() => {
                 </view>
               </view>
               <text v-if="row.item.exception" class="adjust" :style="{ color: row.item.course.color }">
-                {{ row.item.exception.status === 'added' ? '本次临时添加' : '本次计划已调整' }}
+                {{ t(row.item.exception.status === 'added' ? '本次临时添加' : '本次计划已调整') }}
               </text>
             </view>
             <view class="lesson-side">
@@ -383,19 +384,19 @@ const rows = computed(() => {
                 <AppIcon name="dots" tone="muted" :size="18" />
               </button>
               <view v-if="!hideFee" class="fee-row">
-                <text class="fee">{{ row.fee.label }}</text>
+                <text class="fee" :class="{ en: isEn() }">{{ t(row.fee.label) }}</text>
                 <text
                   v-if="row.fee.paid !== undefined"
                   class="pay-pill"
                   :class="row.fee.paid ? 'paid' : 'unpaid'"
-                >{{ row.fee.paid ? '本次已付' : '本次未付' }}</text>
+                >{{ t(row.fee.paid ? '本次已付' : '本次未付') }}</text>
               </view>
             </view>
           </view>
           <view class="course-progress">
             <view class="progress-copy">
-              <text class="progress-label">课程进度 {{ row.progress.completed }}/{{ row.progress.total }} 课时</text>
-              <text v-if="row.totals && !hideFee" class="fee-totals">已付 {{ money(row.totals.paid) }} · 未付 {{ money(row.totals.unpaid) }}</text>
+              <text class="progress-label">{{ t('课程进度 {done}/{total} 课时', { done: row.progress.completed, total: row.progress.total }) }}</text>
+              <text v-if="row.totals && !hideFee" class="fee-totals">{{ t('已付 {paid} · 未付 {unpaid}', { paid: money(row.totals.paid), unpaid: money(row.totals.unpaid) }) }}</text>
             </view>
             <view class="progress-track" :style="row.trackStyle">
               <view :style="row.fillStyle" />
@@ -408,9 +409,9 @@ const rows = computed(() => {
     <view v-if="homeworkRows.length" class="homework-block">
       <view class="homework-head">
         <view class="homework-dot" />
-        <text class="homework-title">课堂作业</text>
-        <text class="homework-count">{{ homeworkDone }}/{{ homeworkRows.length }} 已完成</text>
-        <text v-if="!readonly" class="homework-hint">左滑卡片可更改状态</text>
+        <text class="homework-title">{{ t('课堂作业') }}</text>
+        <text class="homework-count">{{ t('{done}/{total} 已完成', { done: homeworkDone, total: homeworkRows.length }) }}</text>
+        <text v-if="!readonly" class="homework-hint">{{ t('左滑卡片可更改状态') }}</text>
       </view>
       <HomeworkCard
         v-for="item in homeworkRows"
@@ -439,15 +440,15 @@ const rows = computed(() => {
           </view>
         </view>
       </view>
-      <text class="boot-hint">{{ SCHEDULE_LOADING }}</text>
+      <text class="boot-hint">{{ t(SCHEDULE_LOADING) }}</text>
     </view>
 
     <view v-else-if="store.offline" class="empty-card">
-      <EmptyHint icon="calendar" :label="SCHEDULE_OFFLINE" />
+      <EmptyHint icon="calendar" :label="t(SCHEDULE_OFFLINE)" />
     </view>
 
     <view v-else class="empty-card">
-      <EmptyHint icon="calendar" :label="emptyLine">
+      <EmptyHint icon="calendar" :label="t(emptyLine)">
         <template v-if="!readonly" #mark>
           <button hover-class="press-on" hover-stay-time="80" class="empty-add press" @click="emit('add')">
             <AppIcon name="plus" tone="accent" :size="22" />
@@ -688,6 +689,7 @@ const rows = computed(() => {
   text-align: right;
 }
 .fee { font-size: 15px; font-weight: 750; white-space: nowrap; }
+.fee.en { font-size: 13px; }
 .pay-pill { padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 750; }
 .pay-pill.paid { color: var(--paid); background: var(--paid-soft); }
 .pay-pill.unpaid { color: var(--unpaid); background: var(--unpaid-soft); }

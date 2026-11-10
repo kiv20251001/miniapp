@@ -1,10 +1,9 @@
 import { createPinia } from 'pinia'
 import { createSSRApp } from 'vue'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
 import App from './App.vue'
+import { installUniI18n } from './i18n'
 
-dayjs.locale('zh-cn')
+installUniI18n()
 
 export function createApp() {
   const app = createSSRApp(App)

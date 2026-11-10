@@ -10,6 +10,7 @@ import { TEXT_LIMIT } from '@/domain/limits'
 import { expectedUsageCharge } from '@server-domain/charges'
 import { amountError, amountInputValue, cleanText, formTip } from '@/utils/form'
 import TimeField from './TimeField.vue'
+import { isEn, t } from '@/i18n'
 
 const props = defineProps<{
   item: DayOccurrence | null
@@ -43,8 +44,8 @@ const infoRows = computed(() => {
   const item = props.item
   if (!item || temporary.value) return []
   return [
-    { icon: 'family', label: '老师', value: item.course.teacher || '待定' },
-    { icon: 'school', label: '地点', value: item.course.location || '待定' },
+    { icon: 'family', label: t('老师'), value: item.course.teacher || t('待定') },
+    { icon: 'school', label: t('地点'), value: item.course.location || t('待定') },
   ]
 })
 const free = computed(() => {
@@ -154,7 +155,7 @@ function cancelOnce() {
           <AppIcon :name="icon" tone="white" :size="24" />
         </view>
         <view class="occ-copy">
-          <text class="occ-badge">{{ temporary ? '临时计划' : '这次计划' }}</text>
+          <text class="occ-badge">{{ t(temporary ? '临时计划' : '这次计划') }}</text>
           <text class="occ-title">{{ item.course.title }}</text>
         </view>
         <text class="close press" hover-class="press-on" hover-stay-time="80" @click="emit('close')">×</text>
@@ -163,48 +164,48 @@ function cancelOnce() {
         <view v-if="infoRows.length" class="info-card">
           <view v-for="row in infoRows" :key="row.label" class="info-row">
             <view class="info-mark"><AppIcon :name="row.icon" tone="muted" :size="15" /></view>
-            <text class="info-label">{{ row.label }}</text>
+            <text class="info-label" :class="{ en: isEn() }">{{ row.label }}</text>
             <text class="info-value">{{ row.value }}</text>
           </view>
         </view>
         <view v-else-if="temporary && readonly" class="info-card">
           <view class="info-row">
             <view class="info-mark"><AppIcon name="clipboard" tone="muted" :size="15" /></view>
-            <text class="info-label">备注</text>
+            <text class="info-label" :class="{ en: isEn() }">{{ t('备注') }}</text>
             <text class="info-value">{{ temporaryRemark(item.course) }}</text>
           </view>
         </view>
         <template v-if="!readonly">
           <view class="row" :class="{ 'time-first': !infoRows.length }">
             <view class="field" style="flex: 1">
-              <text class="field-label">开始</text>
+              <text class="field-label">{{ t('开始') }}</text>
               <TimeField v-model="startTime" />
             </view>
             <view class="field" style="flex: 1">
-              <text class="field-label">结束</text>
+              <text class="field-label">{{ t('结束') }}</text>
               <TimeField v-model="endTime" />
             </view>
           </view>
           <view v-if="temporary" class="field">
-            <text class="field-label">备注</text>
-            <input v-model="note" :maxlength="TEXT_LIMIT.note" placeholder="地点或事项" placeholder-class="ph" />
+            <text class="field-label">{{ t('备注') }}</text>
+            <input v-model="note" :maxlength="TEXT_LIMIT.note" :placeholder="t('地点或事项')" placeholder-class="ph" />
           </view>
           <view v-if="!free" class="field">
-            <text class="field-label">金额</text>
+            <text class="field-label">{{ t('金额') }}</text>
             <view class="money">
               <text>¥</text>
               <input v-model="amount" type="digit" :maxlength="TEXT_LIMIT.amount" placeholder="0" placeholder-class="ph" :disabled="locked" />
             </view>
           </view>
           <view v-if="!free" class="row pay-row">
-            <text>是否已支付</text>
+            <text>{{ t('是否已支付') }}</text>
             <switch :checked="paid" :disabled="locked" color="#ff7a45" @change="paid = Boolean($event.detail.value)" />
           </view>
         </template>
       </scroll-view>
       <view v-if="!readonly" class="sheet-foot action-row">
-        <button hover-class="press-on" hover-stay-time="80" class="btn danger" @click="cancelOnce">取消课程</button>
-        <button hover-class="press-on" hover-stay-time="80" class="btn" :disabled="saving" @click="save">{{ saving ? '保存中…' : '确认修改' }}</button>
+        <button hover-class="press-on" hover-stay-time="80" class="btn danger" @click="cancelOnce">{{ t('取消课程') }}</button>
+        <button hover-class="press-on" hover-stay-time="80" class="btn" :disabled="saving" @click="save">{{ t(saving ? '保存中…' : '确认修改') }}</button>
       </view>
     </view>
   </view>
@@ -269,6 +270,7 @@ function cancelOnce() {
   background: var(--paper);
 }
 .info-label { flex: 0 0 auto; width: 34px; color: var(--muted); font-size: 12px; }
+.info-label.en { width: 52px; }
 .info-value {
   flex: 1;
   min-width: 0;

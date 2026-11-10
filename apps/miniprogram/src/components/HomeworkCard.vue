@@ -6,6 +6,7 @@ import { HOMEWORK_COLOR, HOMEWORK_DONE_COLOR } from '@/domain/homework'
 import { useThemeStore } from '@/utils/wx-theme'
 import { cardBackground, mix, tileBackground } from '@/utils/color'
 import AppIcon from '@/components/AppIcon.vue'
+import { t, tc } from '@/i18n'
 
 const ACTION_WIDTH = 176
 
@@ -183,7 +184,7 @@ function tapCard() {
     >
       <view v-if="seal" class="hw-seal" :class="seal.cls">
         <view class="hw-seal-ring">
-          <view class="hw-seal-inner"><text>{{ seal.text }}</text></view>
+          <view class="hw-seal-inner"><text>{{ t(seal.text) }}</text></view>
         </view>
       </view>
       <view class="hw-tile" :style="look.tile">
@@ -191,19 +192,19 @@ function tapCard() {
       </view>
       <view class="hw-copy">
         <view class="hw-top">
-          <text class="hw-subject">{{ homework.subject }}</text>
-          <text v-if="!seal" class="hw-status" :class="status.cls">{{ status.text }}</text>
+          <text class="hw-subject">{{ t(homework.subject) }}</text>
+          <text v-if="!seal" class="hw-status" :class="status.cls">{{ t(status.text) }}</text>
         </view>
         <view class="hw-content" :class="{ clamp: long && !expanded }">{{ homework.content }}</view>
-        <text v-if="long" class="hw-more">{{ expanded ? '收起' : '展开全部' }}</text>
+        <text v-if="long" class="hw-more">{{ t(expanded ? '收起' : '展开全部') }}</text>
         <view v-if="homework.note" class="hw-note">
-          <text class="hw-note-label">备注</text>
+          <text class="hw-note-label">{{ t('备注') }}</text>
           <text class="hw-note-text">{{ homework.note }}</text>
         </view>
       </view>
       <view v-if="!readonly && !opened" class="hw-cue" :style="look.cue">
         <AppIcon name="chevron-left" tone="muted" :size="12" />
-        <text>左滑</text>
+        <text>{{ t('左滑') }}</text>
       </view>
     </view>
     <view
@@ -214,7 +215,7 @@ function tapCard() {
     >
       <view hover-class="hw-action-on" hover-stay-time="80" class="hw-action hw-edit" @click.stop="emit('edit')">
         <AppIcon name="edit" tone="white" :size="15" />
-        <text>编辑</text>
+        <text>{{ t('编辑') }}</text>
       </view>
       <view
         hover-class="hw-action-on"
@@ -224,7 +225,7 @@ function tapCard() {
         @click.stop="emit('toggle')"
       >
         <AppIcon :name="homework.done ? 'undo' : 'check'" tone="white" :size="15" />
-        <text>{{ homework.done ? '未完成' : '完成' }}</text>
+        <text>{{ homework.done ? tc('action', '未完成') : t('完成') }}</text>
       </view>
     </view>
   </view>

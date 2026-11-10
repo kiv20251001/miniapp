@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TEXT_LIMIT } from '@/domain/limits'
 import AppIcon from './AppIcon.vue'
+import { t } from '@/i18n'
 
 /**
  * 勾选后用微信原生能力选头像（chooseAvatar）、填昵称（type="nickname"）。
@@ -41,7 +42,7 @@ function onNickname(event: { detail?: { value?: string } }) {
         type="nickname"
         :value="nickName"
         :maxlength="TEXT_LIMIT.nickName"
-        placeholder="点击使用微信昵称"
+        :placeholder="t('点击使用微信昵称')"
         placeholder-class="ph"
         @input="onNickname"
         @blur="onNickname"
@@ -49,7 +50,7 @@ function onNickname(event: { detail?: { value?: string } }) {
     </view>
     <view class="check press" hover-class="press-on" hover-stay-time="80" @click="emit('update:enabled', !enabled)">
       <view class="box" :class="{ on: enabled }"><text v-if="enabled" class="tick">✓</text></view>
-      <text class="check-label">使用微信头像和昵称，方便家人认出你</text>
+      <text class="check-label">{{ t('使用微信头像和昵称，方便家人认出你') }}</text>
     </view>
   </view>
 </template>

@@ -1,3 +1,5 @@
+import { t } from '@/i18n'
+
 /** 右上角转发、朋友圈和邀请家人共用同一张推广图。好友卡片是 5:4，朋友圈缩略图会裁成正方形。 */
 export const SHARE_IMAGE = '/static/share-cover.jpg'
 
@@ -18,7 +20,7 @@ export function isMomentsPreview() {
 /** onShareAppMessage 必须写在页面文件里，uni 编译时才会给页面开启转发菜单。 */
 export function appShare(): ShareContent {
   return {
-    title: 'Uday 家庭课表计划：今天上什么课，家人一起看',
+    title: t('Uday 家庭课表计划：今天上什么课，家人一起看'),
     path: '/pages/home/index',
     imageUrl: SHARE_IMAGE,
   }
@@ -27,7 +29,7 @@ export function appShare(): ShareContent {
 /** onShareTimeline 同样必须写在页面文件里。query 置空，避免把当前页的邀请码带到朋友圈。 */
 export function momentsShare() {
   return {
-    title: MOMENTS_TITLE,
+    title: t(MOMENTS_TITLE),
     query: '',
     imageUrl: SHARE_IMAGE,
   }
@@ -35,7 +37,7 @@ export function momentsShare() {
 
 export function inviteShare(code: string): ShareContent {
   return {
-    title: '邀请你一起看 Uday 家庭课表',
+    title: t('邀请你一起看 Uday 家庭课表'),
     path: code ? `/pages/login/index?invite=${code}` : '/pages/login/index',
     imageUrl: SHARE_IMAGE,
   }

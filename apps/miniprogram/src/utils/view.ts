@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import type { Course, Expense, ScheduleException } from '@server-domain/types'
 import { money } from '@server-domain/billing'
 import { occurrencesOnDate } from '@server-domain/schedule'
+import { t } from '@/i18n'
 
 export function mondayOf(date: string) {
   const day = dayjs(date)
@@ -29,8 +30,8 @@ export function weekLabel(date: string) {
   const days = weekDates(date)
   const start = dayjs(days[0])
   const end = dayjs(days[6])
-  if (start.month() === end.month()) return `${start.format('M月D日')}–${end.format('D日')}`
-  return `${start.format('M月D日')}–${end.format('M月D日')}`
+  if (start.month() === end.month()) return `${start.format(t('M月D日'))}–${end.format(t('D日'))}`
+  return `${start.format(t('M月D日'))}–${end.format(t('M月D日'))}`
 }
 
 const LEGACY_TEMPORARY_NOTE = '通过快速新增创建的临时安排'
@@ -45,7 +46,7 @@ export function temporaryNoteValue(course: { note?: string }) {
 /** 临时计划没有老师和地点，卡片上改展示备注。 */
 export function temporaryRemark(course: { source?: string; note?: string }) {
   if (course.source !== 'temporary') return ''
-  return temporaryNoteValue(course) || '暂无备注'
+  return temporaryNoteValue(course) || t('暂无备注')
 }
 
 /** 一天一个点，颜色相同也分开画，方便看出当天有几节课。 */

@@ -1,4 +1,5 @@
 import { noticeNotMember } from '@/utils/login-prompt'
+import { isEn, t } from '@/i18n'
 
 /** 还没有家庭时写操作被拦下，已经弹过创建引导，不再提示错误。 */
 export const NEED_FAMILY = 'NEED_FAMILY'
@@ -76,8 +77,8 @@ export function showCloudError(error: unknown) {
     noticeNotMember()
     return
   }
-  const message = error instanceof Error ? error.message : '操作失败'
-  if (message.length > 18) {
+  const message = t(error instanceof Error ? error.message : '操作失败')
+  if (message.length > (isEn() ? 40 : 18)) {
     uni.showModal({ title: '提示', content: message, showCancel: false })
     return
   }

@@ -13,6 +13,7 @@ import { SCHEDULE_LOADING, SCHEDULE_OFFLINE } from '@/domain/copy'
 import EmptyHint from '@/components/EmptyHint.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import TrendChart from '@/components/TrendChart.vue'
+import { t } from '@/i18n'
 
 defineProps<{ active: boolean }>()
 const store = useFamilyStore()
@@ -36,12 +37,12 @@ const stats = computed(() => calculateLearningStatistics(
 ))
 
 const scopeLabel = computed(() =>
-  granularity.value === 'year' ? `${anchor.value.year()} 年` : anchor.value.format('YYYY 年 M 月'),
+  granularity.value === 'year' ? t('{year} 年', { year: anchor.value.year() }) : anchor.value.format(t('YYYY 年 M 月')),
 )
-const periodTotalLabel = computed(() => granularity.value === 'year' ? '本年总金额' : '本月总金额')
-const periodDonutLabel = computed(() => granularity.value === 'year' ? '本年' : '本月')
-const courseTrend = computed(() => stats.value.trend.map((item) => ({ label: item.label, value: item.courseHours })))
-const expenseTrend = computed(() => stats.value.trend.map((item) => ({ label: item.label, value: item.expense })))
+const periodTotalLabel = computed(() => t(granularity.value === 'year' ? '本年总金额' : '本月总金额'))
+const periodDonutLabel = computed(() => t(granularity.value === 'year' ? '本年' : '本月'))
+const courseTrend = computed(() => stats.value.trend.map((item) => ({ label: t(item.label), value: item.courseHours })))
+const expenseTrend = computed(() => stats.value.trend.map((item) => ({ label: t(item.label), value: item.expense })))
 const periodBills = computed(() => {
   const start = (granularity.value === 'year' ? anchor.value.startOf('year') : anchor.value.startOf('month')).format('YYYY-MM-DD')
   const end = (granularity.value === 'year' ? anchor.value.endOf('year') : anchor.value.endOf('month')).format('YYYY-MM-DD')
@@ -89,11 +90,11 @@ function formatTrendHours(hours: number) {
 
 <template>
     <view class="page stats-page">
-      <PageHeader :eyebrow="store.canViewBills ? '账单数据' : '课程数据'" title="课程统计">
+      <PageHeader :eyebrow="t(store.canViewBills ? '账单数据' : '课程数据')" :title="t('课程统计')">
         <template #actions>
           <view class="nav">
-            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'month' }" @click="setGranularity('month')">月度</button>
-            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'year' }" @click="setGranularity('year')">年度</button>
+            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'month' }" @click="setGranularity('month')">{{ t('月度') }}</button>
+            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'year' }" @click="setGranularity('year')">{{ t('年度') }}</button>
           </view>
         </template>
       </PageHeader>
@@ -110,17 +111,17 @@ function formatTrendHours(hours: number) {
           <text class="strong">{{ money(stats.periodTotal) }}</text>
         </view>
         <view class="mini">
-          <text class="muted">已支付</text>
+          <text class="muted">{{ t('已支付') }}</text>
           <text class="strong pay-paid">{{ money(stats.periodPaid) }}</text>
         </view>
         <view class="mini">
-          <text class="muted">未支付</text>
+          <text class="muted">{{ t('未支付') }}</text>
           <text class="strong pay-unpaid">{{ money(stats.periodUnpaid) }}</text>
         </view>
       </view>
 
       <view v-if="store.canViewBills" class="card cats">
-        <text class="section">按类型</text>
+        <text class="section">{{ t('按类型') }}</text>
         <view v-if="feeBreakdown.length" class="fee-content">
           <view class="donut">
             <view class="donut-ring" :style="{ background: donutBackground }" />
@@ -132,28 +133,28 @@ function formatTrendHours(hours: number) {
           <view class="legend">
             <view v-for="item in feeBreakdown" :key="item.category" class="legend-row">
               <view class="swatch" :style="{ background: item.color }" />
-              <text>{{ CATEGORY_LABEL[item.category] }}</text>
+              <text>{{ t(CATEGORY_LABEL[item.category]) }}</text>
               <text class="legend-amount">{{ money(item.amount) }}</text>
             </view>
           </view>
         </view>
-        <EmptyHint v-else-if="store.booting" icon="bill" :label="SCHEDULE_LOADING" />
-        <EmptyHint v-else-if="store.offline" icon="bill" :label="SCHEDULE_OFFLINE" />
-        <EmptyHint v-else icon="bill" label="还没有账单" />
+        <EmptyHint v-else-if="store.booting" icon="bill" :label="t(SCHEDULE_LOADING)" />
+        <EmptyHint v-else-if="store.offline" icon="bill" :label="t(SCHEDULE_OFFLINE)" />
+        <EmptyHint v-else icon="bill" :label="t('还没有账单')" />
       </view>
 
       <view class="quick-metrics">
         <view class="metric">
           <view class="metric-icon purple"><AppIcon name="clipboard" tone="white" :size="18" /></view>
           <view>
-            <text class="muted">课程计划</text>
-            <text class="metric-value">{{ stats.scheduledCount }}<text class="unit">次</text></text>
+            <text class="muted">{{ t('课程计划') }}</text>
+            <text class="metric-value">{{ stats.scheduledCount }}<text class="unit">{{ t('次') }}</text></text>
           </view>
         </view>
         <view class="metric">
           <view class="metric-icon blue"><AppIcon name="clock" tone="white" :size="18" /></view>
           <view>
-            <text class="muted">总课时</text>
+            <text class="muted">{{ t('总课时') }}</text>
             <text class="metric-value">{{ formatMinutes(stats.scheduledMinutes) }}</text>
           </view>
         </view>
@@ -161,10 +162,10 @@ function formatTrendHours(hours: number) {
 
       <view class="section-head">
         <view>
-          <text class="eyebrow">课程明细</text>
-          <text class="h2">每门课程表现</text>
+          <text class="eyebrow">{{ t('课程明细') }}</text>
+          <text class="h2">{{ t('每门课程表现') }}</text>
         </view>
-        <text class="muted">全家 · {{ scopeLabel }}</text>
+        <text class="muted">{{ t('全家') }} · {{ scopeLabel }}</text>
       </view>
       <scroll-view v-if="stats.courseStats.length" scroll-x class="report-scroll" :show-scrollbar="false">
         <view class="report-row">
@@ -183,7 +184,7 @@ function formatTrendHours(hours: number) {
               </view>
               <view class="report-copy">
                 <text class="report-title">{{ item.course.title }}</text>
-                <text class="muted">{{ item.completedCount }}/{{ item.scheduledCount }} 次已完成</text>
+                <text class="muted">{{ t('{done}/{total} 次已完成', { done: item.completedCount, total: item.scheduledCount }) }}</text>
               </view>
               <view
                 class="progress-ring"
@@ -193,21 +194,21 @@ function formatTrendHours(hours: number) {
               </view>
             </view>
             <view v-if="store.canViewBills" class="course-values">
-              <view><text>总费用</text><text class="val">{{ money(item.totalFee) }}</text></view>
-              <view><text>已支付</text><text class="val pay-paid">{{ money(item.paidFee) }}</text></view>
-              <view><text>未支付</text><text class="val pay-unpaid">{{ money(item.unpaidFee) }}</text></view>
+              <view><text>{{ t('总费用') }}</text><text class="val">{{ money(item.totalFee) }}</text></view>
+              <view><text>{{ t('已支付') }}</text><text class="val pay-paid">{{ money(item.paidFee) }}</text></view>
+              <view><text>{{ t('未支付') }}</text><text class="val pay-unpaid">{{ money(item.unpaidFee) }}</text></view>
             </view>
-            <text v-if="item.packageLabel" class="package">{{ item.packageLabel }}</text>
+            <text v-if="item.packageLabel" class="package">{{ t(item.packageLabel) }}</text>
           </view>
         </view>
       </scroll-view>
       <view v-else class="card">
-        <EmptyHint icon="calendar" :label="store.booting ? SCHEDULE_LOADING : store.offline ? SCHEDULE_OFFLINE : '还没有课程'" />
+        <EmptyHint icon="calendar" :label="t(store.booting ? SCHEDULE_LOADING : store.offline ? SCHEDULE_OFFLINE : '还没有课程')" />
       </view>
 
       <TrendChart
-        title="课时趋势"
-        :caption="granularity === 'year' ? '各月计划课时' : '每日计划课时'"
+        :title="t('课时趋势')"
+        :caption="t(granularity === 'year' ? '各月计划课时' : '每日计划课时')"
         :points="courseTrend"
         color="#FF7A45"
         :value-formatter="formatTrendHours"
@@ -215,8 +216,8 @@ function formatTrendHours(hours: number) {
       />
       <TrendChart
         v-if="store.canViewBills"
-        title="支付趋势"
-        :caption="granularity === 'year' ? '按实际支付月份统计' : '按实际支付日期统计'"
+        :title="t('支付趋势')"
+        :caption="t(granularity === 'year' ? '按实际支付月份统计' : '按实际支付日期统计')"
         :points="expenseTrend"
         color="#FF5F79"
         :value-formatter="money"

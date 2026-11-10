@@ -8,6 +8,7 @@ import { homeworkStatusMap } from '@/domain/homework'
 import { useFamilyStore } from '@/stores/family'
 import { useUiStore } from '@/stores/ui'
 import { monthMatrix, occurrenceDots } from '@/utils/view'
+import { fmt, t } from '@/i18n'
 import PageHeader from '@/components/PageHeader.vue'
 import DayCourseList from '@/components/DayCourseList.vue'
 import AddSheet from '@/components/AddSheet.vue'
@@ -67,8 +68,8 @@ const cellViews = computed(() => cells.value.map((date, index) => ({
   on: date === ui.selectedDate,
   colors: cellColors.value[index],
 })))
-const monthTitle = computed(() => dayjs(`${cursor.value}-01`).format('YYYY年M月'))
-const listTitle = computed(() => `${dayjs(ui.selectedDate).format('M月D日')}计划`)
+const monthTitle = computed(() => fmt(`${cursor.value}-01`, 'YYYY年M月'))
+const listTitle = computed(() => t('{date}计划', { date: fmt(ui.selectedDate, 'M月D日') }))
 
 function shiftMonth(delta: number) {
   cursor.value = dayjs(`${cursor.value}-01`).add(delta, 'month').format('YYYY-MM')
@@ -115,18 +116,18 @@ async function undoCancel() {
 
 <template>
     <view class="page">
-      <PageHeader eyebrow="课程日历" :title="monthTitle">
+      <PageHeader :eyebrow="t('课程日历')" :title="monthTitle">
         <template #actions>
           <view class="nav">
             <button hover-class="press-on" hover-stay-time="80" @click="shiftMonth(-1)">‹</button>
-            <button hover-class="press-on" hover-stay-time="80" class="today" @click="pick(ui.today)">今</button>
+            <button hover-class="press-on" hover-stay-time="80" class="today" @click="pick(ui.today)">{{ t('今') }}</button>
             <button hover-class="press-on" hover-stay-time="80" @click="shiftMonth(1)">›</button>
           </view>
         </template>
       </PageHeader>
       <view class="card cal">
         <view class="week">
-          <text v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label">{{ label }}</text>
+          <text v-for="label in ['一', '二', '三', '四', '五', '六', '日']" :key="label">{{ t(label) }}</text>
         </view>
         <view class="days">
           <button hover-class="press-on" hover-stay-time="80"
@@ -155,8 +156,8 @@ async function undoCancel() {
         @edit-homework="openHomework"
       />
       <view v-if="cancelled" class="undo">
-        <text>已取消“{{ cancelled.course.title }}”</text>
-        <button hover-class="press-on" hover-stay-time="80" @click="undoCancel">撤销</button>
+        <text>{{ t('已取消“{title}”', { title: cancelled.course.title }) }}</text>
+        <button hover-class="press-on" hover-stay-time="80" @click="undoCancel">{{ t('撤销') }}</button>
       </view>
       <AddSheet v-if="store.canWrite && addOpen" :open="addOpen" :date="ui.selectedDate" :homework="editingHomework" @close="closeAdd" />
       <OccurrenceSheet v-if="editing" :item="editing" :readonly="!store.canWrite" @close="editing = null" @cancelled="cancelled = $event" />

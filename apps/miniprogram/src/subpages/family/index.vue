@@ -10,6 +10,7 @@ import AppIcon from '@/components/AppIcon.vue'
 import EmptyHint from '@/components/EmptyHint.vue'
 import { inviteShare, isMomentsPreview, momentsShare } from '@/utils/share'
 import { openTab } from '@/utils/nav'
+import { fmt, t } from '@/i18n'
 import {
   FAMILY_ROLE_HINT,
   FAMILY_ROLE_LABEL,
@@ -33,8 +34,8 @@ const inviting = ref('')
 const pickingAvatar = ref(false)
 const inviteRole = ref<InviteRole>(store.canInviteParent ? 'parent' : 'viewer')
 const roleTabs = computed(() => [
-  ...(store.canInviteParent ? [{ role: 'parent' as const, label: '邀请家长' }] : []),
-  ...(store.canInviteViewer ? [{ role: 'viewer' as const, label: '邀请家人' }] : []),
+  ...(store.canInviteParent ? [{ role: 'parent' as const, label: t('邀请家长') }] : []),
+  ...(store.canInviteViewer ? [{ role: 'viewer' as const, label: t('邀请家人') }] : []),
 ])
 /** 过期或次数用完的邀请码不展示，列表里只留还能打开的。 */
 const activeInvites = computed(() => invites.value.filter((item) => isInviteActive(item)))
@@ -114,18 +115,14 @@ function copyCode(code: string) {
 function expireLabel(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hour = String(date.getHours()).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${month}月${day}日 ${hour}:${minute} 前有效`
+  return t('{time} 前有效', { time: fmt(date, 'M月D日 HH:mm') })
 }
 
 function remove(member: FamilyMemberView) {
   if (!store.canRemove(member)) return
   uni.showModal({
     title: '移出家庭',
-    content: `确定把「${memberTitle(member).name}」移出这个家庭？`,
+    content: t('确定把「{name}」移出这个家庭？', { name: t(memberTitle(member).name) }),
     success: async (res) => {
       if (!res.confirm) return
       try {
@@ -181,19 +178,19 @@ function leave() {
   <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
   <view class="theme-root" :class="themeClass">
     <view class="page family-page">
-      <PageHeader show-back safe title="家庭成员" />
+      <PageHeader show-back safe :title="t('家庭成员')" />
 
       <view class="card role-card">
         <view class="role-copy">
-          <text class="eyebrow">当前身份</text>
-          <text class="role-name">{{ store.ready || store.fromCache ? store.roleLabel : (store.booting ? '正在同步…' : '还没有家庭') }}</text>
-          <text class="muted">{{ store.ready || store.fromCache ? FAMILY_ROLE_HINT[store.role] : '创建或加入家庭后，可以和家人一起看课表。' }}</text>
+          <text class="eyebrow">{{ t('当前身份') }}</text>
+          <text class="role-name">{{ t(store.ready || store.fromCache ? store.roleLabel : (store.booting ? '正在同步…' : '还没有家庭')) }}</text>
+          <text class="muted">{{ t(store.ready || store.fromCache ? FAMILY_ROLE_HINT[store.role] : '创建或加入家庭后，可以和家人一起看课表。') }}</text>
         </view>
       </view>
 
       <view class="section-head">
-        <text class="h2">成员</text>
-        <text class="muted">{{ loading || !loaded ? '同步中…' : `${members.length} 人` }}</text>
+        <text class="h2">{{ t('成员') }}</text>
+        <text class="muted">{{ loading || !loaded ? t('同步中…') : t('{n} 人', { n: members.length }) }}</text>
       </view>
       <view class="card list">
         <template v-if="!loaded">
@@ -215,24 +212,24 @@ function leave() {
             hover-stay-time="80"
             open-type="chooseAvatar"
             @chooseavatar="onChooseAvatar"
-          >{{ memberTitle(member).name.slice(0, 1) }}</button>
-          <view v-else class="avatar" :class="member.role">{{ memberTitle(member).name.slice(0, 1) }}</view>
+          >{{ t(memberTitle(member).name).slice(0, 1) }}</button>
+          <view v-else class="avatar" :class="member.role">{{ t(memberTitle(member).name).slice(0, 1) }}</view>
           <view class="member-copy">
             <view class="name-row">
-              <text class="name">{{ memberTitle(member).name }}</text>
-              <text v-if="memberTitle(member).tag" class="name-tag">{{ memberTitle(member).tag }}</text>
-              <text v-if="member.self" class="name-self">· 我</text>
+              <text class="name">{{ t(memberTitle(member).name) }}</text>
+              <text v-if="memberTitle(member).tag" class="name-tag">{{ t(memberTitle(member).tag) }}</text>
+              <text v-if="member.self" class="name-self">{{ t('· 我') }}</text>
             </view>
-            <text class="muted">{{ FAMILY_ROLE_LABEL[member.role] }}{{ member.self && !member.avatarUrl ? ' · 点头像设置' : '' }}</text>
+            <text class="muted">{{ t(FAMILY_ROLE_LABEL[member.role]) }}{{ member.self && !member.avatarUrl ? t(' · 点头像设置') : '' }}</text>
           </view>
-          <button hover-class="press-on" hover-stay-time="80" v-if="store.canRemove(member)" class="ghost" @click="remove(member)">移出</button>
-          <button hover-class="press-on" hover-stay-time="80" v-else-if="member.self && store.canLeave" class="ghost" @click="leave">退出</button>
+          <button hover-class="press-on" hover-stay-time="80" v-if="store.canRemove(member)" class="ghost" @click="remove(member)">{{ t('移出') }}</button>
+          <button hover-class="press-on" hover-stay-time="80" v-else-if="member.self && store.canLeave" class="ghost" @click="leave">{{ t('退出') }}</button>
         </view>
-        <EmptyHint v-if="loaded && !members.length" icon="family" label="还没有成员" />
+        <EmptyHint v-if="loaded && !members.length" icon="family" :label="t('还没有成员')" />
       </view>
 
       <view v-if="store.canInviteParent || store.canInviteViewer" class="section-head">
-        <text class="h2">邀请加入</text>
+        <text class="h2">{{ t('邀请加入') }}</text>
       </view>
       <view v-if="store.canInviteParent || store.canInviteViewer" class="card">
         <view class="role-tabs">
@@ -251,7 +248,7 @@ function leave() {
             @click="pickRole(tab.role)"
           >{{ tab.label }}</view>
         </view>
-        <text class="hint">{{ INVITE_ROLE_HINT[inviteRole] }}</text>
+        <text class="hint">{{ t(INVITE_ROLE_HINT[inviteRole]) }}</text>
         <view class="code-box">
           <template v-if="!loaded">
             <view class="sk sk-line code-sk" style="width: 88px" />
@@ -260,25 +257,25 @@ function leave() {
             <view class="sk" style="height: 44px; margin-top: 14px; border-radius: 14px" />
           </template>
           <template v-else-if="current">
-            <text class="code-label">邀请码 · {{ FAMILY_ROLE_LABEL[current.role] }}</text>
+            <text class="code-label">{{ t('邀请码') }} · {{ t(FAMILY_ROLE_LABEL[current.role]) }}</text>
             <text class="code press" hover-class="press-on" hover-stay-time="80" @click="copyCode(current.code)">{{ formatInviteCode(current.code) }}</text>
-            <text class="muted">{{ expireLabel(current.expireAt) }} · 已用 {{ current.usedCount }}/{{ current.maxUses }}</text>
+            <text class="muted">{{ expireLabel(current.expireAt) }} · {{ t('已用 {used}/{max}', { used: current.usedCount, max: current.maxUses }) }}</text>
             <button hover-class="press-on" hover-stay-time="80" class="btn share-btn" open-type="share" :data-code="current.code">
               <AppIcon name="share" tone="white" :size="17" />
-              <text>发给微信好友</text>
+              <text>{{ t('发给微信好友') }}</text>
             </button>
           </template>
           <template v-else>
-            <text class="muted">{{ inviting ? '正在生成邀请码…' : '还没有可用的邀请码' }}</text>
+            <text class="muted">{{ t(inviting ? '正在生成邀请码…' : '还没有可用的邀请码') }}</text>
             <button hover-class="press-on" hover-stay-time="80" class="btn share-btn" :disabled="Boolean(inviting)" @click="invite(inviteRole)">
-              {{ inviting ? '生成中…' : '生成邀请码' }}
+              {{ t(inviting ? '生成中…' : '生成邀请码') }}
             </button>
           </template>
         </view>
         <view v-for="item in others" :key="item.code" class="invite-row">
           <view class="invite-copy">
-            <text class="invite-title">{{ formatInviteCode(item.code) }} · {{ FAMILY_ROLE_LABEL[item.role] }}</text>
-            <text class="invite-meta">{{ expireLabel(item.expireAt) }} · 已用 {{ item.usedCount }}/{{ item.maxUses }}</text>
+            <text class="invite-title">{{ formatInviteCode(item.code) }} · {{ t(FAMILY_ROLE_LABEL[item.role]) }}</text>
+            <text class="invite-meta">{{ expireLabel(item.expireAt) }} · {{ t('已用 {used}/{max}', { used: item.usedCount, max: item.maxUses }) }}</text>
           </view>
           <button
             hover-class="press-on"

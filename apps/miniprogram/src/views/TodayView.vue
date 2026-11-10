@@ -12,6 +12,7 @@ import { onViewShow } from '@/composables/useTabView'
 import { useFamilyStore } from '@/stores/family'
 import { useUiStore } from '@/stores/ui'
 import { openTab } from '@/utils/nav'
+import { fmt, t, weekdayShort } from '@/i18n'
 import { occurrenceDots, weekDates, weekLabel } from '@/utils/view'
 import AppIcon from '@/components/AppIcon.vue'
 import DayCourseList from '@/components/DayCourseList.vue'
@@ -114,13 +115,13 @@ const dayDonePercent = computed(() => {
 const weekHomework = computed(() => homeworkStatusMap(store.homework, days.value, ui.today))
 const dayViews = computed(() => days.value.map((date) => ({
   date,
-  weekday: WEEKDAY_SHORT[dayjs(date).day()],
+  weekday: weekdayShort(dayjs(date).day(), WEEKDAY_SHORT),
   num: Number(date.slice(8, 10)),
   colors: occurrenceDots(store.overviewCourses, date, store.overviewScheduleExceptions),
   homework: weekHomework.value[date] ?? 'none',
 })))
 const isToday = computed(() => ui.selectedDate === ui.today)
-const selectedLabel = computed(() => dayjs(ui.selectedDate).format('M月D日'))
+const selectedLabel = computed(() => fmt(ui.selectedDate, 'M月D日'))
 
 function shiftWeek(delta: number) {
   ui.selectedDate = dayjs(ui.selectedDate).add(delta, 'week').format('YYYY-MM-DD')
@@ -170,7 +171,7 @@ async function undoCancel() {
       <view class="week-picker">
         <view class="week-toolbar">
           <button hover-class="press-on" hover-stay-time="80" @click="shiftWeek(-1)"><AppIcon name="chevron-left" tone="muted" :size="18" /></button>
-          <text>{{ isThisWeek ? '本周' : weekLabel(ui.selectedDate) }}</text>
+          <text>{{ isThisWeek ? t('本周') : weekLabel(ui.selectedDate) }}</text>
           <button hover-class="press-on" hover-stay-time="80" @click="shiftWeek(1)"><AppIcon name="chevron-right" tone="muted" :size="18" /></button>
         </view>
         <view class="date-strip">
@@ -194,7 +195,7 @@ async function undoCancel() {
         <view class="overview-card press" hover-class="press-on" hover-stay-time="80" @click="openTab('calendar')">
           <view class="overview-head">
             <view class="mark"><AppIcon name="calendar" tone="white" :size="15" /></view>
-            <text>课程日历</text>
+            <text>{{ t('课程日历') }}</text>
             <text class="more">›</text>
           </view>
           <view v-if="store.booting" class="overview-body">
@@ -207,7 +208,7 @@ async function undoCancel() {
           <view v-else class="overview-body">
             <view>
               <text class="big">{{ items.length }}</text>
-              <text class="muted">节课程</text>
+              <text class="muted">{{ t('节课程') }}</text>
             </view>
             <view class="overview-ring" :style="{ '--ring': dayDonePercent + '%' }">
               <text>{{ dayDonePercent }}%</text>
@@ -217,7 +218,7 @@ async function undoCancel() {
         <view v-if="store.canViewBills" class="overview-card is-bill press" hover-class="press-on" hover-stay-time="80" @click="openBills">
           <view class="overview-head">
             <view class="mark bill"><AppIcon name="bill" tone="white" :size="15" /></view>
-            <text>本周课程账单</text>
+            <text>{{ t('本周课程账单') }}</text>
             <text class="more">›</text>
           </view>
           <view v-if="store.booting" class="overview-body">
@@ -230,7 +231,7 @@ async function undoCancel() {
           <view v-else class="overview-body">
             <view>
               <text class="big">{{ money(weekOpen) }}</text>
-              <text class="muted">{{ weekBills.length }} 笔账单{{ weekUnbilled ? ' · 待结算 ' + money(weekUnbilled) : '' }}</text>
+              <text class="muted">{{ t('{n} 笔账单', { n: weekBills.length }) }}{{ weekUnbilled ? t(' · 待结算 {amount}', { amount: money(weekUnbilled) }) : '' }}</text>
             </view>
             <view class="overview-ring" :style="{ '--ring': weekSettledPercent + '%' }">
               <text>{{ weekSettledPercent }}%</text>
@@ -240,7 +241,7 @@ async function undoCancel() {
       </view>
 
       <DayCourseList
-        :title="isToday ? '今日计划' : selectedLabel + '计划'"
+        :title="isToday ? t('今日计划') : t('{date}计划', { date: selectedLabel })"
         :date="ui.selectedDate"
         :items="items"
         :readonly="!store.canWrite"
@@ -251,8 +252,8 @@ async function undoCancel() {
       />
 
       <view v-if="cancelled" class="undo">
-        <text>已取消“{{ cancelled.course.title }}”</text>
-        <button hover-class="press-on" hover-stay-time="80" @click="undoCancel">撤销</button>
+        <text>{{ t('已取消“{title}”', { title: cancelled.course.title }) }}</text>
+        <button hover-class="press-on" hover-stay-time="80" @click="undoCancel">{{ t('撤销') }}</button>
       </view>
       <AddSheet v-if="store.canWrite && addOpen" :open="addOpen" :date="ui.selectedDate" :homework="editingHomework" @close="closeAdd" />
       <OccurrenceSheet v-if="editing" :item="editing" :readonly="!store.canWrite" @close="editing = null" @cancelled="rememberCancel" />

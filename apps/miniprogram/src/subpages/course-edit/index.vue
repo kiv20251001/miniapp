@@ -28,6 +28,7 @@ import SelectField from '@/components/SelectField.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import ChildAvatar from '@/components/ChildAvatar.vue'
 import DateDragGrid from '@/components/DateDragGrid.vue'
+import { fmt, t, weekdayShort } from '@/i18n'
 
 const store = useFamilyPage()
 const themeClass = useThemePage()
@@ -75,18 +76,17 @@ const paymentPlan = computed(() => (
   form.pricingMode === 'per_session' || form.pricingMode === 'per_hour' ? 'usage' : form.pricingMode
 ))
 const amountLabel = computed(() => {
-  if (form.pricingMode === 'prepaid') return '课程总金额'
-  if (form.pricingMode === 'per_hour') return '每小时费用'
-  return '单次费用'
+  if (form.pricingMode === 'prepaid') return t('课程总金额')
+  if (form.pricingMode === 'per_hour') return t('每小时费用')
+  return t('单次费用')
 })
 const billingSummary = computed(() => {
   const amount = `¥${Math.max(0, Number(form.amount) || 0).toLocaleString('zh-CN')}`
-  if (form.pricingMode === 'free') return '该课程无需缴费，只记录课程计划。'
+  if (form.pricingMode === 'free') return t('该课程无需缴费，只记录课程计划。')
   if (form.pricingMode === 'prepaid') {
-    return `课程总费用 ${amount}，当前${form.paymentStatus === 'paid' ? '已支付' : '待支付'}。`
+    return t(form.paymentStatus === 'paid' ? '课程总费用 {amount}，当前已支付。' : '课程总费用 {amount}，当前待支付。', { amount })
   }
-  const unit = form.pricingMode === 'per_hour' ? '每小时' : '每完成 1 次'
-  return `${unit}计费 ${amount}；取消未上的课次不计费。`
+  return t(form.pricingMode === 'per_hour' ? '每小时计费 {amount}；取消未上的课次不计费。' : '每完成 1 次计费 {amount}；取消未上的课次不计费。', { amount })
 })
 const batchConflict = computed(() => {
   if (!slots.value.length) return ''
@@ -101,10 +101,10 @@ const batchConflict = computed(() => {
     batchStart.value,
     batchEnd.value,
   )
-  return hit ? `${hit.title} 已占用 ${hit.start}–${hit.end}` : ''
+  return hit ? t('{title} 已占用 {start}–{end}', { title: hit.title, start: hit.start, end: hit.end }) : ''
 })
 const batchHint = computed(() => {
-  if (batchEnd.value <= batchStart.value) return '结束时间要晚于开始时间'
+  if (batchEnd.value <= batchStart.value) return t('结束时间要晚于开始时间')
   if (batchConflict.value) return batchConflict.value
   return ''
 })
@@ -298,7 +298,7 @@ async function save() {
     form.childIds,
   )
   if (conflict) {
-    formTip(`${conflict.date} 与「${conflict.title}」时间重叠`)
+    formTip(t('{date} 与「{title}」时间重叠', { date: conflict.date, title: conflict.title }))
     return
   }
   saving.value = true
@@ -365,14 +365,14 @@ function pickIcon(icon: CourseIcon) {
   <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
   <view class="theme-root" :class="themeClass">
   <view class="page edit sub">
-    <PageHeader safe show-back :title="courseId ? '课程编辑' : '新增课程'">
+    <PageHeader safe show-back :title="t(courseId ? '课程编辑' : '新增课程')">
       <template #actions>
-        <text class="lesson-count">{{ slots.length }} 次课</text>
+        <text class="lesson-count">{{ t('{n} 次课', { n: slots.length }) }}</text>
       </template>
     </PageHeader>
 
     <view class="participants">
-      <text class="participants-title">选择参与这门课程的孩子<text class="req">*</text></text>
+      <text class="participants-title">{{ t('选择参与这门课程的孩子') }}<text class="req">*</text></text>
       <view class="child-row">
         <view
           v-for="child in store.snapshot.children"
@@ -393,7 +393,7 @@ function pickIcon(icon: CourseIcon) {
           hover-stay-time="80"
           @click="promptLogin()"
         >
-          <text>前往创建</text>
+          <text>{{ t('前往创建') }}</text>
         </view>
       </view>
     </view>
@@ -402,30 +402,30 @@ function pickIcon(icon: CourseIcon) {
       <view class="section-heading">
         <text>01</text>
         <view>
-          <text class="h2">课程信息</text>
+          <text class="h2">{{ t('课程信息') }}</text>
         </view>
       </view>
       <view class="field">
-        <text class="field-label">课程名称<text class="req">*</text></text>
-        <input v-model="form.title" :maxlength="TEXT_LIMIT.courseTitle" placeholder="例如 钢琴课 / 外教口语" placeholder-class="ph" />
+        <text class="field-label">{{ t('课程名称') }}<text class="req">*</text></text>
+        <input v-model="form.title" :maxlength="TEXT_LIMIT.courseTitle" :placeholder="t('例如 钢琴课 / 外教口语')" placeholder-class="ph" />
       </view>
       <view class="row">
         <view class="field" style="flex: 1">
-          <text class="field-label">类型</text>
+          <text class="field-label">{{ t('类型') }}</text>
           <SelectField v-model="form.type" :options="COURSE_TYPE_OPTIONS" />
         </view>
         <view class="field" style="flex: 1">
-          <text class="field-label">老师</text>
-          <input v-model="form.teacher" :maxlength="TEXT_LIMIT.teacher" placeholder="老师姓名" placeholder-class="ph" />
+          <text class="field-label">{{ t('老师') }}</text>
+          <input v-model="form.teacher" :maxlength="TEXT_LIMIT.teacher" :placeholder="t('老师姓名')" placeholder-class="ph" />
         </view>
       </view>
       <view class="field">
-        <text class="field-label">上课地点</text>
-        <input v-model="form.location" :maxlength="TEXT_LIMIT.location" placeholder="线下地点或在线平台" placeholder-class="ph" />
+        <text class="field-label">{{ t('上课地点') }}</text>
+        <input v-model="form.location" :maxlength="TEXT_LIMIT.location" :placeholder="t('线下地点或在线平台')" placeholder-class="ph" />
       </view>
 
       <view class="billing">
-        <text class="bill-title">课程费用</text>
+        <text class="bill-title">{{ t('课程费用') }}</text>
         <view class="plan-list">
           <view
             v-for="option in pricingPlans"
@@ -436,8 +436,8 @@ function pickIcon(icon: CourseIcon) {
             hover-stay-time="80"
             @click="choosePlan(option.value)"
           >
-            <text class="plan-name">{{ option.label }}</text>
-            <text class="hint">{{ option.caption }}</text>
+            <text class="plan-name">{{ t(option.label) }}</text>
+            <text class="hint">{{ t(option.caption) }}</text>
           </view>
         </view>
         <view v-if="paymentPlan === 'usage'" class="unit-row">
@@ -449,7 +449,7 @@ function pickIcon(icon: CourseIcon) {
             hover-class="press-on"
             hover-stay-time="80"
             @click="setUsageUnit(option.value)"
-          >{{ option.label }}</text>
+          >{{ t(option.label) }}</text>
         </view>
         <view v-if="form.pricingMode !== 'free'" class="field">
           <text class="field-label">{{ amountLabel }}<text class="req">*</text></text>
@@ -459,7 +459,7 @@ function pickIcon(icon: CourseIcon) {
           </view>
         </view>
         <view v-if="form.pricingMode === 'prepaid'" class="row pay-row">
-          <text>是否已支付</text>
+          <text>{{ t('是否已支付') }}</text>
           <switch :checked="form.paymentStatus === 'paid'" color="#ff7a45" @change="form.paymentStatus = $event.detail.value ? 'paid' : 'unpaid'" />
         </view>
         <text class="summary">{{ billingSummary }}</text>
@@ -470,29 +470,29 @@ function pickIcon(icon: CourseIcon) {
       <view class="section-heading">
         <text>02</text>
         <view>
-          <text class="h2">选择上课日期<text class="req">*</text></text>
-          <text class="hint">点选或按住滑动，可连续多选、取消</text>
+          <text class="h2">{{ t('选择上课日期') }}<text class="req">*</text></text>
+          <text class="hint">{{ t('点选或按住滑动，可连续多选、取消') }}</text>
         </view>
       </view>
       <DateDragGrid :selected="selectedDates" @update:selected="onSelectedDates" />
-      <text class="hint">已选 {{ slots.length }} 个日期</text>
+      <text class="hint">{{ t('已选 {n} 个日期', { n: slots.length }) }}</text>
     </view>
 
     <view class="editor-card">
       <view class="section-heading">
         <text>03</text>
         <view>
-          <text class="h2">批量设置时间</text>
-          <text class="hint">改这里会立刻更新全部已选日期</text>
+          <text class="h2">{{ t('批量设置时间') }}</text>
+          <text class="hint">{{ t('改这里会立刻更新全部已选日期') }}</text>
         </view>
       </view>
       <view class="row">
         <view class="field" style="flex: 1">
-          <text class="field-label">开始</text>
+          <text class="field-label">{{ t('开始') }}</text>
           <TimeField :model-value="batchStart" @update:model-value="onBatchStart" />
         </view>
         <view class="field" style="flex: 1">
-          <text class="field-label">结束</text>
+          <text class="field-label">{{ t('结束') }}</text>
           <TimeField :model-value="batchEnd" @update:model-value="onBatchEnd" />
         </view>
       </view>
@@ -503,8 +503,8 @@ function pickIcon(icon: CourseIcon) {
       <view class="section-heading slot-toggle press" hover-class="press-on" hover-stay-time="80" @click="slotsOpen = !slotsOpen">
         <text>04</text>
         <view class="slot-toggle-copy">
-          <text class="h2">逐日调整</text>
-          <text class="hint">{{ slotsOpen ? '点击某个日期，单独修改当天时间' : `已选 ${sortedSlots.length} 个日期，展开后可单独调整` }}</text>
+          <text class="h2">{{ t('逐日调整') }}</text>
+          <text class="hint">{{ slotsOpen ? t('点击某个日期，单独修改当天时间') : t('已选 {n} 个日期，展开后可单独调整', { n: sortedSlots.length }) }}</text>
         </view>
         <view class="slot-caret" :class="{ open: slotsOpen }">
           <AppIcon name="chevron-right" tone="muted" :size="16" />
@@ -520,8 +520,8 @@ function pickIcon(icon: CourseIcon) {
           @click="openSlot(slot)"
         >
           <view>
-            <text class="slot-date">{{ dayjs(slot.date).format('M月D日') }}</text>
-            <text class="hint">周{{ WEEKDAY_SHORT[dayjs(slot.date).day()] }}</text>
+            <text class="slot-date">{{ fmt(slot.date, 'M月D日') }}</text>
+            <text class="hint">{{ t('周{day}', { day: weekdayShort(dayjs(slot.date).day(), WEEKDAY_SHORT) }) }}</text>
           </view>
           <text class="slot-time">{{ slot.startTime }}–{{ slot.endTime }}</text>
           <text class="slot-more">›</text>
@@ -531,7 +531,7 @@ function pickIcon(icon: CourseIcon) {
 
     <view class="editor-card">
       <view class="field">
-        <text class="field-label">课程图标</text>
+        <text class="field-label">{{ t('课程图标') }}</text>
         <view class="icon-options">
           <view
             v-for="option in COURSE_ICON_OPTIONS"
@@ -543,12 +543,12 @@ function pickIcon(icon: CourseIcon) {
             @click="pickIcon(option.value)"
           >
             <AppIcon :name="option.value" :tone="form.icon === option.value ? 'violet' : 'ink'" :size="21" />
-            <text>{{ option.label }}</text>
+            <text>{{ t(option.label) }}</text>
           </view>
         </view>
       </view>
       <view class="field">
-        <text class="field-label">课程颜色</text>
+        <text class="field-label">{{ t('课程颜色') }}</text>
         <view class="chip-row color-row">
           <view
             v-for="color in COURSE_COLORS"
@@ -563,17 +563,17 @@ function pickIcon(icon: CourseIcon) {
         </view>
       </view>
       <view class="field">
-        <text class="field-label">备注</text>
-        <textarea v-model="form.note" :maxlength="TEXT_LIMIT.note" placeholder="课程说明或注意事项" placeholder-class="ph" />
+        <text class="field-label">{{ t('备注') }}</text>
+        <textarea v-model="form.note" :maxlength="TEXT_LIMIT.note" :placeholder="t('课程说明或注意事项')" placeholder-class="ph" />
       </view>
     </view>
 
   </view>
 
   <view class="save-dock">
-    <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存当前课程' }}</button>
+    <button hover-class="press-on" hover-stay-time="80" class="btn block" :disabled="saving" @click="save">{{ t(saving ? '保存中…' : '保存当前课程') }}</button>
     <button hover-class="press-on" hover-stay-time="80" v-if="courseId" class="btn ghost block" style="margin-top: 8px" @click="archive">
-      {{ existing?.archived ? '恢复课程' : '标记已结课' }}
+      {{ t(existing?.archived ? '恢复课程' : '标记已结课') }}
     </button>
   </view>
 
@@ -581,24 +581,24 @@ function pickIcon(icon: CourseIcon) {
     <view class="sheet" @click.stop>
       <view class="sheet-head">
         <view>
-          <text class="eyebrow">单独调整</text>
-          <text class="sheet-title">{{ dayjs(editingSlot.date).format('M月D日') }}</text>
+          <text class="eyebrow">{{ t('单独调整') }}</text>
+          <text class="sheet-title">{{ fmt(editingSlot.date, 'M月D日') }}</text>
         </view>
         <text class="close press" hover-class="press-on" hover-stay-time="80" @click="editingSlot = null">×</text>
       </view>
       <view class="row">
         <view class="field" style="flex: 1">
-          <text class="field-label">开始</text>
+          <text class="field-label">{{ t('开始') }}</text>
           <TimeField v-model="editingSlot.startTime" />
         </view>
         <view class="field" style="flex: 1">
-          <text class="field-label">结束</text>
+          <text class="field-label">{{ t('结束') }}</text>
           <TimeField v-model="editingSlot.endTime" />
         </view>
       </view>
       <view class="sheet-foot">
-        <button hover-class="press-on" hover-stay-time="80" class="btn block" @click="saveSlotTime">保存当天时间</button>
-        <text class="hint">只修改这一天，不影响其他已选日期。</text>
+        <button hover-class="press-on" hover-stay-time="80" class="btn block" @click="saveSlotTime">{{ t('保存当天时间') }}</button>
+        <text class="hint">{{ t('只修改这一天，不影响其他已选日期。') }}</text>
       </view>
     </view>
   </view>

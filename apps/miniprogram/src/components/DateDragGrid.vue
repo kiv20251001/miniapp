@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, ref } from 'vue'
 import dayjs from 'dayjs'
+import { t } from '@/i18n'
 
 const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -116,11 +117,11 @@ defineExpose({ shift })
   <view class="drag-cal">
     <view class="month-nav">
       <text class="press" hover-class="press-on" hover-stay-time="80" @click="shift(-1)">‹</text>
-      <text class="month-label">{{ month.format('YYYY年 M月') }}</text>
+      <text class="month-label">{{ month.format(t('YYYY年 M月')) }}</text>
       <text class="press" hover-class="press-on" hover-stay-time="80" @click="shift(1)">›</text>
     </view>
     <view class="week-row">
-      <text v-for="label in WEEK_LABELS" :key="label">{{ label }}</text>
+      <text v-for="label in WEEK_LABELS" :key="label">{{ t(label) }}</text>
     </view>
     <view
       class="date-grid"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { openTab } from '@/utils/nav'
+import { toggleLocale } from '@/i18n'
 import { brandHeaderHeight, capsuleInset, statusBarHeight } from '@/utils/system'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
@@ -11,7 +11,7 @@ const actionsRight = capsuleInset() + 6
 <template>
   <view class="app-brand-header" :style="{ height: barHeight + 'px', paddingTop: statusBar + 'px' }">
     <view class="app-brand-inner" :style="{ paddingRight: actionsRight + 'px' }">
-      <view class="brand press" hover-class="press-on" hover-stay-time="80" @click="openTab('today')">
+      <view class="brand press" hover-class="press-on" hover-stay-time="80" @click="toggleLocale">
         <view class="brand-mark"><image class="brand-glyph" src="/static/logo-u.svg" mode="aspectFit" /></view>
         <view class="brand-copy">
           <text>Uday</text>

@@ -17,6 +17,7 @@ import TabBar from '@/components/TabBar.vue'
 import { currentMixBase, mix, tileBackground } from '@/utils/color'
 import AppHeader from '@/components/AppHeader.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import { t } from '@/i18n'
 
 const store = useFamilyPage()
 const themeClass = useThemePage()
@@ -89,49 +90,49 @@ function shift(delta: number) {
   <view class="theme-root" :class="themeClass">
     <AppHeader />
     <view class="page">
-      <PageHeader show-back compact eyebrow="全家账单" :title="weekLabel(anchor)">
+      <PageHeader show-back compact :eyebrow="t('全家账单')" :title="weekLabel(anchor)">
         <template #actions>
           <view class="nav">
             <button hover-class="press-on" hover-stay-time="80" @click="shift(-1)">‹</button>
             <button hover-class="press-on" hover-stay-time="80" class="add" @click="uni.navigateTo({ url: '/subpages/expense-edit/index' })">
               <AppIcon name="plus" tone="white" :size="14" />
-              <text>记一笔</text>
+              <text>{{ t('记一笔') }}</text>
             </button>
             <button hover-class="press-on" hover-stay-time="80" @click="shift(1)">›</button>
           </view>
         </template>
       </PageHeader>
       <view class="card stats">
-        <view class="mini"><text class="muted">本周总金额</text><text class="strong">{{ money(weekTotal) }}</text></view>
-        <view class="mini"><text class="muted">已支付</text><text class="strong pay-paid">{{ money(paidAmount) }}</text></view>
-        <view class="mini"><text class="muted">待支付</text><text class="strong pay-unpaid">{{ money(openAmount) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('本周总金额') }}</text><text class="strong">{{ money(weekTotal) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('已支付') }}</text><text class="strong pay-paid">{{ money(paidAmount) }}</text></view>
+        <view class="mini"><text class="muted">{{ t('待支付') }}</text><text class="strong pay-unpaid">{{ money(openAmount) }}</text></view>
       </view>
       <view class="card cats">
-        <text class="section">按类型</text>
+        <text class="section">{{ t('按类型') }}</text>
         <view v-if="slices.length" class="fee-content">
           <view class="donut">
             <view class="donut-ring" :style="{ background: donutBackground }" />
             <view class="donut-hole">
-              <text class="muted">本周</text>
+              <text class="muted">{{ t('本周') }}</text>
               <text class="donut-total">{{ money(weekTotal) }}</text>
             </view>
           </view>
           <view class="legend">
             <view v-for="item in slices" :key="item.category" class="legend-row">
               <view class="swatch" :style="{ background: item.color }" />
-              <text>{{ CATEGORY_LABEL[item.category] }}</text>
+              <text>{{ t(CATEGORY_LABEL[item.category]) }}</text>
               <text class="legend-amount">{{ money(item.amount) }}</text>
             </view>
           </view>
         </view>
-        <EmptyHint v-else icon="bill" label="还没有账单" />
+        <EmptyHint v-else icon="bill" :label="t('还没有账单')" />
       </view>
       <view class="list-title">
-        <text class="muted">账单明细</text>
-        <text class="h2">{{ bills.length }} 笔记录</text>
+        <text class="muted">{{ t('账单明细') }}</text>
+        <text class="h2">{{ t('{n} 笔记录', { n: bills.length }) }}</text>
       </view>
       <view v-if="!bills.length" class="card">
-        <EmptyHint icon="bill" label="还没有账单" />
+        <EmptyHint icon="bill" :label="t('还没有账单')" />
       </view>
       <view
         v-for="bill in bills"
@@ -149,17 +150,17 @@ function shift(delta: number) {
           <text v-else>¥</text>
         </view>
         <view class="bill-copy">
-          <text class="muted">{{ CATEGORY_LABEL[bill.category] }} · {{ bill.dueDate }}</text>
-          <text class="title">{{ bill.title }}</text>
-          <text class="muted">{{ bill.status === 'paid' ? '已支付' : '未支付' }}</text>
+          <text class="muted">{{ t(CATEGORY_LABEL[bill.category]) }} · {{ bill.dueDate }}</text>
+          <text class="title">{{ t(bill.title) }}</text>
+          <text class="muted">{{ t(bill.status === 'paid' ? '已支付' : '未支付') }}</text>
           <text v-if="refundedAmountOf(bill.id, store.overviewPayments)" class="refund-note">
-            已退 {{ money(refundedAmountOf(bill.id, store.overviewPayments)) }}
+            {{ t('已退 {amount}', { amount: money(refundedAmountOf(bill.id, store.overviewPayments)) }) }}
           </text>
         </view>
         <view class="bill-side">
           <text class="amount">{{ money(billNetAmount(bill, store.overviewPayments)) }}</text>
           <text class="pill" :class="bill.status === 'paid' ? 'paid' : 'unpaid'">
-            {{ bill.status === 'paid' ? '已支付' : '未支付' }}
+            {{ t(bill.status === 'paid' ? '已支付' : '未支付') }}
           </text>
         </view>
         <text class="arrow">›</text>

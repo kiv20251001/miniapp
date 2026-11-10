@@ -17,6 +17,7 @@ import EmptyHint from '@/components/EmptyHint.vue'
 import ChildAvatar from '@/components/ChildAvatar.vue'
 import { cardBackground, currentMixBase, deepTone, folderTab, mix, tileBackground } from '@/utils/color'
 import PageHeader from '@/components/PageHeader.vue'
+import { t } from '@/i18n'
 
 defineProps<{ active: boolean }>()
 const emit = defineEmits<{ cover: [covered: boolean] }>()
@@ -36,7 +37,7 @@ const editingAvatarId = ref('')
 const newName = ref('')
 const newAvatar = ref<ChildAvatarKey>('boy-blue')
 const names = reactive<Record<string, string>>({})
-const newChildPlaceholder = computed(() => avatarDefaultName(newAvatar.value))
+const newChildPlaceholder = computed(() => t(avatarDefaultName(newAvatar.value)))
 
 function avatarUsedByOther(key: ChildAvatarKey, exceptId?: string) {
   return store.snapshot.children.some((child) => child.id !== exceptId && childAvatarOption(child.avatarKey).key === key)
@@ -167,7 +168,7 @@ async function addChild() {
 
 function removeCurrentChild(id: string, name: string) {
   uni.showModal({
-    title: `删除${name}`,
+    title: t('删除{name}', { name }),
     content: '会删除只属于这个孩子的课程和账单。共享课只解除关联。',
     success: async (res) => {
       if (!res.confirm) return
@@ -192,7 +193,7 @@ function more(course: Course) {
   if (!store.canWrite) {
     uni.showModal({
       title: course.title,
-      content: [course.teacher || '老师待定', course.location || '地点待定'].join('\n'),
+      content: [course.teacher || t('老师待定'), course.location || t('地点待定')].join('\n'),
       showCancel: false,
     })
     return
@@ -236,7 +237,7 @@ function more(course: Course) {
 <template>
   <view class="courses-view">
     <view class="page courses-page">
-      <PageHeader title="长期课程/计划" :caption="store.canWrite ? `管理 ${store.child?.name || '孩子'} 的排课、进度与费用` : `查看 ${store.child?.name || '孩子'} 的课程、老师和地点`">
+      <PageHeader :title="t('长期课程/计划')" :caption="t(store.canWrite ? '管理 {name} 的排课、进度与费用' : '查看 {name} 的课程、老师和地点', { name: store.child?.name || t('孩子') })">
         <template #actions>
           <view class="child-row">
             <view
@@ -259,10 +260,10 @@ function more(course: Course) {
       </PageHeader>
 
       <view v-if="store.booting || (store.offline && !cards.length)" class="card">
-        <EmptyHint icon="calendar" :label="store.booting ? SCHEDULE_LOADING : SCHEDULE_OFFLINE" />
+        <EmptyHint icon="calendar" :label="t(store.booting ? SCHEDULE_LOADING : SCHEDULE_OFFLINE)" />
       </view>
       <view v-else-if="!cards.length && !store.canWrite" class="card">
-        <EmptyHint icon="calendar" label="还没有课程" />
+        <EmptyHint icon="calendar" :label="t('还没有课程')" />
       </view>
       <view v-else class="course-grid">
         <view
@@ -273,42 +274,42 @@ function more(course: Course) {
         >
           <view class="bookmark" :style="{ background: card.lifecycle.inactive ? (card.dark ? '#2a3142' : '#eceef4') : folderTab(card.course.color) }" />
           <view class="course-face" :style="card.face">
-          <text v-if="card.lifecycle.inactive" class="watermark">{{ card.lifecycle.label }}</text>
+          <text v-if="card.lifecycle.inactive" class="watermark">{{ t(card.lifecycle.label) }}</text>
           <view class="course-top">
             <view class="course-icon" :style="{ background: card.lifecycle.inactive ? '#aeb4c0' : tileBackground(card.course.color) }">
               <AppIcon :name="card.course.icon || 'generic'" tone="white" :size="23" />
             </view>
             <view class="course-actions" @click.stop>
-              <text class="badge" :class="`is-${card.lifecycle.key}`">{{ card.lifecycle.label }}</text>
+              <text class="badge" :class="`is-${card.lifecycle.key}`">{{ t(card.lifecycle.label) }}</text>
               <button hover-class="press-on" hover-stay-time="80" class="more" @click="more(card.course)"><AppIcon name="dots" tone="muted" :size="18" /></button>
             </view>
           </view>
-          <text class="type" :style="{ color: card.lifecycle.inactive ? '#8b93a5' : deepTone(card.course.color), background: card.lifecycle.inactive ? (card.dark ? '#2a3142' : '#eef0f4') : mix(card.course.color, currentMixBase(), card.dark ? 0.72 : 0.82) }">{{ COURSE_TYPE_LABEL[card.course.type] }}</text>
+          <text class="type" :style="{ color: card.lifecycle.inactive ? '#8b93a5' : deepTone(card.course.color), background: card.lifecycle.inactive ? (card.dark ? '#2a3142' : '#eef0f4') : mix(card.course.color, currentMixBase(), card.dark ? 0.72 : 0.82) }">{{ t(COURSE_TYPE_LABEL[card.course.type]) }}</text>
           <text class="name">{{ card.course.title }}</text>
           <view class="bar" :style="{ background: mix(card.course.color, card.dark ? '#2a3142' : '#eceef4', 0.86) }">
             <view :style="{ width: card.progress.percent + '%', background: card.lifecycle.inactive ? '#aeb4c0' : tileBackground(card.course.color) }" />
           </view>
-          <text class="meta">{{ card.progress.completed }}/{{ card.progress.total }} 课时 · {{ card.progress.percent }}%</text>
+          <text class="meta">{{ t('{done}/{total} 课时 · {percent}%', { done: card.progress.completed, total: card.progress.total, percent: card.progress.percent }) }}</text>
           <view class="foot">
             <view v-if="store.canViewBills">
-              <text class="price">{{ getCoursePricingLabel(card.course) }}</text>
-              <text v-if="card.billing.key !== 'free'" class="bill-state" :class="`is-${card.billing.key}`">{{ card.billing.label }}</text>
+              <text class="price">{{ t(getCoursePricingLabel(card.course)) }}</text>
+              <text v-if="card.billing.key !== 'free'" class="bill-state" :class="`is-${card.billing.key}`">{{ t(card.billing.label) }}</text>
             </view>
             <view v-else>
-              <text class="price">{{ card.course.teacher || '老师待定' }}</text>
-              <text class="bill-state">{{ card.course.location || '地点待定' }}</text>
+              <text class="price">{{ card.course.teacher || t('老师待定') }}</text>
+              <text class="bill-state">{{ card.course.location || t('地点待定') }}</text>
             </view>
             <view v-if="store.canViewBills" class="amount-col">
-              <text class="amount">{{ getCourseAmountLabel(card.course) }}</text>
-              <text v-if="card.billing.key === 'open'" class="pay press" hover-class="press-on" hover-stay-time="80" @click.stop="uni.navigateTo({ url: `/subpages/course-bills/index?id=${card.course.id}` })">去支付</text>
+              <text class="amount">{{ t(getCourseAmountLabel(card.course)) }}</text>
+              <text v-if="card.billing.key === 'open'" class="pay press" hover-class="press-on" hover-stay-time="80" @click.stop="uni.navigateTo({ url: `/subpages/course-bills/index?id=${card.course.id}` })">{{ t('去支付') }}</text>
             </view>
           </view>
           </view>
         </view>
         <view v-if="store.canWrite" class="course add press" hover-class="press-on" hover-stay-time="80" @click="openCreate">
           <view class="plus"><AppIcon name="plus" tone="white" :size="22" /></view>
-          <text class="name">新增课程/计划</text>
-          <text class="meta">创建新的课程与排课计划</text>
+          <text class="name">{{ t('新增课程/计划') }}</text>
+          <text class="meta">{{ t('创建新的课程与排课计划') }}</text>
         </view>
       </view>
     </view>
@@ -317,8 +318,8 @@ function more(course: Course) {
       <view class="sheet" @click.stop>
         <view class="sheet-head">
           <view>
-            <text class="eyebrow">家庭成员</text>
-            <text class="sheet-title">孩子资料管理</text>
+            <text class="eyebrow">{{ t('家庭成员') }}</text>
+            <text class="sheet-title">{{ t('孩子资料管理') }}</text>
           </view>
           <text class="close press" hover-class="press-on" hover-stay-time="80" @click="managing = false">×</text>
         </view>
@@ -341,13 +342,13 @@ function more(course: Course) {
               </view>
             </view>
             <view class="field profile-name">
-              <text class="field-label">孩子名称</text>
+              <text class="field-label">{{ t('孩子名称') }}</text>
               <input v-model="names[child.id]" :maxlength="TEXT_LIMIT.childName" placeholder-class="ph" @blur="saveName(child.id)" />
             </view>
-            <text class="delete press" hover-class="press-on" hover-stay-time="80" @click="removeCurrentChild(child.id, child.name)">删除</text>
+            <text class="delete press" hover-class="press-on" hover-stay-time="80" @click="removeCurrentChild(child.id, child.name)">{{ t('删除') }}</text>
           </view>
           <template v-if="canAddChild">
-            <text class="field-label">选择头像</text>
+            <text class="field-label">{{ t('选择头像') }}</text>
             <view class="avatar-choices new">
               <view
                 v-for="option in CHILD_AVATAR_OPTIONS"
@@ -363,10 +364,10 @@ function more(course: Course) {
             </view>
             <view class="new-row">
               <input v-model="newName" :maxlength="TEXT_LIMIT.childName" :placeholder="newChildPlaceholder" placeholder-class="ph" />
-              <button hover-class="press-on" hover-stay-time="80" class="btn" @click="addChild">添加</button>
+              <button hover-class="press-on" hover-stay-time="80" class="btn" @click="addChild">{{ t('添加') }}</button>
             </view>
           </template>
-          <text v-else class="child-limit">最多 4 个孩子，每个头像只能用一次</text>
+          <text v-else class="child-limit">{{ t('最多 4 个孩子，每个头像只能用一次') }}</text>
         </scroll-view>
       </view>
     </view>
