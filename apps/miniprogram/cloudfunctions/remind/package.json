@@ -1,0 +1,10 @@
+{
+  "name": "remind",
+  "version": "0.1.0",
+  "private": true,
+  "description": "课前 15 分钟订阅消息。定时扫描 reminders，不处理页面请求。",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

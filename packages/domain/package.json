@@ -1,0 +1,6 @@
+{
+  "name": "@myhome/domain",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Placeholder for shared domain types and business rules used by web, server, and miniprogram."
+}

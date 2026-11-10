@@ -1,0 +1,21 @@
+{
+  "name": "myhome",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web",
+    "apps/miniprogram",
+    "server",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @myhome/web",
+    "dev:server": "npm run start:dev -w @myhome/server",
+    "dev:mp": "npm run dev:mp-weixin -w @myhome/miniprogram",
+    "build": "npm run build -w @myhome/web",
+    "build:mp": "npm run build:mp-weixin -w @myhome/miniprogram",
+    "build:mp:dev": "npm run build:mp-weixin:dev -w @myhome/miniprogram",
+    "build:cloud": "npm run build:cloud -w @myhome/miniprogram",
+    "preview": "npm run preview -w @myhome/web"
+  }
+}

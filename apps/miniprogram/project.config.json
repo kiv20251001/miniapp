@@ -1,0 +1,40 @@
+{
+  "miniprogramRoot": "dist/build/mp-weixin/",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "newFeature": true,
+    "ignoreUploadUnusedFiles": true,
+    "uploadWithSourceMap": true,
+    "checkSiteMap": false,
+    "bigPackageSizeSupport": true
+  },
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "cloudfunctions"
+      },
+      {
+        "type": "suffix",
+        "value": ".ts"
+      },
+      {
+        "type": "suffix",
+        "value": ".map"
+      }
+    ],
+    "include": []
+  },
+  "appid": "wxappid",
+  "projectname": "Uday家庭课表计划",
+  "compileType": "miniprogram",
+  "libVersion": "3.5.5",
+  "condition": {}
+}

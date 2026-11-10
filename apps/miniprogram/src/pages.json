@@ -1,0 +1,35 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "Uday 家庭课表",
+        "componentPlaceholder": {
+          "calendar-view": "view",
+          "courses-view": "view",
+          "stats-view": "view"
+        }
+      }
+    },
+    { "path": "pages/login/index", "style": { "navigationBarTitleText": "登录" } }
+  ],
+  "subPackages": [
+    {
+      "root": "subpages",
+      "pages": [
+        { "path": "bills/index", "style": { "navigationBarTitleText": "本周账单" } },
+        { "path": "course-edit/index", "style": { "navigationBarTitleText": "编辑课程" } },
+        { "path": "course-bills/index", "style": { "navigationBarTitleText": "课程账单" } },
+        { "path": "expense-edit/index", "style": { "navigationBarTitleText": "账单" } },
+        { "path": "family/index", "style": { "navigationBarTitleText": "家庭" } }
+      ]
+    }
+  ],
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#F3F4FB",
+    "backgroundColorTop": "#F3F4FB",
+    "backgroundColorBottom": "#F3F4FB",
+    "backgroundTextStyle": "dark"
+  }
+}
