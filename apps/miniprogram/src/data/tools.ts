@@ -22,4 +22,10 @@ export const TOOLS: ToolEntry[] = [
     image: '/static/tools/maths.png',
     url: '/subpages/maths/index',
   },
+  {
+    key: 'clock',
+    name: '认识时钟',
+    image: '/static/tools/clock.png',
+    url: '/subpages/clock/index',
+  },
 ]

@@ -1,4 +1,4 @@
-let cached: { statusBar: number; windowWidth: number } | undefined
+let cached: { statusBar: number; windowWidth: number; windowHeight: number } | undefined
 
 function readInfo() {
   if (!cached) {
@@ -6,6 +6,7 @@ function readInfo() {
     cached = {
       statusBar: info.statusBarHeight || 20,
       windowWidth: info.windowWidth || 375,
+      windowHeight: info.windowHeight || 667,
     }
   }
   return cached
@@ -26,6 +27,10 @@ export function brandHeaderHeight() {
 
 export function windowWidth() {
   return readInfo().windowWidth
+}
+
+export function windowHeight() {
+  return readInfo().windowHeight
 }
 
 let capsule: { inset: number; top: number; height: number } | undefined

@@ -44,6 +44,48 @@ function maths() {
     <circle cx="80" cy="91" r="5" fill="url(#divide)"/>`
 }
 
+function clock() {
+  const ticks = Array.from({ length: 60 }, (_, index) => {
+    const major = index % 5 === 0
+    const angle = (index * 6 * Math.PI) / 180
+    const outer = 46
+    const inner = major ? 40.5 : 43.5
+    const p = (r) => [60 + r * Math.sin(angle), 60 - r * Math.cos(angle)].map((value) => value.toFixed(2)).join(' ')
+    return `<path d="M${p(outer)}L${p(inner)}" stroke="${major ? '#2b3340' : '#9aa1b2'}" stroke-width="${major ? 2.4 : 1}" stroke-linecap="round"/>`
+  }).join('')
+  const numbers = [
+    ['12', 60, 31.5],
+    ['3', 89, 60],
+    ['6', 60, 88.5],
+    ['9', 31, 60],
+  ]
+    .map(([label, x, y]) => `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="Helvetica Neue, Helvetica, Arial" font-size="12" font-weight="700" fill="#2b3340">${label}</text>`)
+    .join('')
+  const hand = (deg, length, width, color) => {
+    const angle = (deg * Math.PI) / 180
+    return `<path d="M60 60L${(60 + length * Math.sin(angle)).toFixed(2)} ${(60 - length * Math.cos(angle)).toFixed(2)}" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`
+  }
+  return `
+    <defs>
+      <radialGradient id="face" cx="0.5" cy="0.42" r="0.6">
+        <stop offset="0.7" stop-color="#ffffff"/>
+        <stop offset="1" stop-color="#eef0f5"/>
+      </radialGradient>
+      <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset="1" stop-color="#dfe3ec"/>
+      </linearGradient>
+    </defs>
+    <circle cx="60" cy="60" r="52" fill="url(#rim)"/>
+    <circle cx="60" cy="60" r="48.5" fill="url(#face)" stroke="#e3e7ef" stroke-width="1"/>
+    ${ticks}${numbers}
+    ${hand(-60, 22, 5, '#2b3340')}
+    ${hand(60, 33, 3.6, '#2b3340')}
+    ${hand(200, 38, 1.4, '#f15a36')}
+    <circle cx="60" cy="60" r="4" fill="#2b3340"/>
+    <circle cx="60" cy="60" r="1.8" fill="#f15a36"/>`
+}
+
 function soon() {
   return `
     <defs>
@@ -56,7 +98,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, soon }
+const icons = { copybook, maths, clock, soon }
 
 await mkdir(outDir, { recursive: true })
 for (const [name, draw] of Object.entries(icons)) {
