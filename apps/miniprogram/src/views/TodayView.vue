@@ -53,8 +53,8 @@ function closeAdd() {
   editingHomework.value = null
 }
 
-function openBills() {
-  uni.navigateTo({ url: '/subpages/bills/index?from=today' })
+function openStats() {
+  uni.navigateTo({ url: `/subpages/stats/index?date=${ui.selectedDate}` })
 }
 
 watch([addOpen, editing], () => {
@@ -101,6 +101,9 @@ const weekUnbilled = computed(() => {
     return date >= start && date <= end
   })
 })
+const weekLessonCount = computed(() =>
+  days.value.reduce((sum, date) => sum + occurrencesOnDate(store.overviewCourses, date, store.overviewScheduleExceptions).length, 0),
+)
 const dayDonePercent = computed(() => {
   const total = items.value.length
   if (!total) return 0
@@ -215,10 +218,10 @@ async function undoCancel() {
             </view>
           </view>
         </view>
-        <view v-if="store.canViewBills" class="overview-card is-bill press" hover-class="press-on" hover-stay-time="80" @click="openBills">
+        <view v-if="store.canViewBills" class="overview-card is-bill press" hover-class="press-on" hover-stay-time="80" @click="openStats">
           <view class="overview-head">
             <view class="mark bill"><AppIcon name="bill" tone="white" :size="15" /></view>
-            <text>{{ t('本周课程账单') }}</text>
+            <text>{{ t('课程账单统计') }}</text>
             <text class="more">›</text>
           </view>
           <view v-if="store.booting" class="overview-body">
@@ -235,6 +238,25 @@ async function undoCancel() {
             </view>
             <view class="overview-ring" :style="{ '--ring': weekSettledPercent + '%' }">
               <text>{{ weekSettledPercent }}%</text>
+            </view>
+          </view>
+        </view>
+        <view v-else class="overview-card press" hover-class="press-on" hover-stay-time="80" @click="openStats">
+          <view class="overview-head">
+            <view class="mark"><AppIcon name="bars" tone="white" :size="15" /></view>
+            <text>{{ t('课程统计') }}</text>
+            <text class="more">›</text>
+          </view>
+          <view v-if="store.booting" class="overview-body">
+            <view>
+              <view class="sk sk-title boot-num" />
+              <view class="sk sk-line boot-sub" />
+            </view>
+          </view>
+          <view v-else class="overview-body">
+            <view>
+              <text class="big">{{ weekLessonCount }}</text>
+              <text class="muted">{{ t('节课程') }}</text>
             </view>
           </view>
         </view>

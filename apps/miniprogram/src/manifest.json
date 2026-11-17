@@ -24,6 +24,11 @@
       "subPackages": true
     },
     "lazyCodeLoading": "requiredComponents",
+    "permission": {
+      "scope.writePhotosAlbum": {
+        "desc": "保存字帖图片到相册，方便打印"
+      }
+    },
     "usingComponents": true
   },
   "mp-toutiao": {

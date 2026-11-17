@@ -11,10 +11,10 @@ import TabBar from '@/components/TabBar.vue'
 import TodayView from '@/views/TodayView.vue'
 import CalendarView from '@/views/CalendarView.vue'
 import CoursesView from '@/views/CoursesView.vue'
-import StatsView from '@/views/StatsView.vue'
+import ToolboxView from '@/views/ToolboxView.vue'
 
 /**
- * 今日、日历、课程、统计四个视图都挂在这一个页面里。
+ * 今日、日历、课程、工具箱四个视图都挂在这一个页面里。
  * 切 tab 只是在同一个 WebView 里换显示的那块，不新建页面，所以没有新页面首帧的底色闪烁；
  * 换肤也直接作用到全部视图，不再有“缓存页还是旧主题”的问题。
  */
@@ -26,14 +26,14 @@ const pageBg = usePageBackground()
 const ui = useUiStore()
 
 /** 视图第一次被打开后保留在树里，之后只用 hidden 切换，回来时还是原样。 */
-const mounted = reactive<Record<TabKey, boolean>>({ today: true, calendar: false, courses: false, stats: false })
-const covers = reactive<Record<TabKey, boolean>>({ today: false, calendar: false, courses: false, stats: false })
+const mounted = reactive<Record<TabKey, boolean>>({ today: true, calendar: false, courses: false, tools: false })
+const covers = reactive<Record<TabKey, boolean>>({ today: false, calendar: false, courses: false, tools: false })
 const covered = computed(() => covers[ui.tab])
 /** 两个一样的 keyframes 轮流用，才能让每次切换都重新播放淡入。 */
 const enterTick = ref(0)
 const stageClass = computed(() => (enterTick.value ? `enter-${enterTick.value % 2}` : ''))
 
-const scrollTops: Record<TabKey, number> = { today: 0, calendar: 0, courses: 0, stats: 0 }
+const scrollTops: Record<TabKey, number> = { today: 0, calendar: 0, courses: 0, tools: 0 }
 let scrollTop = 0
 
 onPageScroll((event) => {
@@ -89,8 +89,8 @@ watch(() => ui.tab, (tab, previous) => {
       <view v-if="mounted.courses" v-show="ui.tab === 'courses'">
         <CoursesView :active="ui.tab === 'courses'" @cover="setCover('courses', $event)" />
       </view>
-      <view v-if="mounted.stats" v-show="ui.tab === 'stats'">
-        <StatsView :active="ui.tab === 'stats'" />
+      <view v-if="mounted.tools" v-show="ui.tab === 'tools'">
+        <ToolboxView />
       </view>
     </view>
     <TabBar :hidden="covered" />

@@ -26,7 +26,7 @@ const tabs = [
   { key: 'today', label: '今日', icon: 'clock' },
   { key: 'calendar', label: '日历', icon: 'calendar' },
   { key: 'courses', label: '课程', icon: 'book' },
-  { key: 'stats', label: '统计', icon: 'bars' },
+  { key: 'tools', label: '工具箱', icon: 'toolbox' },
 ] as const
 
 const leftTabs = tabs.slice(0, 2)
@@ -343,6 +343,8 @@ onMounted(measureSoon)
   left: 50%;
   bottom: calc(104px + var(--safe-bottom));
   width: min(268px, calc(100% - 48px));
+  max-height: calc(100vh - 180px - var(--safe-bottom));
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 7px;

@@ -1,6 +1,6 @@
 import { useUiStore } from '@/stores/ui'
 
-export type TabKey = 'today' | 'calendar' | 'courses' | 'stats'
+export type TabKey = 'today' | 'calendar' | 'courses' | 'tools'
 
 /**
  * 四个 tab 视图都放在同一个页面里，由 ui.tab 决定显示哪一个。
@@ -9,7 +9,7 @@ export type TabKey = 'today' | 'calendar' | 'courses' | 'stats'
 export const HOME_PATH = '/pages/home/index'
 
 export function isTabKey(value: unknown): value is TabKey {
-  return value === 'today' || value === 'calendar' || value === 'courses' || value === 'stats'
+  return value === 'today' || value === 'calendar' || value === 'courses' || value === 'tools'
 }
 
 function homeIndex() {

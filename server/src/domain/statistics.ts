@@ -6,7 +6,23 @@ import { forecastAmountInRange } from './forecast'
 import { getPackageBalance, packageCaption } from './packages'
 import { occurrencesInRange } from './schedule'
 
-export type StatisticsGranularity = 'year' | 'month'
+export type StatisticsGranularity = 'year' | 'month' | 'week'
+
+const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日']
+
+/** 周一为一周的第一天，和课表周选择器一致。 */
+export function startOfWeek(anchor: dayjs.Dayjs) {
+  return anchor.subtract((anchor.day() + 6) % 7, 'day').startOf('day')
+}
+
+export function statisticsRange(anchor: dayjs.Dayjs, granularity: StatisticsGranularity) {
+  if (granularity === 'year') return { start: anchor.startOf('year'), end: anchor.endOf('year') }
+  if (granularity === 'week') {
+    const start = startOfWeek(anchor)
+    return { start, end: start.add(6, 'day') }
+  }
+  return { start: anchor.startOf('month'), end: anchor.endOf('month') }
+}
 
 export interface CourseStatistic {
   course: Course
@@ -67,6 +83,16 @@ function createTrend(anchor: dayjs.Dayjs, granularity: StatisticsGranularity): T
     }))
   }
 
+  if (granularity === 'week') {
+    const start = startOfWeek(anchor)
+    return Array.from({ length: 7 }, (_, index) => ({
+      key: start.add(index, 'day').format('YYYY-MM-DD'),
+      label: WEEKDAY_LABELS[index],
+      courseHours: 0,
+      expense: 0,
+    }))
+  }
+
   return Array.from({ length: anchor.daysInMonth() }, (_, index) => ({
     key: anchor.date(index + 1).format('YYYY-MM-DD'),
     label: String(index + 1),
@@ -85,11 +111,14 @@ export function calculateLearningStatistics(
   occurrenceRecords: OccurrenceRecord[] = [],
   payments: Payment[] = [],
 ): LearningStatistics {
-  const start = (granularity === 'year' ? anchor.startOf('year') : anchor.startOf('month')).format('YYYY-MM-DD')
-  const end = (granularity === 'year' ? anchor.endOf('year') : anchor.endOf('month')).format('YYYY-MM-DD')
+  const bounds = statisticsRange(anchor, granularity)
+  const start = bounds.start.format('YYYY-MM-DD')
+  const end = bounds.end.format('YYYY-MM-DD')
   const today = dayjs().format('YYYY-MM-DD')
   const occurrences = occurrencesInRange(courses, start, end, exceptions)
-  const scopedExpenses = expensesInRange(expenses, start, end)
+  const scopedExpenses = granularity === 'week'
+    ? expenses.filter((item) => item.status !== 'void' && item.dueDate >= start && item.dueDate <= end)
+    : expensesInRange(expenses, start, end)
   const periodBills = billsInDueRange(expenses, start, end)
   const periodMoney = summarizeBills(periodBills, payments)
   const scopedPayments = payments.filter((item) => item.paidAt >= start && item.paidAt <= end)

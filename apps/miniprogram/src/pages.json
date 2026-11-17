@@ -21,7 +21,10 @@
         { "path": "course-edit/index", "style": { "navigationBarTitleText": "编辑课程" } },
         { "path": "course-bills/index", "style": { "navigationBarTitleText": "课程账单" } },
         { "path": "expense-edit/index", "style": { "navigationBarTitleText": "账单" } },
-        { "path": "family/index", "style": { "navigationBarTitleText": "家庭" } }
+        { "path": "family/index", "style": { "navigationBarTitleText": "家庭" } },
+        { "path": "toolbox/index", "style": { "navigationBarTitleText": "工具箱" } },
+        { "path": "stats/index", "style": { "navigationBarTitleText": "课程统计" } },
+        { "path": "copybook/index", "style": { "navigationBarTitleText": "字帖生成" } }
       ]
     }
   ],

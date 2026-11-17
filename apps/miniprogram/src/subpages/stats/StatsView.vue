@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import dayjs from 'dayjs'
-import { groupByCategory, money } from '@server-domain/billing'
+import { billNetAmount, groupByCategory, money, refundedAmountOf } from '@server-domain/billing'
 import { CATEGORY_LABEL } from '@server-domain/constants'
-import { calculateLearningStatistics } from '@server-domain/statistics'
+import { calculateLearningStatistics, statisticsRange, type StatisticsGranularity } from '@server-domain/statistics'
 import { useFamilyStore } from '@/stores/family'
 import { useThemeStore } from '@/utils/wx-theme'
 import { currentMixBase, deepTone, mix, tileBackground } from '@/utils/color'
@@ -13,16 +13,18 @@ import { SCHEDULE_LOADING, SCHEDULE_OFFLINE } from '@/domain/copy'
 import EmptyHint from '@/components/EmptyHint.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import TrendChart from '@/components/TrendChart.vue'
+import { showCloudError } from '@/cloud/call'
 import { t } from '@/i18n'
+import { weekLabel } from '@/utils/view'
 
-defineProps<{ active: boolean }>()
+const props = defineProps<{ active: boolean; initialDate?: string }>()
 const store = useFamilyStore()
 const theme = useThemeStore()
 /** 与 web 一致：卡片接近整行，右侧露出下一张方便左右滑。 */
 const reportCardWidth = Math.max(280, windowWidth() - 88)
 
-const granularity = ref<'month' | 'year'>('month')
-const anchor = ref(dayjs())
+const granularity = ref<StatisticsGranularity>('week')
+const anchor = ref(dayjs(/^\d{4}-\d{2}-\d{2}$/.test(props.initialDate || '') ? props.initialDate : undefined))
 const chartColors = ['#FF7A45', '#FF5F79', '#FFB347', '#39C6A4', '#5D9CFF', '#B46AF4']
 
 const stats = computed(() => calculateLearningStatistics(
@@ -36,17 +38,23 @@ const stats = computed(() => calculateLearningStatistics(
   store.overviewPayments,
 ))
 
-const scopeLabel = computed(() =>
-  granularity.value === 'year' ? t('{year} 年', { year: anchor.value.year() }) : anchor.value.format(t('YYYY 年 M 月')),
-)
-const periodTotalLabel = computed(() => t(granularity.value === 'year' ? '本年总金额' : '本月总金额'))
-const periodDonutLabel = computed(() => t(granularity.value === 'year' ? '本年' : '本月'))
+const scopeLabel = computed(() => {
+  if (granularity.value === 'year') return t('{year} 年', { year: anchor.value.year() })
+  if (granularity.value === 'week') return weekLabel(anchor.value.format('YYYY-MM-DD'))
+  return anchor.value.format(t('YYYY 年 M 月'))
+})
+const periodTotalLabel = computed(() => t(granularity.value === 'year' ? '本年总金额' : granularity.value === 'week' ? '本周总金额' : '本月总金额'))
+const periodDonutLabel = computed(() => t(granularity.value === 'year' ? '本年' : granularity.value === 'week' ? '本周' : '本月'))
 const courseTrend = computed(() => stats.value.trend.map((item) => ({ label: t(item.label), value: item.courseHours })))
 const expenseTrend = computed(() => stats.value.trend.map((item) => ({ label: t(item.label), value: item.expense })))
 const periodBills = computed(() => {
-  const start = (granularity.value === 'year' ? anchor.value.startOf('year') : anchor.value.startOf('month')).format('YYYY-MM-DD')
-  const end = (granularity.value === 'year' ? anchor.value.endOf('year') : anchor.value.endOf('month')).format('YYYY-MM-DD')
-  return store.overviewExpenses.filter((item) => item.status !== 'void' && item.dueDate >= start && item.dueDate <= end)
+  const range = statisticsRange(anchor.value, granularity.value)
+  const start = range.start.format('YYYY-MM-DD')
+  const end = range.end.format('YYYY-MM-DD')
+  return store.overviewExpenses
+    .filter((item) => item.status !== 'void' && item.dueDate >= start && item.dueDate <= end)
+    .slice()
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.title.localeCompare(b.title))
 })
 const feeBreakdown = computed(() =>
   groupByCategory(periodBills.value, store.overviewPayments).map((item, index) => ({
@@ -69,13 +77,34 @@ const donutBackground = computed(() => {
 })
 
 function shift(direction: number) {
-  anchor.value = granularity.value === 'year' ? anchor.value.add(direction, 'year') : anchor.value.add(direction, 'month')
+  const unit = granularity.value === 'year' ? 'year' : granularity.value === 'week' ? 'week' : 'month'
+  anchor.value = anchor.value.add(direction, unit)
 }
 
-function setGranularity(value: 'month' | 'year') {
+function setGranularity(value: StatisticsGranularity) {
   granularity.value = value
   anchor.value = dayjs()
 }
+
+function courseOf(courseId?: string) {
+  if (!courseId) return undefined
+  return store.snapshot.courses.find((item) => item.id === courseId)
+}
+
+function ensureBills() {
+  if (!store.ready || !store.canViewBills || granularity.value === 'year') return
+  const range = statisticsRange(anchor.value, granularity.value)
+  const months: string[] = []
+  let cursor = range.start.startOf('month')
+  const last = range.end.startOf('month')
+  while ((cursor.isBefore(last) || cursor.isSame(last, 'month')) && months.length < 3) {
+    months.push(cursor.format('YYYY-MM'))
+    cursor = cursor.add(1, 'month')
+  }
+  for (const period of months) store.generateBills(period).catch((error) => showCloudError(error))
+}
+
+watch(() => [granularity.value, anchor.value.format('YYYY-MM-DD'), store.ready, store.canViewBills] as const, ensureBills, { immediate: true })
 
 function formatMinutes(minutes: number) {
   if (minutes < 60) return `${minutes}min`
@@ -90,14 +119,15 @@ function formatTrendHours(hours: number) {
 
 <template>
     <view class="page stats-page">
-      <PageHeader :eyebrow="t(store.canViewBills ? '账单数据' : '课程数据')" :title="t('课程统计')">
-        <template #actions>
-          <view class="nav">
-            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'month' }" @click="setGranularity('month')">{{ t('月度') }}</button>
-            <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'year' }" @click="setGranularity('year')">{{ t('年度') }}</button>
-          </view>
-        </template>
-      </PageHeader>
+      <PageHeader safe show-back :eyebrow="t(store.canViewBills ? '账单数据' : '课程数据')" :title="t('课程统计')" />
+
+      <view class="nav-row">
+        <view class="nav">
+          <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'week' }" @click="setGranularity('week')">{{ t('周度') }}</button>
+          <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'month' }" @click="setGranularity('month')">{{ t('月度') }}</button>
+          <button hover-class="press-on" hover-stay-time="80" :class="{ on: granularity === 'year' }" @click="setGranularity('year')">{{ t('年度') }}</button>
+        </view>
+      </view>
 
       <view class="scope-nav">
         <button hover-class="press-on" hover-stay-time="80" @click="shift(-1)">‹</button>
@@ -143,6 +173,52 @@ function formatTrendHours(hours: number) {
         <EmptyHint v-else icon="bill" :label="t('还没有账单')" />
       </view>
 
+      <template v-if="store.canViewBills && granularity === 'week'">
+        <view class="list-title">
+          <view>
+            <text class="muted">{{ t('账单明细') }}</text>
+            <text class="h2">{{ t('{n} 笔记录', { n: periodBills.length }) }}</text>
+          </view>
+          <button v-if="store.canWrite" hover-class="press-on" hover-stay-time="80" class="add-bill" @click="uni.navigateTo({ url: '/subpages/expense-edit/index' })">
+            <AppIcon name="plus" tone="white" :size="14" />
+            <text>{{ t('记一笔') }}</text>
+          </button>
+        </view>
+        <view v-if="!periodBills.length" class="card">
+          <EmptyHint icon="bill" :label="t('还没有账单')" />
+        </view>
+        <view
+          v-for="bill in periodBills"
+          :key="bill.id"
+          class="card bill press"
+          hover-class="press-on"
+          hover-stay-time="80"
+          @click="uni.navigateTo({ url: `/subpages/expense-edit/index?id=${bill.id}` })"
+        >
+          <view
+            class="bill-icon"
+            :style="{ background: courseOf(bill.courseId) ? tileBackground(courseOf(bill.courseId)!.color) : tileBackground('#ff6b8a') }"
+          >
+            <AppIcon v-if="courseOf(bill.courseId)" :name="courseOf(bill.courseId)!.icon || 'generic'" tone="white" :size="22" />
+            <text v-else>¥</text>
+          </view>
+          <view class="bill-copy">
+            <text class="muted">{{ t(CATEGORY_LABEL[bill.category]) }} · {{ bill.dueDate }}</text>
+            <text class="title">{{ t(bill.title) }}</text>
+            <text v-if="refundedAmountOf(bill.id, store.overviewPayments)" class="refund-note">
+              {{ t('已退 {amount}', { amount: money(refundedAmountOf(bill.id, store.overviewPayments)) }) }}
+            </text>
+          </view>
+          <view class="bill-side">
+            <text class="amount">{{ money(billNetAmount(bill, store.overviewPayments)) }}</text>
+            <text class="pill" :class="bill.status === 'paid' ? 'paid' : 'unpaid'">
+              {{ t(bill.status === 'paid' ? '已支付' : '未支付') }}
+            </text>
+          </view>
+          <text class="arrow">›</text>
+        </view>
+      </template>
+
       <view class="quick-metrics">
         <view class="metric">
           <view class="metric-icon purple"><AppIcon name="clipboard" tone="white" :size="18" /></view>
@@ -176,7 +252,7 @@ function formatTrendHours(hours: number) {
             :style="{ width: reportCardWidth + 'px', background: `radial-gradient(120% 90% at 0% 0%, ${mix(item.course.color, currentMixBase(), 0.84)} 0%, ${currentMixBase()} 78%)` }"
             hover-class="press-on"
             hover-stay-time="80"
-            @click="store.canViewBills && uni.navigateTo({ url: `/subpages/course-bills/index?id=${item.course.id}&returnTo=stats` })"
+            @click="store.canViewBills && uni.navigateTo({ url: `/subpages/course-bills/index?id=${item.course.id}` })"
           >
             <view class="report-head">
               <view class="report-icon" :style="{ background: tileBackground(item.course.color) }">
@@ -229,19 +305,21 @@ function formatTrendHours(hours: number) {
 
 <style scoped>
 .stats-page { padding-top: 8px; }
+.nav-row { display: flex; justify-content: flex-end; margin-bottom: 14px; }
 .nav { display: flex; align-items: center; padding: 3px; border-radius: 14px; background: var(--paper); box-shadow: var(--elev-sm); }
 .nav button {
   display: flex;
-  min-width: 48px;
+  min-width: 44px;
   height: 30px;
   align-items: center;
   justify-content: center;
-  padding: 0 10px;
+  padding: 0 9px;
   border-radius: 11px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
   line-height: 30px;
+  white-space: nowrap;
 }
 .nav button.on { color: var(--accent-text); background: var(--accent-soft); }
 .scope-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
@@ -349,4 +427,39 @@ function formatTrendHours(hours: number) {
 .course-values text { display: block; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .val { margin-top: 4px; color: var(--ink); font-size: 13px; font-weight: 800; white-space: nowrap; }
 .package { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
+.list-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin: 4px 0 11px; }
+.add-bill {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  color: #fff;
+  border-radius: 13px;
+  background: #ff7a45;
+  font-size: 11px;
+  font-weight: 750;
+}
+.bill { display: flex; align-items: center; gap: 11px; }
+.bill-icon {
+  display: flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border-radius: 13px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.bill-copy { flex: 1; min-width: 0; }
+.title { display: block; margin: 2px 0; font-weight: 700; }
+.refund-note { display: block; color: var(--unpaid); font-size: 10px; }
+.bill-side { text-align: right; }
+.amount { display: block; font-weight: 750; }
+.pill { display: inline-block; margin-top: 6px; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.pill.paid { color: var(--paid); background: var(--paid-soft); }
+.pill.unpaid { color: var(--unpaid); background: var(--unpaid-soft); }
+.arrow { color: #c5cad6; font-size: 18px; }
 </style>
