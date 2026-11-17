@@ -22,13 +22,6 @@ export type GradeId = keyof typeof GRADE_CHARS
 
 const ALL = [...new Set(Object.values(GRADE_CHARS).join(''))]
 
-export const SHEET_TRACE = '临摹'
-export const SHEET_PRACTICE = '书写'
-/** 打印页脚的小程序引导语，放在这里以免被 i18n 检查当作页面文案。 */
-export const SHEET_FOLLOW_PREFIX = '微信搜索「'
-export const SHEET_FOLLOW_NAME = 'Uday家庭课表计划'
-export const SHEET_FOLLOW_SUFFIX = '」小程序'
-
 export function randomGradeText(id: GradeId | 'all', count = 16) {
   const pool = id === 'all' ? ALL.slice() : [...GRADE_CHARS[id]]
   for (let i = pool.length - 1; i > 0; i -= 1) {

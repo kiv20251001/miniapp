@@ -7,11 +7,12 @@ import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { t } from '@/i18n'
-import { statusBarHeight } from '@/utils/system'
 import { formTip } from '@/utils/form'
 import { randomGradeText, type GradeId } from './grades'
-import { layoutSheet, MAX_PAGES, type GridStyle } from './render'
-import { openSheetPdf, persistSheetImage, renderSheetFiles } from './export'
+import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } from './render'
+import { renderSheetFiles } from './export'
+import { saveSheetImages, saveSheetPdf } from '../print/save'
+import { scrollToFirstSheet } from '../print/scroll'
 
 useFamilyPage()
 const themeClass = useThemePage()
@@ -83,7 +84,23 @@ const previewFont = computed(() => {
   const scale = style.value === 'line' ? 0.42 : 0.62
   return `${Math.max(11, Math.round(previewCellWidth() * scale))}px`
 })
-const previewPy = computed(() => `${Math.max(8, Math.round(previewCellWidth() * 0.28))}px`)
+const previewPy = computed(() => `${Math.max(8, Math.round(previewCellWidth() * 0.29))}px`)
+
+const english = computed(() => isEnglishText(text.value))
+/** 英文预览：取输入的前一两个单词，范字一遍、临摹几遍，书写留空位。 */
+const previewWords = computed(() => {
+  const words = englishWords(text.value)
+  const picked = columns.value === 2 ? [words[0] ?? 'good', words[1] ?? 'day'] : [words[0] ?? 'good']
+  const count = 1 + traceCount.value + practiceCount.value
+  return picked.map((word, group) => ({
+    key: `${group}-${word}`,
+    slots: Array.from({ length: count }, (_, index) => ({
+      index,
+      text: word,
+      kind: index === 0 ? 'model' : index <= traceCount.value ? 'trace' : 'blank',
+    })),
+  }))
+})
 
 const options = computed(() => ({
   text: text.value,
@@ -91,7 +108,7 @@ const options = computed(() => ({
   traceCount: traceCount.value,
   practiceCount: practiceCount.value,
   columns: columns.value,
-  pinyin: style.value !== 'line' && withPinyin.value,
+  pinyin: !english.value && style.value !== 'line' && withPinyin.value,
   alpha: depth.value / 100,
 }))
 
@@ -166,7 +183,7 @@ async function generate() {
     images.value = await renderSheetFiles(sheet)
     uni.hideLoading()
     await nextTick()
-    scrollToSheet()
+    scrollToFirstSheet(instance?.proxy)
   } catch (error) {
     formTip(error instanceof Error ? error.message : '生成图片失败')
   } finally {
@@ -175,64 +192,11 @@ async function generate() {
   }
 }
 
-function scrollToSheet() {
-  const proxy = instance?.proxy
-  if (!proxy) return
-  const query = uni.createSelectorQuery().in(proxy)
-  query.select('#sheet-0').boundingClientRect()
-  query.select('.page-header-bar').boundingClientRect()
-  query.selectViewport().scrollOffset()
-  query.exec((result) => {
-    const sheet = result?.[0]
-    const header = result?.[1]
-    const scroll = result?.[2]
-    if (!sheet || Array.isArray(sheet) || !scroll || Array.isArray(scroll)) return
-    const measured = header && !Array.isArray(header) ? header.height : 0
-    const headerH = measured || statusBarHeight() + 84
-    uni.pageScrollTo({ scrollTop: Math.max(0, scroll.scrollTop + sheet.top - headerH - 8), duration: 280 })
-  })
-}
-
-function saveOne(filePath: string) {
-  return new Promise<void>((resolve, reject) => {
-    uni.saveImageToPhotosAlbum({
-      filePath,
-      success: () => resolve(),
-      fail: (err) => reject(new Error(err?.errMsg || '保存图片失败')),
-    })
-  })
-}
-
 async function saveImages() {
   if (!images.value.length || saving.value) return
   saving.value = true
-  uni.showLoading({ title: '正在保存…', mask: true })
   try {
-    for (let index = 0; index < images.value.length; index += 1) {
-      const file = await persistSheetImage(images.value[index], index)
-      await saveOne(file)
-    }
-    uni.hideLoading()
-    setTimeout(() => {
-      uni.showToast({ icon: 'none', title: t('已保存 {n} 张到相册', { n: images.value.length }) })
-    }, 120)
-  } catch (error) {
-    uni.hideLoading()
-    const message = error instanceof Error ? error.message : '保存图片失败'
-    if (/auth deny|authorize|privacy|隐私/i.test(message)) {
-      setTimeout(() => {
-        uni.showModal({
-          title: '需要相册权限',
-          content: '保存字帖图片需要允许访问相册。',
-          confirmText: '去设置',
-          success: (result) => {
-            if (result.confirm) uni.openSetting({})
-          },
-        })
-      }, 120)
-      return
-    }
-    setTimeout(() => formTip(message), 120)
+    await saveSheetImages(images.value)
   } finally {
     saving.value = false
   }
@@ -241,16 +205,8 @@ async function saveImages() {
 async function savePdf() {
   if (!images.value.length || saving.value) return
   saving.value = true
-  uni.showLoading({ title: '正在生成 PDF…', mask: true })
   try {
-    await openSheetPdf(images.value)
-    uni.hideLoading()
-    setTimeout(() => {
-      uni.showToast({ icon: 'none', title: '已打开 PDF，可以转发或打印' })
-    }, 120)
-  } catch (error) {
-    uni.hideLoading()
-    setTimeout(() => formTip(error instanceof Error ? error.message : '打开 PDF 失败'), 120)
+    await saveSheetPdf(images.value)
   } finally {
     saving.value = false
   }
@@ -283,7 +239,7 @@ async function savePdf() {
           </view>
         </view>
         <textarea v-model="text" maxlength="200" :placeholder="t('请输入要练习的生字：例如天地人上中下多米要开心……')" placeholder-class="ph" />
-        <text class="grade-note">{{ t('支持手动输入或修改需要生成的内容') }}</text>
+        <text class="grade-note">{{ t('支持手动输入或修改需要生成的内容，也可以输入英文，按空格分成单词') }}</text>
       </view>
 
       <view class="setting">
@@ -309,7 +265,7 @@ async function savePdf() {
           <text class="chip press" :class="{ active: columns === 2 }" @click="setColumns(2)">{{ t('双列') }}</text>
         </view>
       </view>
-      <view v-if="style !== 'line'" class="setting">
+      <view v-if="!english && style !== 'line'" class="setting">
         <text>{{ t('拼音') }}</text>
         <switch :checked="withPinyin" color="#ff7a45" @change="withPinyin = Boolean($event.detail.value)" />
       </view>
@@ -317,7 +273,11 @@ async function savePdf() {
         <text>{{ t('透明度') }} {{ depth }}%</text>
         <slider :value="depth" min="10" max="80" activeColor="#ff7a45" backgroundColor="#e6e8f0" block-size="18" @change="depth = Number($event.detail.value)" />
       </view>
-      <view class="setting">
+      <view v-if="english" class="setting">
+        <text>{{ t('格子') }}</text>
+        <text class="english-note">{{ t('英文单词使用四线格') }}</text>
+      </view>
+      <view v-else class="setting">
         <text>{{ t('格子') }}</text>
         <view class="chip-row tight">
           <text
@@ -331,7 +291,24 @@ async function savePdf() {
           >{{ t(item.label) }}</text>
         </view>
       </view>
-      <view class="row-preview" :class="{ lines: style === 'line', split: columns === 2 }">
+      <view v-if="english" class="row-preview words" :class="{ split: columns === 2 }">
+        <view v-for="group in previewWords" :key="group.key" class="word-staff">
+          <view class="word-line solid top" />
+          <view class="word-line dash mid" />
+          <view class="word-line dash base" />
+          <view class="word-line solid bottom" />
+          <view class="word-row">
+            <text
+              v-for="slot in group.slots"
+              :key="slot.index"
+              class="word-text"
+              :class="slot.kind"
+              :style="slot.kind === 'trace' ? { color: traceColor } : undefined"
+            >{{ slot.text }}</text>
+          </view>
+        </view>
+      </view>
+      <view v-else class="row-preview" :class="{ lines: style === 'line', split: columns === 2 }">
         <view v-for="group in previewGroups" :key="group.char" class="preview-group">
           <view class="preview-cells">
             <view v-for="cell in group.cells" :key="cell.index" class="preview-slot">
@@ -392,17 +369,19 @@ async function savePdf() {
   right: 2px;
   border-top: 1px dashed #b7c0ce;
 }
-.band-line.upper { top: 36%; }
-.band-line.base { top: 70%; }
+.band-line.upper { top: 33.3%; }
+.band-line.base { top: 66.7%; }
 .mini-py {
   position: absolute;
   left: 0;
   right: 0;
-  top: 70%;
-  transform: translateY(-90%);
+  top: 66.7%;
+  transform: translateY(-78%);
   text-align: center;
-  font-weight: 600;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
   line-height: 1;
+  white-space: nowrap;
 }
 .mini-face {
   position: relative;
@@ -437,6 +416,24 @@ async function savePdf() {
 .staff-lines { position: absolute; inset: 2px 0; display: flex; flex-direction: column; justify-content: space-between; }
 .staff { height: 0; border-top: 1px solid #7d8798; }
 .staff.dash { border-top-style: dashed; border-top-color: #c5ccd6; }
+.word-staff { position: relative; flex: 1; min-width: 0; height: 40px; overflow: hidden; }
+.word-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid #7d8798; }
+.word-line.dash { border-top-style: dashed; border-top-color: #c5ccd6; }
+.word-line.top { top: 2px; }
+.word-line.mid { top: 14px; }
+.word-line.base { top: 26px; }
+.word-line.bottom { top: 38px; }
+.word-row { position: absolute; top: 8px; left: 4px; display: flex; white-space: nowrap; }
+.word-text {
+  flex: none;
+  margin-right: 18px;
+  color: #1c2430;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 23px;
+  line-height: 23px;
+}
+.word-text.blank { visibility: hidden; }
+.english-note { color: var(--muted); font-size: 12px; font-weight: 500; }
 .grade-actions { display: flex; align-items: center; gap: 8px; }
 .grade-picker { flex: 1; min-width: 0; }
 .tool-btn {

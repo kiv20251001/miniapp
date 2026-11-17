@@ -1,15 +1,22 @@
-import { SHEET_FOLLOW_NAME, SHEET_FOLLOW_PREFIX, SHEET_FOLLOW_SUFFIX, SHEET_PRACTICE, SHEET_TRACE } from './grades'
 import { readingOfChar } from './readings'
 import { strokesOf } from './strokes'
+import {
+  contentWidth,
+  drawBrand,
+  isHanzi,
+  MARGIN_BOTTOM,
+  MARGIN_TOP,
+  MARGIN_X,
+  PAGE_H,
+  PAGE_W,
+  textWidth,
+  type SheetPen,
+} from '../print/sheet'
 
-/** A4 比例的画布。1240×1754 约等于 150dpi，打印清晰，内存也扛得住。 */
-export const PAGE_W = 1240
-export const PAGE_H = 1754
+export { PAGE_H, PAGE_W, type SheetPen } from '../print/sheet'
 export const MAX_PAGES = 8
 
 export type GridStyle = 'tian' | 'mi' | 'line'
-
-type PenGradient = { addColorStop: (offset: number, color: string) => void }
 
 export type SheetOptions = {
   text: string
@@ -20,29 +27,6 @@ export type SheetOptions = {
   pinyin: boolean
   /** 临摹字的不透明度，0.1–0.8。 */
   alpha: number
-}
-
-export type SheetPen = {
-  fillStyle: string | PenGradient
-  strokeStyle: string
-  lineWidth: number
-  lineCap: CanvasLineCap
-  lineJoin: CanvasLineJoin
-  font: string
-  textAlign: CanvasTextAlign
-  textBaseline: CanvasTextBaseline
-  setLineDash: (segments: number[]) => void
-  fillRect: (x: number, y: number, w: number, h: number) => void
-  strokeRect: (x: number, y: number, w: number, h: number) => void
-  beginPath: () => void
-  closePath: () => void
-  moveTo: (x: number, y: number) => void
-  lineTo: (x: number, y: number) => void
-  arc: (x: number, y: number, radius: number, start: number, end: number, counterclockwise?: boolean) => void
-  fill: () => void
-  stroke: () => void
-  fillText: (text: string, x: number, y: number) => void
-  createLinearGradient: (x0: number, y0: number, x1: number, y1: number) => PenGradient
 }
 
 type CellBlock = {
@@ -58,6 +42,9 @@ type CellBlock = {
   strokePer: number
 }
 
+/** 英文单词在四线格里的一次书写，x 相对这一行的左边。 */
+type WordSlot = { x: number; text: string; model: boolean }
+
 type LineBlock = {
   text: string
   trace: boolean
@@ -65,7 +52,10 @@ type LineBlock = {
   y: number
   width: number
   height: number
+  words?: WordSlot[]
 }
+
+type StaffDraft = Pick<LineBlock, 'text' | 'trace' | 'words'>
 
 type BlankCell = { x: number; y: number; size: number; band: number }
 
@@ -75,13 +65,6 @@ export type SheetPage = {
   blanks: BlankCell[]
 }
 
-const MARGIN_X = 48
-/** 页眉横线、页脚横线，以及正文离这两条线的相同间距。 */
-const HEADER_RULE = 112
-const FOOTER_GAP = 56
-const CONTENT_GAP = 64
-const MARGIN_TOP = HEADER_RULE + CONTENT_GAP
-const MARGIN_BOTTOM = FOOTER_GAP + CONTENT_GAP
 const CELL_GAP = 8
 const COL_GAP = CELL_GAP
 const ROW_GAP = 36
@@ -90,22 +73,52 @@ const PINYIN_H = 28
 const MODEL = 70
 const MODEL_GAP = 18
 const READING_LEAD = 22
-const CAPTION_H = 20
+/** 一个字的格子折成多行时，行与行之间的空隙。 */
+const CELL_ROW_GAP = 8
 const BLANK_GAP = 14
 const TRACE_GREEN = '#17824a'
 /** 不加粗。楷体往往没有粗体，写上 700 会被换成黑体。 */
 const KAI = 'STKaiti, "Kaiti SC", KaiTi, "\u6977\u4f53", "\u6977\u4f53_GB2312", "FZKai-Z03", serif'
 
+const LATIN = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+const STAFF_H = 78
+const STAFF_GAP = 18
+const STAFF_INSET = 4
+const STAFF_PAD = 10
+
 function kaiFont(size: number) {
   return `${Math.round(size)}px ${KAI}`
+}
+
+/** 小写字母正好占四线格的中间一格（x 高约 0.52 em）。 */
+function latinSize(height: number) {
+  return Math.round((height - STAFF_INSET * 2) / 3 / 0.52)
+}
+
+/**
+ * 拼音四线三格：a、o、e 这类字母写满中格，b、d、l 出头到上格，g、p、y 伸到下格，
+ * 声调写在上格。字号让 x 高正好等于中格。
+ */
+function pinyinSize(zone: number) {
+  return Math.max(10, Math.round(zone / 0.52))
+}
+
+/** 没有汉字、有英文字母时按英文单词字帖排版。 */
+export function isEnglishText(text: string) {
+  return /[A-Za-z]/.test(text) && !Array.from(text).some(isHanzi)
+}
+
+/** 按空格和标点拆成单词，保留 don't、well-known 这类词内的符号。 */
+export function englishWords(text: string) {
+  return text
+    .split(/[\s,，、;；:：.。!！?？"“”()（）[\]【】]+/)
+    .map((word) => word.replace(/^['’-]+|['’-]+$/g, ''))
+    .filter(Boolean)
 }
 
 function pinyinBand(cell: number, enabled: boolean) {
   return enabled ? Math.round(cell * 0.46) : 0
 }
-/** 和登录页同一份白色 U 标，画在橙色圆角底上。 */
-const LOGO_PATH = 'M23.8 87.4l5.4 3 4.1 1.7 5.5 1.6 7.2 1.1 8 0 7-1.1 5.2-1.5 6.4-2.7 3.4-2.1zM10.5 75.4l3.2 3.9 3.3 3.1 65.8 0 3.2-2.9 3.3-3.9zM3.5 63.6l2.4 5.2 1.1 1.6 85.8 0 .9-1.3 2.6-5.3 0-.4zM49.9 15.3l-.2 2.3-1.5 6.6-.9 2.4-2 3-1.5 1.3-2.8 1.6-3.5 1.3-3.7 1 3.7 .7 3.5 1.3 2.8 1.6 2 2.1 1 1.3 1.4 3.5 1.5 6.5 .2 2.2 2-9.1 2.3-4.2 2.2-2.3 2.7-1.6 3.6-1.3 3.7-.7-6.9-2.1-2.9-1.6-2.3-2.1-1.6-2.6-.8-2zM80.8 0l-1.9 .9-.9 1.1-.4 1.1 0 40.5-.3 2.4-1 3.2-1.6 3.5-2.4 3.3-2.8 2.6 28.1 0 1.8-7 .6-5 0-43.6-.6-1.3-1.1-1.1-1.3-.6zM2.4 .2l-1.7 1.3-.7 1.6 0 43.7 .7 5.9 1.5 5.7 28.3 .2-3.1-3.1-2.1-3-1.5-3.1-1.1-4.1-.3-42.9-1.3-1.7-1.7-.7z'
-
 function emptyPage(): SheetPage {
   return { cells: [], lines: [], blanks: [] }
 }
@@ -114,17 +127,9 @@ function glyphs(text: string) {
   return Array.from(text).filter((char) => !/\s/u.test(char))
 }
 
-function isHanzi(char: string) {
-  return /[\u3400-\u9fff]/.test(char)
-}
-
 function readingOf(char: string) {
   if (!isHanzi(char)) return ''
   return readingOfChar(char)
-}
-
-function contentWidth() {
-  return PAGE_W - MARGIN_X * 2
 }
 
 function columnWidth(columns: number) {
@@ -143,15 +148,6 @@ function pageCell() {
 
 function perRow(cell: number, width: number) {
   return Math.max(1, Math.floor((width + CELL_GAP) / (cell + CELL_GAP)))
-}
-
-function textWidth(text: string, fontSize: number) {
-  let width = 0
-  for (const char of Array.from(text)) {
-    const wide = isHanzi(char) || /[\u3000-\u303f\uff00-\uffef]/.test(char)
-    width += wide ? fontSize : fontSize * 0.56
-  }
-  return width
 }
 
 function wrapParagraph(text: string, maxWidth: number, fontSize: number) {
@@ -226,7 +222,7 @@ function makeBlock(char: string, options: SheetOptions, width: number, cell: num
 function blockHeight(block: CellBlock, slots: number, pinyin: boolean) {
   const rows = Math.ceil(slots / block.perRow)
   const lead = block.headerH + (isHanzi(block.char) ? MODEL_GAP : 0)
-  return lead + rows * (pinyinBand(block.cell, pinyin) + block.cell + CAPTION_H)
+  return lead + rows * (pinyinBand(block.cell, pinyin) + block.cell + CELL_ROW_GAP) - CELL_ROW_GAP
 }
 
 function blankBandOf(options: SheetOptions, cell: number) {
@@ -239,7 +235,7 @@ function fillOpenColumns(page: SheetPage, row: CellBlock[], options: SheetOption
   const width = columnWidth(options.columns)
   const slots = slotsOf(options)
   const band = blankBandOf(options, sample.cell)
-  const unit = band + sample.cell + CAPTION_H
+  const unit = band + sample.cell + CELL_ROW_GAP
   const top = sample.y + sample.headerH + (isHanzi(sample.char) ? MODEL_GAP : 0)
   const used = new Set(row.map((item) => item.x))
   for (let column = 0; column < options.columns; column += 1) {
@@ -319,24 +315,12 @@ function layoutCells(options: SheetOptions): SheetPage[] {
   return pages
 }
 
-function layoutLines(options: SheetOptions): SheetPage[] {
-  const height = 78
-  const fontSize = Math.round(height * 0.5)
-  const columns = options.columns
+/**
+ * 把几组四线格从上往下、从左列到右列排开。一组（同一句或同一个单词）能放进
+ * 一列时不拆开；每页剩下的地方补空白四线格。
+ */
+function flowStaffs(groups: StaffDraft[][], columns: number): SheetPage[] {
   const width = columnWidth(columns)
-  const wrapped = wrapParagraph(options.text, width - 20, fontSize)
-  if (!wrapped.length) return []
-  const staffs: Array<{ text: string; trace: boolean }> = []
-  const traces = Math.max(0, options.traceCount)
-  const practices = Math.max(0, options.practiceCount)
-  const traceTimes = traces + practices > 0 ? traces : 1
-  const practiceTimes = traces + practices > 0 ? practices : 0
-  for (const line of wrapped) {
-    for (let index = 0; index < traceTimes; index += 1) staffs.push({ text: line, trace: true })
-    for (let index = 0; index < practiceTimes; index += 1) staffs.push({ text: line, trace: false })
-  }
-  const colH = PAGE_H - MARGIN_TOP - MARGIN_BOTTOM
-  const gap = 18
   const limit = PAGE_H - MARGIN_BOTTOM
   const pages: SheetPage[] = []
   let page = emptyPage()
@@ -344,42 +328,118 @@ function layoutLines(options: SheetOptions): SheetPage[] {
   let y = MARGIN_TOP
   const cursors = () => Array.from({ length: columns }, () => MARGIN_TOP)
   let columnY = cursors()
-  const fillColumns = () => {
-    for (let index = 0; index < columns; index += 1) {
-      let cursor = columnY[index]
-      while (cursor + height <= limit) {
-        page.lines.push({ text: '', trace: false, x: MARGIN_X + index * (width + COL_GAP), y: cursor, width, height })
-        cursor += height + gap
-      }
+  const nextColumn = () => {
+    col += 1
+    y = MARGIN_TOP
+    if (col < columns) return
+    pages.push(page)
+    page = emptyPage()
+    col = 0
+    columnY = cursors()
+  }
+  for (const group of groups) {
+    const groupH = group.length * (STAFF_H + STAFF_GAP) - STAFF_GAP
+    if (y > MARGIN_TOP && y + groupH > limit && groupH <= limit - MARGIN_TOP) nextColumn()
+    for (const staff of group) {
+      if (y + STAFF_H > limit) nextColumn()
+      page.lines.push({ ...staff, x: MARGIN_X + col * (width + COL_GAP), y, width, height: STAFF_H })
+      y += STAFF_H + STAFF_GAP
+      columnY[col] = y
     }
   }
-  for (const staff of staffs) {
-    if (y + height > MARGIN_TOP + colH) {
-      col += 1
+  if (!page.lines.length) return pages
+  for (let index = 0; index < columns; index += 1) {
+    for (let cursor = columnY[index]; cursor + STAFF_H <= limit; cursor += STAFF_H + STAFF_GAP) {
+      page.lines.push({ text: '', trace: false, x: MARGIN_X + index * (width + COL_GAP), y: cursor, width, height: STAFF_H })
+    }
+  }
+  pages.push(page)
+  return pages
+}
+
+function layoutLines(options: SheetOptions): SheetPage[] {
+  const fontSize = Math.round(STAFF_H * 0.5)
+  const wrapped = wrapParagraph(options.text, columnWidth(options.columns) - STAFF_PAD * 2, fontSize)
+  if (!wrapped.length) return []
+  const traces = Math.max(0, options.traceCount)
+  const practices = Math.max(0, options.practiceCount)
+  const traceTimes = traces + practices > 0 ? traces : 1
+  const practiceTimes = traces + practices > 0 ? practices : 0
+  const groups = wrapped.map((line) => [
+    ...Array.from({ length: traceTimes }, () => ({ text: line, trace: true })),
+    ...Array.from({ length: practiceTimes }, () => ({ text: line, trace: false })),
+  ])
+  return flowStaffs(groups, options.columns)
+}
+
+/** 双列时同一行左右各放一组，和田字格的双列一样按行排；每页剩下的地方补空白四线格。 */
+function flowRows(groups: StaffDraft[][], columns: number): SheetPage[] {
+  const width = columnWidth(columns)
+  const limit = PAGE_H - MARGIN_BOTTOM
+  const unit = STAFF_H + STAFF_GAP
+  const pages: SheetPage[] = []
+  let page = emptyPage()
+  let y = MARGIN_TOP
+  for (let start = 0; start < groups.length; start += columns) {
+    const row = groups.slice(start, start + columns)
+    const count = Math.max(...row.map((group) => group.length))
+    if (y > MARGIN_TOP && y + count * unit - STAFF_GAP > limit) {
+      pages.push(page)
+      page = emptyPage()
       y = MARGIN_TOP
-      if (col >= columns) {
+    }
+    for (let line = 0; line < count; line += 1) {
+      if (y + STAFF_H > limit) {
         pages.push(page)
         page = emptyPage()
-        col = 0
-        columnY = cursors()
+        y = MARGIN_TOP
       }
+      for (let col = 0; col < columns; col += 1) {
+        const staff = row[col]?.[line] ?? { text: '', trace: false }
+        page.lines.push({ ...staff, x: MARGIN_X + col * (width + COL_GAP), y, width, height: STAFF_H })
+      }
+      y += unit
     }
-    page.lines.push({
-      text: staff.text,
-      trace: staff.trace,
-      x: MARGIN_X + col * (width + COL_GAP),
-      y,
-      width,
-      height,
-    })
-    y += height + gap
-    columnY[col] = y
   }
-  if (page.lines.length) {
-    fillColumns()
-    pages.push(page)
+  if (!page.lines.length) return pages
+  for (; y + STAFF_H <= limit; y += unit) {
+    for (let col = 0; col < columns; col += 1) {
+      page.lines.push({ text: '', trace: false, x: MARGIN_X + col * (width + COL_GAP), y, width, height: STAFF_H })
+    }
   }
+  pages.push(page)
   return pages
+}
+
+/**
+ * 英文单词字帖：每个单词另起一行，先写一遍深色范字，再写「临摹」次数的浅色描红，
+ * 「书写」次数留出同样宽的空位；一行放不下就接着下一行。
+ */
+function layoutWords(options: SheetOptions): SheetPage[] {
+  const words = englishWords(options.text)
+  if (!words.length) return []
+  const width = columnWidth(options.columns)
+  const fontSize = latinSize(STAFF_H)
+  const groups = words.map((word) => {
+    const wordW = textWidth(word, fontSize)
+    const step = wordW + fontSize * 0.9
+    const count = 1 + options.traceCount + options.practiceCount
+    const rows: WordSlot[][] = [[]]
+    let used = 0
+    let x = STAFF_PAD
+    for (let index = 0; index < count; index += 1) {
+      if (used > 0 && x + wordW > width - STAFF_PAD) {
+        rows.push([])
+        used = 0
+        x = STAFF_PAD
+      }
+      if (index <= options.traceCount) rows[rows.length - 1].push({ x, text: word, model: index === 0 })
+      used += 1
+      x += step
+    }
+    return rows.map((slots) => ({ text: word, trace: slots.length > 0, words: slots }))
+  })
+  return flowRows(groups, options.columns)
 }
 
 function layoutBlanks(style: GridStyle, pinyin: boolean): SheetPage[] {
@@ -402,12 +462,10 @@ function layoutBlanks(style: GridStyle, pinyin: boolean): SheetPage[] {
 }
 
 function layoutBlankLines(): SheetPage[] {
-  const height = 78
-  const gap = 18
   const page = emptyPage()
   const width = contentWidth()
-  for (let y = MARGIN_TOP; y + height <= PAGE_H - MARGIN_BOTTOM; y += height + gap) {
-    page.lines.push({ text: '', trace: false, x: MARGIN_X, y, width, height })
+  for (let y = MARGIN_TOP; y + STAFF_H <= PAGE_H - MARGIN_BOTTOM; y += STAFF_H + STAFF_GAP) {
+    page.lines.push({ text: '', trace: false, x: MARGIN_X, y, width, height: STAFF_H })
   }
   return [page]
 }
@@ -425,6 +483,7 @@ export function layoutSheet(options: SheetOptions) {
     style: options.style === 'mi' || options.style === 'line' ? options.style : 'tian',
   } satisfies SheetOptions
   if (!glyphs(sheet.text).length) return layoutBlanks(sheet.style, sheet.pinyin && sheet.style !== 'line')
+  if (isEnglishText(sheet.text)) return layoutWords(sheet)
   return sheet.style === 'line' ? layoutLines(sheet) : layoutCells(sheet)
 }
 
@@ -543,9 +602,8 @@ function drawStrokeHeader(pen: SheetPen, block: CellBlock) {
 }
 
 function drawStaff(pen: SheetPen, block: LineBlock, color: string, alpha: number) {
-  const inset = 4
-  const top = block.y + inset
-  const bottom = block.y + block.height - inset
+  const top = block.y + STAFF_INSET
+  const bottom = block.y + block.height - STAFF_INSET
   const span = bottom - top
   pen.strokeStyle = '#7d8798'
   pen.lineWidth = 1.6
@@ -566,128 +624,22 @@ function drawStaff(pen: SheetPen, block: LineBlock, color: string, alpha: number
   pen.lineTo(block.x + block.width, top + (span * 2) / 3)
   pen.stroke()
   pen.setLineDash([])
+  if (block.words) {
+    pen.font = `${latinSize(block.height)}px ${LATIN}`
+    pen.textAlign = 'left'
+    pen.textBaseline = 'alphabetic'
+    for (const slot of block.words) {
+      pen.fillStyle = slot.model ? '#1c2430' : rgba(color, alpha)
+      pen.fillText(slot.text, block.x + slot.x, top + (span * 2) / 3)
+    }
+    return
+  }
   if (!block.trace || !block.text) return
   pen.font = kaiFont(block.height * 0.46)
   pen.fillStyle = rgba(color, alpha)
   pen.textAlign = 'left'
   pen.textBaseline = 'middle'
-  pen.fillText(block.text, block.x + 10, (top + bottom) / 2)
-}
-
-function roundRect(pen: SheetPen, x: number, y: number, w: number, h: number, r: number) {
-  pen.beginPath()
-  pen.moveTo(x + r, y)
-  pen.lineTo(x + w - r, y)
-  pen.arc(x + w - r, y + r, r, -Math.PI / 2, 0)
-  pen.lineTo(x + w, y + h - r)
-  pen.arc(x + w - r, y + h - r, r, 0, Math.PI / 2)
-  pen.lineTo(x + r, y + h)
-  pen.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI)
-  pen.lineTo(x, y + r)
-  pen.arc(x + r, y + r, r, Math.PI, (Math.PI * 3) / 2)
-  pen.closePath()
-  pen.fill()
-}
-
-function drawLogoMark(pen: SheetPen, x: number, y: number, size: number) {
-  const gradient = pen.createLinearGradient(x, y, x + size, y + size)
-  gradient.addColorStop(0, '#ffb45c')
-  gradient.addColorStop(0.48, '#ff7a45')
-  gradient.addColorStop(1, '#f15a36')
-  pen.fillStyle = gradient
-  roundRect(pen, x, y, size, size, Math.round(size * (14 / 42)))
-  const glyph = size * (22 / 42)
-  const scale = glyph / 100
-  const ox = x + (size - 100 * scale) / 2
-  const oy = y + (size - 94.8 * scale) / 2
-  const tokens = LOGO_PATH.match(/[MLmlzZ]|-?\d*\.?\d+/g) || []
-  let index = 0
-  let cx = 0
-  let cy = 0
-  let command = ''
-  let drawing = false
-  const place = (px: number, py: number) => [ox + px * scale, oy + py * scale] as const
-  pen.beginPath()
-  while (index < tokens.length) {
-    const token = tokens[index]
-    if (/[MLmlzZ]/.test(token)) {
-      command = token
-      index += 1
-      if (command === 'z' || command === 'Z') pen.closePath()
-      continue
-    }
-    const dx = Number(tokens[index])
-    const dy = Number(tokens[index + 1])
-    index += 2
-    if (command === 'm' || command === 'l') {
-      cx += dx
-      cy += dy
-    } else {
-      cx = dx
-      cy = dy
-    }
-    const [px, py] = place(cx, cy)
-    if (command === 'M' || command === 'm') pen.moveTo(px, py)
-    else pen.lineTo(px, py)
-    if (command === 'M') command = 'L'
-    if (command === 'm') command = 'l'
-    drawing = true
-  }
-  if (!drawing) return
-  pen.fillStyle = '#ffffff'
-  pen.fill()
-}
-
-function drawBrand(pen: SheetPen, pageIndex: number, pageCount: number) {
-  const x = MARGIN_X
-  const y = 28
-  const size = 44
-  drawLogoMark(pen, x, y, size)
-  pen.font = '800 28px sans-serif'
-  pen.fillStyle = '#1c2430'
-  pen.textAlign = 'left'
-  pen.textBaseline = 'middle'
-  pen.fillText('Uday', x + size + 12, y + size / 2 + 1)
-  pen.font = '500 13px sans-serif'
-  pen.fillStyle = '#98a2b3'
-  pen.textAlign = 'left'
-  pen.textBaseline = 'middle'
-  pen.fillText('Plan Your Day. Grow Your Way.', x, y + size + 16)
-  pen.strokeStyle = '#eceff3'
-  pen.lineWidth = 1
-  pen.lineCap = 'butt'
-  pen.beginPath()
-  pen.moveTo(MARGIN_X, HEADER_RULE)
-  pen.lineTo(PAGE_W - MARGIN_X, HEADER_RULE)
-  pen.moveTo(MARGIN_X, PAGE_H - FOOTER_GAP)
-  pen.lineTo(PAGE_W - MARGIN_X, PAGE_H - FOOTER_GAP)
-  pen.stroke()
-  pen.font = '500 16px sans-serif'
-  pen.fillStyle = '#98a2b3'
-  pen.textAlign = 'right'
-  pen.textBaseline = 'middle'
-  pen.fillText(`${pageIndex + 1} / ${pageCount}`, PAGE_W - MARGIN_X, PAGE_H - 28)
-
-  const prefix = SHEET_FOLLOW_PREFIX
-  const name = SHEET_FOLLOW_NAME
-  const suffix = SHEET_FOLLOW_SUFFIX
-  const fontSize = 16
-  const total = textWidth(prefix, fontSize) + textWidth(name, fontSize) + textWidth(suffix, fontSize)
-  let cursor = PAGE_W / 2 - total / 2
-  const lineY = PAGE_H - 28
-  pen.textAlign = 'left'
-  pen.textBaseline = 'middle'
-  pen.font = `500 ${fontSize}px sans-serif`
-  pen.fillStyle = '#98a2b3'
-  pen.fillText(prefix, cursor, lineY)
-  cursor += textWidth(prefix, fontSize)
-  pen.font = `700 ${fontSize}px sans-serif`
-  pen.fillStyle = '#ff7a45'
-  pen.fillText(name, cursor, lineY)
-  cursor += textWidth(name, fontSize)
-  pen.font = `500 ${fontSize}px sans-serif`
-  pen.fillStyle = '#98a2b3'
-  pen.fillText(suffix, cursor, lineY)
+  pen.fillText(block.text, block.x + STAFF_PAD, (top + bottom) / 2)
 }
 
 function drawPinyinBand(pen: SheetPen, x: number, y: number, width: number, height: number, reading: string, trace: boolean, alpha: number) {
@@ -696,8 +648,9 @@ function drawPinyinBand(pen: SheetPen, x: number, y: number, width: number, heig
   pen.lineCap = 'butt'
   pen.setLineDash([])
   pen.strokeRect(x + 1, y + 1, width - 2, height - 2)
-  const upper = y + height * 0.36
-  const base = y + height * 0.7
+  const zone = (height - 2) / 3
+  const upper = y + 1 + zone
+  const base = y + 1 + zone * 2
   pen.strokeStyle = '#b7c0ce'
   pen.setLineDash([3, 3])
   pen.beginPath()
@@ -708,11 +661,13 @@ function drawPinyinBand(pen: SheetPen, x: number, y: number, width: number, heig
   pen.stroke()
   pen.setLineDash([])
   if (!trace || !reading) return
-  pen.font = `600 ${Math.max(12, Math.round(height * 0.42))}px sans-serif`
+  let size = pinyinSize(zone)
+  if (textWidth(reading, size) > width - 6) size = Math.floor(((width - 6) / textWidth(reading, size)) * size)
+  pen.font = `500 ${size}px ${LATIN}`
   pen.fillStyle = rgba(TRACE_GREEN, alpha)
   pen.textAlign = 'center'
   pen.textBaseline = 'alphabetic'
-  pen.fillText(reading, x + width / 2, base + 1)
+  pen.fillText(reading, x + width / 2, base)
 }
 
 export function drawSheet(pen: SheetPen, page: SheetPage, pageIndex: number, pageCount: number, options: SheetOptions) {
@@ -730,7 +685,7 @@ export function drawSheet(pen: SheetPen, page: SheetPage, pageIndex: number, pag
   for (const block of page.cells) {
     drawStrokeHeader(pen, block)
     const band = pinyinBand(block.cell, options.pinyin && options.style !== 'line')
-    const unit = band + block.cell + CAPTION_H
+    const unit = band + block.cell + CELL_ROW_GAP
     const top = block.y + block.headerH + (isHanzi(block.char) ? MODEL_GAP : 0)
     for (let index = 0; index < slots; index += 1) {
       const col = index % block.perRow
@@ -742,11 +697,6 @@ export function drawSheet(pen: SheetPen, page: SheetPage, pageIndex: number, pag
       const squareY = y + band
       drawGuides(pen, x, squareY, block.cell, grid)
       if (trace && block.char) drawCellChar(pen, block.char, x, squareY, block.cell, TRACE_GREEN, alpha)
-      pen.font = '500 12px sans-serif'
-      pen.fillStyle = '#98a2b3'
-      pen.textAlign = 'center'
-      pen.textBaseline = 'top'
-      pen.fillText(trace ? SHEET_TRACE : SHEET_PRACTICE, x + block.cell / 2, squareY + block.cell + 2)
     }
   }
   for (const block of page.lines) drawStaff(pen, block, TRACE_GREEN, alpha)
