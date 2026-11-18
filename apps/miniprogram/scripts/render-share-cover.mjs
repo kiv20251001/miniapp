@@ -4,11 +4,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
+import { OPEN_SANS, openFontOptions } from './open-fonts.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const logo = fs.readFileSync(path.join(root, 'src/static/logo-u.svg'), 'utf8')
 const glyph = logo.match(/d="([^"]+)"/)?.[1] || ''
-const font = 'Microsoft YaHei, PingFang SC, sans-serif'
+const font = OPEN_SANS
 
 const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="750" height="600" viewBox="0 0 750 600">
@@ -50,7 +51,7 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
   <text x="375" y="530" text-anchor="middle" fill="#8B93A5" font-family="${font}" font-size="18">Plan Your Day. Grow Your Way.</text>
 </svg>`
 
-const png = new Resvg(svg, { fitTo: { mode: 'width', value: 500 } }).render().asPng()
+const png = new Resvg(svg, { fitTo: { mode: 'width', value: 500 }, font: await openFontOptions() }).render().asPng()
 const Jimp = (await import('jimp')).default
 const image = await Jimp.read(png)
 const jpeg = await image.quality(72).getBufferAsync(Jimp.MIME_JPEG)

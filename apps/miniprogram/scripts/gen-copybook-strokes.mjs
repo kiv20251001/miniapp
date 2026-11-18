@@ -67,6 +67,7 @@ entries.sort((a, b) => a[0].localeCompare(b[0], 'zh'))
 const raw = Object.fromEntries(entries)
 const source = `/** 写字表笔顺中线。由 scripts/gen-copybook-strokes.mjs 生成，不要手改。
  * 数据来自 hanzi-writer-data 的笔画中线（Make Me a Hanzi），只保留本字帖用到的字。
+ * 数据许可：Arphic Public License（文鼎公众授权，允许商用和再分发，需保留许可声明），见 docs/third-party-assets.md。
  */
 const RAW: Record<string, string> = ${JSON.stringify(raw)}
 

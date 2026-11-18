@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev:mp-weixin": "node scripts/use-env.mjs development dev && uni -p mp-weixin --mode development",
-    "build:mp-weixin": "node scripts/use-env.mjs production build && uni build -p mp-weixin --mode production && node scripts/report-size.mjs",
-    "build:mp-weixin:dev": "node scripts/use-env.mjs development build && uni build -p mp-weixin --mode development && node scripts/report-size.mjs",
+    "dev:mp-weixin": "node scripts/use-env.mjs development dev && node scripts/vendor-three.mjs && uni -p mp-weixin --mode development",
+    "build:mp-weixin": "node scripts/use-env.mjs production build && node scripts/vendor-three.mjs && uni build -p mp-weixin --mode production && node scripts/report-size.mjs",
+    "build:mp-weixin:dev": "node scripts/use-env.mjs development build && node scripts/vendor-three.mjs && uni build -p mp-weixin --mode development && node scripts/report-size.mjs",
     "dev:mp-toutiao": "uni -p mp-toutiao",
     "build:mp-toutiao": "uni build -p mp-toutiao",
     "build:cloud": "node scripts/build-cloud.mjs",
@@ -20,6 +20,7 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5030120260930001",
     "dayjs": "^1.11.13",
     "pinia": "^2.3.1",
+    "three": "0.162.0",
     "vue": "3.4.21"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@dcloudio/uni-stacktracey": "3.0.0-alpha-5030120260930001",
     "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5030120260930001",
     "@resvg/resvg-js": "^2.6.2",
+    "@types/three": "0.162.0",
     "esbuild": "^0.25.0",
     "hanzi-writer-data": "^2.0.1",
     "pinyin-pro": "^3.29.5",

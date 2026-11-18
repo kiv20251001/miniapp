@@ -45,6 +45,9 @@ try {
     '--flavor=woff',
     '--no-hinting',
     '--desubroutinize',
+    // 保留字体里的版权和 OFL 许可声明，OFL 要求随字体一起分发
+    '--name-IDs=*',
+    '--name-languages=*',
     "--layout-features=''",
     '--drop-tables+=GSUB,GPOS,vhea,vmtx',
   ], { stdio: 'inherit' })

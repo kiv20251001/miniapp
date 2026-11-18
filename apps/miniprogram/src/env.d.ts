@@ -45,4 +45,12 @@ declare const wx: {
     success?: (res: Record<string, unknown>) => void
     fail?: (err: { errMsg?: string }) => void
   }) => void
+  createOffscreenCanvas?: (options: { type: '2d' | 'webgl'; width: number; height: number }) => {
+    getContext(type: '2d'): CanvasRenderingContext2D
+  }
 }
+
+/** 只有正式打包（npm run build:mp）才带同声传译插件，见 vite.config.ts。 */
+declare const __SOLAR_SPEECH__: boolean
+/** 引用在分包 pages.json 里声明过的插件，例如微信同声传译。 */
+declare function requirePlugin(name: string): any

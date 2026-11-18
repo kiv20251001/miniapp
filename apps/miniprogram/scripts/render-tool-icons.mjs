@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Resvg } from '@resvg/resvg-js'
+import { OPEN_SANS, openFontOptions } from './open-fonts.mjs'
 
 const require = createRequire(import.meta.url)
 const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src/static/tools')
@@ -59,7 +60,7 @@ function clock() {
     ['6', 60, 88.5],
     ['9', 31, 60],
   ]
-    .map(([label, x, y]) => `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="Helvetica Neue, Helvetica, Arial" font-size="12" font-weight="700" fill="#2b3340">${label}</text>`)
+    .map(([label, x, y]) => `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-family="${OPEN_SANS}" font-size="12" font-weight="700" fill="#2b3340">${label}</text>`)
     .join('')
   const hand = (deg, length, width, color) => {
     const angle = (deg * Math.PI) / 180
@@ -86,6 +87,23 @@ function clock() {
     <circle cx="60" cy="60" r="1.8" fill="#f15a36"/>`
 }
 
+function solar() {
+  return `
+    <defs>
+      <radialGradient id="sun" cx="0.4" cy="0.36" r="0.7"><stop offset="0" stop-color="#ffe08a"/><stop offset="0.55" stop-color="#ffb340"/><stop offset="1" stop-color="#f15a36"/></radialGradient>
+      <linearGradient id="earth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7cc4ff"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+      <linearGradient id="ringed" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9a4ff"/><stop offset="1" stop-color="#7c5cf0"/></linearGradient>
+    </defs>
+    <ellipse cx="60" cy="64" rx="48" ry="21" transform="rotate(-20 60 64)" stroke="#c4cad8" stroke-width="2.2"/>
+    <circle cx="60" cy="64" r="20" fill="url(#sun)"/>
+    <circle cx="17" cy="76" r="8" fill="url(#earth)"/>
+    <g transform="translate(88 27) rotate(-20)">
+      <path d="M-19 0a19 5.5 0 0 1 38 0" stroke="#7c5cf0" stroke-width="2.6" stroke-opacity="0.45"/>
+      <circle r="10.5" fill="url(#ringed)"/>
+      <path d="M-19 0a19 5.5 0 0 0 38 0" stroke="#7c5cf0" stroke-width="2.6"/>
+    </g>`
+}
+
 function soon() {
   return `
     <defs>
@@ -98,12 +116,13 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, soon }
+const icons = { copybook, maths, clock, solar, soon }
 
 await mkdir(outDir, { recursive: true })
+const font = await openFontOptions()
 for (const [name, draw] of Object.entries(icons)) {
   const markup = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" fill="none">${draw()}</svg>`
-  const png = new Resvg(markup, { fitTo: { mode: 'width', value: SIZE } }).render().asPng()
+  const png = new Resvg(markup, { fitTo: { mode: 'width', value: SIZE }, font }).render().asPng()
   await writeFile(path.join(outDir, `${name}.png`), png)
 }
 console.log(`rendered ${Object.keys(icons).length} tool icons`)

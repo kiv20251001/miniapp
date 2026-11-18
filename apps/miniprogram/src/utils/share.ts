@@ -37,7 +37,7 @@ export function momentsShare() {
 
 /** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
 export const TOOL_SHARE_TITLES = {
-  toolbox: '字帖、计算题、认识时钟，孩子练习的小工具都在这',
+  toolbox: '字帖、计算题、认识时钟、3D 太阳系，孩子练习的小工具都在这',
   copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
   maths: '凑十法、破十法、加减混合，一键生成计算练习题',
   make10: '凑十法练习题一键生成，A4 打印直接练',
@@ -46,6 +46,7 @@ export const TOOL_SHARE_TITLES = {
   clock: '拨一拨时针分针，跟着天空变化认识时间',
   clockQuiz: '认识时钟小测验：拨时间、看时间，你能答对几题？',
   clockPrint: '看时间画指针、看指针填时间，时钟练习题 A4 打印',
+  solar: '3D 太阳系：八大行星有多大、怎么转，月相和四季一看就懂',
 } as const
 
 export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
@@ -64,6 +65,7 @@ const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   clock: '/static/share/clock.jpg',
   clockQuiz: '/static/share/clock-quiz.jpg',
   clockPrint: '/static/share/clock-print.jpg',
+  solar: '/static/share/solar.jpg',
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {

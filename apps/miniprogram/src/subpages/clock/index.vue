@@ -386,15 +386,29 @@ async function focusGuide() {
   if (!step) return
   guidePassed.value = false
   showSeconds.value = step.action !== 'drag-minute'
-  const first = await measure(step.target)
-  if (!first) return
+  const first = await measureRetry(step.target)
+  if (guideStep.value !== step) return
+  // 量不到目标（页面还没渲染好）就跳过这一步，不能留下一层没有卡片的遮罩把页面挡死
+  if (!first) {
+    nextGuide()
+    return
+  }
   const wanted = Math.max(0, first.scrollTop + first.rect.top - (viewH.value - first.rect.height) / 2 + 60)
   if (Math.abs(wanted - first.scrollTop) > 4) {
     uni.pageScrollTo({ scrollTop: wanted, duration: 260 })
     await new Promise((resolve) => setTimeout(resolve, 320))
   }
-  const settled = await measure(step.target)
-  if (settled && guideStep.value === step) guideRect.value = settled.rect
+  const settled = (await measure(step.target)) ?? first
+  if (guideStep.value === step) guideRect.value = settled.rect
+}
+
+async function measureRetry(id: string) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const result = await measure(id)
+    if (result) return result
+    await new Promise((resolve) => setTimeout(resolve, 150))
+  }
+  return null
 }
 
 function startGuide() {
@@ -670,6 +684,18 @@ onReady(() => {
 }
 .seg-item.active { color: var(--accent-text); }
 .seg.small .seg-item { height: 34px; font-size: 13px; line-height: 34px; }
+.theme-dark .seg {
+  border-color: var(--line);
+  background: var(--paper);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 24px -16px rgba(0, 0, 0, 0.6);
+}
+.theme-dark .seg-indicator {
+  background: var(--surface-2);
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.theme-dark .seg-item.active { color: var(--accent-text); }
+.theme-dark .seg.small { border-color: transparent; background: var(--surface-2); box-shadow: none; }
+.theme-dark .seg.small .seg-indicator { background: var(--paper); }
 
 .sky-card {
   position: relative;
@@ -803,7 +829,7 @@ onReady(() => {
 .result .btn.block { align-self: stretch; }
 .theme-dark .option { background: var(--surface-2); }
 
-.guide { position: fixed; inset: 0; z-index: 1000; pointer-events: none; animation: guide-in 0.25s ease; }
+.guide { position: fixed; inset: 0; z-index: 70; pointer-events: none; animation: guide-in 0.25s ease; }
 .guide-mask { position: absolute; inset: 0; background: rgba(15, 18, 30, 0.62); pointer-events: auto; }
 .guide-block { position: fixed; pointer-events: auto; }
 .guide-hole {

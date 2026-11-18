@@ -29,10 +29,25 @@
         { "path": "maths/sheet", "style": { "navigationBarTitleText": "计算题" } },
         { "path": "clock/index", "style": { "navigationBarTitleText": "认识时钟" } }
       ]
+    },
+    {
+      "root": "subsolar",
+      // #ifdef MP-WEIXIN
+      "plugins": {
+        "WechatSI": { "version": "0.3.5", "provider": "wx069ba97219f66d99" }
+      },
+      // #endif
+      "pages": [
+        {
+          "path": "index",
+          "style": { "navigationBarTitleText": "3D 太阳系", "disableScroll": true }
+        }
+      ]
     }
   ],
   "preloadRule": {
-    "pages/home/index": { "network": "all", "packages": ["subpages"] }
+    "pages/home/index": { "network": "all", "packages": ["subpages"] },
+    "subpages/toolbox/index": { "network": "wifi", "packages": ["subsolar"] }
   },
   "globalStyle": {
     "navigationStyle": "custom",
