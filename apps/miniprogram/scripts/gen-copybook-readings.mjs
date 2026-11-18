@@ -17,11 +17,14 @@ const target = join(dirname(fileURLToPath(import.meta.url)), '../src/subpages/co
 const source = `/** 常用汉字的默认读音。由 scripts/gen-copybook-readings.mjs 生成，不要手改。 */
 const RAW = ${JSON.stringify(lines.join('\n'))}
 
-const READINGS = new Map<string, string>()
-for (const line of RAW.split('\\n')) READINGS.set(line[0], line.slice(1))
+let readings: Map<string, string> | undefined
 
 export function readingOfChar(char: string) {
-  return READINGS.get(char) ?? ''
+  if (!readings) {
+    readings = new Map<string, string>()
+    for (const line of RAW.split('\\n')) readings.set(line[0], line.slice(1))
+  }
+  return readings.get(char) ?? ''
 }
 `
 writeFileSync(target, source)

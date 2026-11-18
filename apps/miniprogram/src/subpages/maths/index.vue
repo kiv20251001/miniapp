@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { appShare, momentsShare } from '@/utils/share'
+import { toolMoments, toolShare } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -11,8 +11,8 @@ import { kindPreview } from './preview'
 
 useFamilyPage()
 const themeClass = useThemePage()
-onShareAppMessage(appShare)
-onShareTimeline(momentsShare)
+onShareAppMessage(() => toolShare('maths', '/subpages/maths/index'))
+onShareTimeline(() => toolMoments('maths'))
 const pageBg = usePageBackground()
 
 const previews = reactive<Partial<Record<MathKind, string>>>({})

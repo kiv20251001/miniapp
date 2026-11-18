@@ -31,6 +31,9 @@
       ]
     }
   ],
+  "preloadRule": {
+    "pages/home/index": { "network": "all", "packages": ["subpages"] }
+  },
   "globalStyle": {
     "navigationStyle": "custom",
     "backgroundColor": "#F3F4FB",

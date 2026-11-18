@@ -30,10 +30,14 @@ export function openTab(tab: TabKey = 'today') {
   if (delta > 0) uni.navigateBack({ delta })
 }
 
+/** 从转发卡片直接打开工具页时没有上一页，返回要回到工具箱。 */
+const TOOL_ROUTE = /^subpages\/(toolbox|copybook|maths|clock)\//
+
 /** 返回上一页；没有上一页时回主页面。 */
 export function goBack() {
-  if (getCurrentPages().length <= 1) {
-    openTab('today')
+  const pages = getCurrentPages()
+  if (pages.length <= 1) {
+    openTab(TOOL_ROUTE.test(pages[0]?.route ?? '') ? 'tools' : 'today')
     return
   }
   uni.navigateBack()

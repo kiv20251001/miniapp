@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { appShare, momentsShare } from '@/utils/share'
+import { appShare, momentsShare, toolMoments, toolShare } from '@/utils/share'
 import { syncFamily, useFamilyPage } from '@/composables/useFamilyPage'
 import { useUiStore } from '@/stores/ui'
 import { HOME_PATH, isTabKey, type TabKey } from '@/utils/nav'
@@ -20,10 +20,10 @@ import ToolboxView from '@/views/ToolboxView.vue'
  */
 useFamilyPage()
 const themeClass = useThemePage()
-onShareAppMessage(appShare)
-onShareTimeline(momentsShare)
-const pageBg = usePageBackground()
 const ui = useUiStore()
+onShareAppMessage(() => (ui.tab === 'tools' ? toolShare('toolbox', `${HOME_PATH}?tab=tools`) : appShare()))
+onShareTimeline(() => (ui.tab === 'tools' ? toolMoments('toolbox', 'tab=tools') : momentsShare()))
+const pageBg = usePageBackground()
 
 /** 视图第一次被打开后保留在树里，之后只用 hidden 切换，回来时还是原样。 */
 const mounted = reactive<Record<TabKey, boolean>>({ today: true, calendar: false, courses: false, tools: false })

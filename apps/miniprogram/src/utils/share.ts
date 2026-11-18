@@ -35,6 +35,46 @@ export function momentsShare() {
   }
 }
 
+/** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
+export const TOOL_SHARE_TITLES = {
+  toolbox: '字帖、计算题、认识时钟，孩子练习的小工具都在这',
+  copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
+  maths: '凑十法、破十法、加减混合，一键生成计算练习题',
+  make10: '凑十法练习题一键生成，A4 打印直接练',
+  break10: '破十法练习题一键生成，A4 打印直接练',
+  mixed: '加减混合运算题一键生成，填空位置随心选',
+  clock: '拨一拨时针分针，跟着天空变化认识时间',
+  clockQuiz: '认识时钟小测验：拨时间、看时间，你能答对几题？',
+  clockPrint: '看时间画指针、看指针填时间，时钟练习题 A4 打印',
+} as const
+
+export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
+
+/**
+ * 好友卡片是 5:4 横图，竖屏页面截图放进去看不全，所以每页一张专门画的图，
+ * 由 scripts/render-share-covers.mjs 生成。分享卡片读不到分包里的图片，所以都放主包。
+ */
+const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
+  toolbox: '/static/share/toolbox.jpg',
+  copybook: '/static/share/copybook.jpg',
+  maths: '/static/share/maths.jpg',
+  make10: '/static/share/make10.jpg',
+  break10: '/static/share/break10.jpg',
+  mixed: '/static/share/mixed.jpg',
+  clock: '/static/share/clock.jpg',
+  clockQuiz: '/static/share/clock-quiz.jpg',
+  clockPrint: '/static/share/clock-print.jpg',
+}
+
+export function toolShare(key: ToolShareKey, path: string): ShareContent {
+  return { title: t(TOOL_SHARE_TITLES[key]), path, imageUrl: TOOL_SHARE_IMAGES[key] }
+}
+
+/** 朋友圈缩略图会裁成正方形，横图左边的标题会被裁掉，所以仍用居中排版的推广图，只换成工具自己的标题。 */
+export function toolMoments(key: ToolShareKey, query = '') {
+  return { title: t(TOOL_SHARE_TITLES[key]), query, imageUrl: SHARE_IMAGE }
+}
+
 export function inviteShare(code: string): ShareContent {
   return {
     title: t('邀请你一起看 Uday 家庭课表'),

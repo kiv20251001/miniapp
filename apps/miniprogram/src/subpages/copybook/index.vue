@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { appShare, momentsShare } from '@/utils/share'
+import { toolMoments, toolShare } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -16,8 +16,8 @@ import { scrollToFirstSheet } from '../print/scroll'
 
 useFamilyPage()
 const themeClass = useThemePage()
-onShareAppMessage(appShare)
-onShareTimeline(momentsShare)
+onShareAppMessage(() => toolShare('copybook', '/subpages/copybook/index'))
+onShareTimeline(() => toolMoments('copybook'))
 const pageBg = usePageBackground()
 const instance = getCurrentInstance()
 const MAX_SLOTS = 12

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
-import { onHide, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { appShare, momentsShare } from '@/utils/share'
+import { onHide, onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { toolMoments, toolShare, type ToolShareKey } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -31,8 +31,13 @@ import {
 
 useFamilyPage()
 const themeClass = useThemePage()
-onShareAppMessage(appShare)
-onShareTimeline(momentsShare)
+const TAB_SHARE: Record<Tab, ToolShareKey> = { explore: 'clock', quiz: 'clockQuiz', print: 'clockPrint' }
+onShareAppMessage(() => toolShare(TAB_SHARE[tab.value], `/subpages/clock/index?tab=${tab.value}`))
+onShareTimeline(() => toolMoments(TAB_SHARE[tab.value], `tab=${tab.value}`))
+onLoad((query) => {
+  const value = query?.tab
+  if (value === 'quiz' || value === 'print') setTab(value)
+})
 const pageBg = usePageBackground()
 
 type Motion = 'spring' | 'tick' | 'linear' | 'none'
@@ -420,7 +425,7 @@ function endGuide() {
 }
 
 onReady(() => {
-  if (!uni.getStorageSync(GUIDE_KEY)) setTimeout(startGuide, 450)
+  if (tab.value === 'explore' && !uni.getStorageSync(GUIDE_KEY)) setTimeout(startGuide, 450)
 })
 </script>
 

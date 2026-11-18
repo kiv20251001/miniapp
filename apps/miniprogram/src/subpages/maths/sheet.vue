@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue'
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { appShare, momentsShare } from '@/utils/share'
+import { toolMoments, toolShare } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -18,12 +18,12 @@ import { renderMathFiles, renderMixedFiles } from './preview'
 
 useFamilyPage()
 const themeClass = useThemePage()
-onShareAppMessage(appShare)
-onShareTimeline(momentsShare)
 const pageBg = usePageBackground()
 const instance = getCurrentInstance()
 
 const kind = ref<MathKind>('break10')
+onShareAppMessage(() => toolShare(kind.value, `/subpages/maths/sheet?kind=${kind.value}`))
+onShareTimeline(() => toolMoments(kind.value, `kind=${kind.value}`))
 const text = ref('')
 const hint = ref(true)
 const images = ref<string[]>([])
