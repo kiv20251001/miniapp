@@ -29,6 +29,12 @@ export const TOOLS: ToolEntry[] = [
     url: '/subpages/clock/index',
   },
   {
+    key: 'pizza',
+    name: '认识分数',
+    image: '/static/tools/pizza.png',
+    url: '/subpages/pizza/index',
+  },
+  {
     key: 'solar',
     name: '3D 太阳系',
     image: '/static/tools/solar.png',

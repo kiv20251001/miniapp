@@ -37,7 +37,7 @@ export function momentsShare() {
 
 /** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
 export const TOOL_SHARE_TITLES = {
-  toolbox: '字帖、计算题、认识时钟、3D 太阳系，孩子练习的小工具都在这',
+  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数，孩子练习的小工具都在这',
   copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
   maths: '凑十法、破十法、加减混合，一键生成计算练习题',
   make10: '凑十法练习题一键生成，A4 打印直接练',
@@ -47,25 +47,35 @@ export const TOOL_SHARE_TITLES = {
   clockQuiz: '认识时钟小测验：拨时间、看时间，你能答对几题？',
   clockPrint: '看时间画指针、看指针填时间，时钟练习题 A4 打印',
   solar: '3D 太阳系：八大行星有多大、怎么转，月相和四季一看就懂',
+  pizza: '认识分数：切开披萨，看看分子和分母',
+  pizzaQuiz: '分数小测验：拉开几份，或看披萨写出分子分母',
+  pizzaPrint: '分数练习题：看图写分子分母、看分数画线段，A4 打印',
 } as const
 
 export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
 
 /**
- * 好友卡片是 5:4 横图，竖屏页面截图放进去看不全，所以每页一张专门画的图，
- * 由 scripts/render-share-covers.mjs 生成。分享卡片读不到分包里的图片，所以都放主包。
+ * 好友卡片是 5:4 横图，竖屏页面截图放进去看不全，所以每个工具一张专门画的图，
+ * 由 scripts/render-share-covers.mjs 生成。工具里的测验、打印、题型页共用工具那一张，标题各自不同。
+ * 分享卡片读不到分包里的图片，所以都放主包，张数越少越省主包体积。
  */
+const MATHS_IMAGE = '/static/share/maths.jpg'
+const CLOCK_IMAGE = '/static/share/clock.jpg'
+const PIZZA_IMAGE = '/static/share/pizza.jpg'
 const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   toolbox: '/static/share/toolbox.jpg',
   copybook: '/static/share/copybook.jpg',
-  maths: '/static/share/maths.jpg',
-  make10: '/static/share/make10.jpg',
-  break10: '/static/share/break10.jpg',
-  mixed: '/static/share/mixed.jpg',
-  clock: '/static/share/clock.jpg',
-  clockQuiz: '/static/share/clock-quiz.jpg',
-  clockPrint: '/static/share/clock-print.jpg',
+  maths: MATHS_IMAGE,
+  make10: MATHS_IMAGE,
+  break10: MATHS_IMAGE,
+  mixed: MATHS_IMAGE,
+  clock: CLOCK_IMAGE,
+  clockQuiz: CLOCK_IMAGE,
+  clockPrint: CLOCK_IMAGE,
   solar: '/static/share/solar.jpg',
+  pizza: PIZZA_IMAGE,
+  pizzaQuiz: PIZZA_IMAGE,
+  pizzaPrint: PIZZA_IMAGE,
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {

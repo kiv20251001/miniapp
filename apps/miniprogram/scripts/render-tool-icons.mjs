@@ -104,6 +104,27 @@ function solar() {
     </g>`
 }
 
+function pizza() {
+  const cx = 60
+  const cy = 62
+  const r = 40
+  const slice = (index, count, color) => {
+    const a0 = -Math.PI / 2 + (index * 2 * Math.PI) / count
+    const a1 = a0 + (2 * Math.PI) / count
+    const arc = (angle, radius) => `${(cx + Math.cos(angle) * radius).toFixed(1)} ${(cy + Math.sin(angle) * radius).toFixed(1)}`
+    return `<path d="M${cx} ${cy} L${arc(a0, r)} A${r} ${r} 0 0 1 ${arc(a1, r)} Z" fill="${color}"/>`
+  }
+  const pepperoni = (index) => {
+    const angle = -Math.PI / 2 + ((index + 0.5) * 2 * Math.PI) / 6
+    return `<circle cx="${(cx + Math.cos(angle) * r * 0.55).toFixed(1)}" cy="${(cy + Math.sin(angle) * r * 0.55).toFixed(1)}" r="4" fill="#e23b2f"/>`
+  }
+  return `
+    <circle cx="${cx}" cy="${cy}" r="${r + 7}" fill="#e39a4e"/>
+    ${Array.from({ length: 6 }, (_, index) => slice(index, 6, index < 2 ? '#f6f1e8' : '#f7c873')).join('')}
+    ${[2, 4].map(pepperoni).join('')}
+    <circle cx="86" cy="86" r="3" fill="#3fbf7f"/>`
+}
+
 function soon() {
   return `
     <defs>
@@ -116,7 +137,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, solar, soon }
+const icons = { copybook, maths, clock, pizza, solar, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()

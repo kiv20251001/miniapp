@@ -195,67 +195,6 @@ function mathsArt() {
   )
 }
 
-/** 和计算题 A4 上一样的拆数图，答案用绿色写好，10 用半透明红色提示。 */
-function tenArt(kind) {
-  const [a, b, op] = kind === 'make10' ? [8, 5, '+'] : [13, 9, '−']
-  const s = kind === 'make10' ? 0.86 : 0.82
-  const ox = kind === 'make10' ? -6 : 10
-  const oy = 104
-  const X = (value) => ox + value * s
-  const Y = (value) => oy + value * s
-  const box = 38 * s
-  const answer = 46 * s
-  const splitFirst = kind === 'break10'
-  const splitX = X(splitFirst ? 40 : 130)
-  const otherX = X(splitFirst ? 130 : 40)
-  const leftX = splitX - 24 * s
-  const rightX = splitX + 24 * s
-  const partnerX = splitFirst ? rightX : leftX
-  const restX = splitFirst ? leftX : rightX
-  const boxTop = Y(52)
-  const boxBottom = boxTop + box
-  const joinY = Y(114)
-  const midX = (otherX + partnerX) / 2
-  const resultTop = Y(128)
-  const resultY = resultTop + box / 2
-  const edgeX = restX < midX ? midX - box / 2 : midX + box / 2
-  const values = kind === 'make10' ? { partner: 2, rest: 3, mid: 10, answer: 13 } : { partner: 10, rest: 3, mid: 1, answer: 4 }
-  const hint = 'rgba(226, 74, 74, 0.6)'
-  const green = '#17824a'
-  const line = (points) => `<path d="${points.map(([px, py], index) => `${index ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join('')}" stroke="#5b6474" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
-  const square = (cx, top, size, value, color, stroke = '#5b6474') =>
-    `<rect x="${(cx - size / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" fill="#fff" stroke="${stroke}" stroke-width="1.6"/>
-     <text x="${cx.toFixed(1)}" y="${(top + size / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${NUM}" font-size="${(size * 0.56).toFixed(1)}" font-weight="600" fill="${color}">${value}</text>`
-  const sign = (text, x, y) => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${NUM}" font-size="17" font-weight="700" fill="#2b3340">${text}</text>`
-  const big = (text, x) => `<text x="${x.toFixed(1)}" y="${(oy + 1).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${NUM}" font-size="31" font-weight="500" fill="#2b3340">${text}</text>`
-  const partnerHint = kind === 'break10'
-  return card(`
-    <text x="108" y="38" text-anchor="middle" font-family="${SANS}" font-size="13" font-weight="700" fill="#98a2b3">${kind === 'make10' ? '看大数，拆小数，凑成十' : '拆被减数，10 减几再相加'}</text>
-    ${big(a, X(40))}${big(op, X(86))}${big(b, X(130))}${big('=', X(176))}
-    <rect x="${X(196).toFixed(1)}" y="${(oy - answer / 2).toFixed(1)}" width="${answer.toFixed(1)}" height="${answer.toFixed(1)}" fill="#fff" stroke="#5b6474" stroke-width="1.6"/>
-    <text x="${(X(196) + answer / 2).toFixed(1)}" y="${(oy + 1).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${NUM}" font-size="24" font-weight="600" fill="${green}">${values.answer}</text>
-    ${line([[leftX, boxTop], [splitX, Y(22)], [rightX, boxTop]])}
-    ${square(partnerX, boxTop, box, values.partner, partnerHint ? hint : green, partnerHint ? hint : '#5b6474')}
-    ${square(restX, boxTop, box, values.rest, green)}
-    ${line([[otherX, Y(22)], [otherX, joinY], [partnerX, joinY], [partnerX, boxBottom]])}
-    ${line([[midX, joinY], [midX, resultTop]])}
-    ${sign(kind === 'make10' ? '+' : '−', midX, joinY - 12)}
-    ${square(midX, resultTop, box, values.mid, kind === 'make10' ? hint : green, kind === 'make10' ? hint : '#5b6474')}
-    ${line([[restX, boxBottom], [restX, resultY], [edgeX, resultY]])}
-    ${sign('+', (restX + edgeX) / 2, resultY - 12)}
-  `)
-}
-
-function mixedArt() {
-  const rows = [
-    ['15', '−', '7', '+', '4', '=', null],
-    ['6', '+', null, '−', '3', '=', '9'],
-    [null, '−', '5', '+', '8', '=', '12'],
-    ['9', '+', '6', '−', null, '=', '11'],
-  ]
-  return card(rows.map((tokens, index) => equation(18, 40 + index * 66, tokens, 19)).join(''))
-}
-
 function clockArt() {
   const bar = 'url(#day)'
   return `
@@ -272,49 +211,6 @@ function clockArt() {
     <rect x="22" y="244" width="172" height="10" rx="5" fill="${bar}"/>
     <circle cx="${22 + 172 * (10.17 / 24)}" cy="249" r="10" fill="#fff" stroke="#e1e5ec"/>
     <circle cx="${22 + 172 * (10.17 / 24)}" cy="249" r="5" fill="#ffb84d"/>`
-}
-
-function quizArt() {
-  return card(`
-    <text x="108" y="34" text-anchor="middle" font-family="${SANS}" font-size="13" font-weight="700" fill="#6b7385">这个时钟显示几点？</text>
-    ${clockFace(108, 116, 70, { h: 8, m: 30 })}
-    <rect x="18" y="212" width="86" height="46" rx="14" fill="#e8f7ef" stroke="#34c77b"/>
-    <text x="61" y="241" text-anchor="middle" font-family="${NUM}" font-size="20" font-weight="800" fill="#1f9d5c">8:30</text>
-    <circle cx="96" cy="214" r="10" fill="#34c77b"/>
-    <path d="M91.5 214l3 3 5.5-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="112" y="212" width="86" height="46" rx="14" fill="#f4f5f9"/>
-    <text x="155" y="241" text-anchor="middle" font-family="${NUM}" font-size="20" font-weight="800" fill="#6b7385">6:40</text>`)
-}
-
-function printArt() {
-  const sheetW = 176
-  const sheetH = sheetW * 1.414
-  const clocks = [
-    [{ h: 3, m: 0 }, 'read'],
-    [{ h: 8, m: 30 }, 'draw'],
-    [{ h: 10, m: 10 }, 'draw'],
-    [{ h: 6, m: 45 }, 'read'],
-  ]
-    .map(([time, mode], index) => {
-      const cx = 20 + 46 + (index % 2) * 72
-      const cy = 86 + Math.floor(index / 2) * 90
-      const answer =
-        mode === 'draw'
-          ? `<text x="${cx}" y="${cy + 46}" text-anchor="middle" font-family="${NUM}" font-size="13" font-weight="800" fill="${INK}">${time.h}:${String(time.m).padStart(2, '0')}</text>`
-          : `<rect x="${cx - 23}" y="${cy + 35}" width="18" height="14" fill="#fff" stroke="#5b6474"/><rect x="${cx + 5}" y="${cy + 35}" width="18" height="14" fill="#fff" stroke="#5b6474"/>
-             <circle cx="${cx}" cy="${cy + 39}" r="1.2" fill="${DIAL}"/><circle cx="${cx}" cy="${cy + 45}" r="1.2" fill="${DIAL}"/>`
-      return `${clockFace(cx, cy, 30, mode === 'read' ? time : null)}${answer}`
-    })
-    .join('')
-  return `
-    <g transform="rotate(-4 108 142)">
-      <rect x="20" y="0" width="${sheetW}" height="${sheetH}" rx="6" fill="#fff" stroke="#e8ebf1" filter="url(#shadow)"/>
-      <rect x="32" y="14" width="12" height="12" rx="4" fill="url(#u)"/>
-      <path d="M32 33h152" stroke="#eceff3"/>
-      <text x="108" y="44" text-anchor="middle" font-family="${SANS}" font-size="10" font-weight="800" fill="${INK}">认识时钟练习</text>
-      <g transform="translate(0 2)">${clocks}</g>
-      <path d="M32 ${sheetH - 14}h152" stroke="#eceff3"/>
-    </g>`
 }
 
 /** 3D 太阳系：深色星空卡片，太阳、轨道、行星，底下一排月相。 */
@@ -376,21 +272,60 @@ function solarArt() {
     ${phases}`
 }
 
+/** 切披萨：八块里涂上 eaten 块，配几片意式香肠。 */
+function pizzaArt(eaten) {
+  const cx = 108
+  const cy = 128
+  const r = 96
+  const count = 8
+  const at = (x, y, angle, radius) => `${(x + Math.cos(angle) * radius).toFixed(1)} ${(y + Math.sin(angle) * radius).toFixed(1)}`
+  const slices = Array.from({ length: count }, (_, index) => {
+    const a0 = -Math.PI / 2 + (index * 2 * Math.PI) / count
+    const a1 = a0 + (2 * Math.PI) / count
+    const mid = (a0 + a1) / 2
+    const out = index < eaten ? 16 : 7
+    const ox = cx + Math.cos(mid) * out
+    const oy = cy + Math.sin(mid) * out
+    const crust = `<path d="M${at(ox, oy, a0, 8)} L${at(ox, oy, a0, r)} A${r} ${r} 0 0 1 ${at(ox, oy, a1, r)} Z" fill="#e39a4e"/>`
+    const cheese = `<path d="M${at(ox, oy, a0, 14)} L${at(ox, oy, a0, r * 0.82)} A${r * 0.82} ${r * 0.82} 0 0 1 ${at(ox, oy, a1, r * 0.82)} Z" fill="${index < eaten ? '#f4efe6' : '#f7c873'}"/>`
+    return crust + cheese
+  }).join('')
+  const pepperoni = [2, 4, 6].map((index) => {
+    const angle = -Math.PI / 2 + ((index + 0.5) * 2 * Math.PI) / count
+    const mid = angle
+    const out = 7
+    const ox = cx + Math.cos(mid) * out
+    const oy = cy + Math.sin(mid) * out
+    return `<circle cx="${(ox + Math.cos(angle) * r * 0.5).toFixed(1)}" cy="${(oy + Math.sin(angle) * r * 0.5).toFixed(1)}" r="7" fill="#e23b2f"/>`
+  }).join('')
+  return `
+    <circle cx="${cx}" cy="${cy}" r="${r + 18}" fill="#f6f1ea"/>
+    ${slices}
+    ${pepperoni}`
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
     ['static/tools/maths.png', '计算题'],
     ['static/tools/clock.png', '认识时钟'],
+    ['static/tools/pizza.png', '认识分数'],
     ['static/tools/solar.png', '3D 太阳系'],
   ]
   const parts = []
+  // 五个工具排成两列，最后一行只有一个时居中
+  const tile = 62
+  const colPitch = 104
+  const rowPitch = 90
   for (const [index, [file, label]] of tiles.entries()) {
-    const x = 14 + (index % 2) * 104
-    const y = 6 + Math.floor(index / 2) * 132
+    const row = Math.floor(index / 2)
+    const lastRowSingle = index === tiles.length - 1 && tiles.length % 2 === 1
+    const x = lastRowSingle ? (216 - tile) / 2 : 14 + (index % 2) * colPitch
+    const y = 4 + row * rowPitch
     parts.push(`
-      <rect x="${x}" y="${y}" width="84" height="84" rx="24" fill="url(#glass)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
-      <image href="${await dataUri(file)}" x="${x + 15}" y="${y + 15}" width="54" height="54"/>
-      <text x="${x + 42}" y="${y + 108}" text-anchor="middle" font-family="${SANS}" font-size="13" font-weight="700" fill="${INK}">${label}</text>`)
+      <rect x="${x}" y="${y}" width="${tile}" height="${tile}" rx="18" fill="url(#glass)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
+      <image href="${await dataUri(file)}" x="${x + 12}" y="${y + 12}" width="38" height="38"/>
+      <text x="${x + tile / 2}" y="${y + tile + 16}" text-anchor="middle" font-family="${SANS}" font-size="12" font-weight="700" fill="${INK}">${label}</text>`)
   }
   return `
     <defs>
@@ -410,7 +345,7 @@ const covers = [
   {
     file: 'static/share/toolbox.jpg',
     accent: '#ffb45c', accent2: '#7c5cf0',
-    title: '孩子练习工具箱', sub: '字帖 · 计算题 · 时钟 · 太阳系',
+    title: '孩子练习工具箱', sub: '字帖 · 计算 · 时钟 · 披萨 · 星球',
     tags: [['一键生成', ...ORANGE], ['A4 打印', ...BLUE], ['持续更新', ...PURPLE]],
     art: await toolboxArt(),
   },
@@ -429,27 +364,6 @@ const covers = [
     art: mathsArt(),
   },
   {
-    file: 'static/share/make10.jpg',
-    accent: '#ffb45c', accent2: '#f15a36',
-    title: '凑十法练习', sub: '20 以内进位加法，一看就会',
-    tags: [['提示 10', ...ORANGE], ['随机出题', ...BLUE], ['A4 打印', ...GREEN]],
-    art: tenArt('make10'),
-  },
-  {
-    file: 'static/share/break10.jpg',
-    accent: '#7cc4ff', accent2: '#ffb45c',
-    title: '破十法练习', sub: '20 以内退位减法，一步一步拆',
-    tags: [['提示 10', ...BLUE], ['随机出题', ...ORANGE], ['A4 打印', ...GREEN]],
-    art: tenArt('break10'),
-  },
-  {
-    file: 'static/share/mixed.jpg',
-    accent: '#6fe0b4', accent2: '#7c5cf0',
-    title: '加减混合运算', sub: '填空位置随心选，越练越灵活',
-    tags: [['加减随机', ...GREEN], ['填空位置', ...PURPLE], ['A4 打印', ...ORANGE]],
-    art: mixedArt(),
-  },
-  {
     file: 'static/share/clock.jpg',
     accent: '#7cc4ff', accent2: '#ffb45c',
     title: '认识时钟', sub: '拨一拨指针，天空跟着变',
@@ -457,25 +371,18 @@ const covers = [
     art: clockArt(),
   },
   {
-    file: 'static/share/clock-quiz.jpg',
-    accent: '#6fe0b4', accent2: '#7cc4ff',
-    title: '时钟小测验', sub: '拨时间、看时间，你能答对几题？',
-    tags: [['拨时间', ...GREEN], ['看时间', ...BLUE], ['三档难度', ...ORANGE]],
-    art: quizArt(),
-  },
-  {
-    file: 'static/share/clock-print.jpg',
-    accent: '#b9a4ff', accent2: '#ffb45c',
-    title: '时钟练习题', sub: '看时间画指针，看指针填时间',
-    tags: [['随机出题', ...PURPLE], ['可含秒针', ...ORANGE], ['A4 打印', ...BLUE]],
-    art: printArt(),
-  },
-  {
     file: 'static/share/solar.jpg',
     accent: '#7cc4ff', accent2: '#ffb340',
     title: '3D 太阳系', sub: '行星大小、公转、月相和四季',
     tags: [['动手玩', ...BLUE], ['月相', ...PURPLE], ['四季', ...ORANGE]],
     art: solarArt(),
+  },
+  {
+    file: 'static/share/pizza.jpg',
+    accent: '#f7c873', accent2: '#e23b2f',
+    title: '认识分数', sub: '切开披萨，认识分子和分母',
+    tags: [['动手切', ...ORANGE], ['几分之几', ...GREEN], ['小测验', ...BLUE]],
+    art: pizzaArt(3),
   },
 ]
 

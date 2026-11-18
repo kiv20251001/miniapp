@@ -27,7 +27,8 @@
         { "path": "copybook/index", "style": { "navigationBarTitleText": "字帖生成" } },
         { "path": "maths/index", "style": { "navigationBarTitleText": "计算题生成" } },
         { "path": "maths/sheet", "style": { "navigationBarTitleText": "计算题" } },
-        { "path": "clock/index", "style": { "navigationBarTitleText": "认识时钟" } }
+        { "path": "clock/index", "style": { "navigationBarTitleText": "认识时钟" } },
+        { "path": "pizza/index", "style": { "navigationBarTitleText": "认识分数" } }
       ]
     },
     {

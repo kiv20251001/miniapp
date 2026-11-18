@@ -41,7 +41,7 @@ export function openTab(tab: TabKey = 'today') {
 }
 
 /** 从转发卡片直接打开工具页时没有上一页，返回要回到工具箱。 */
-const TOOL_ROUTE = /^(subpages\/(toolbox|copybook|maths|clock)|subsolar)\//
+const TOOL_ROUTE = /^(subpages\/(toolbox|copybook|maths|clock|pizza)|subsolar)\//
 
 let backAt = 0
 
