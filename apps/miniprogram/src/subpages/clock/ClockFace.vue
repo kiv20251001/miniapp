@@ -166,6 +166,7 @@ function onEnd() {
         <view class="tick" :class="{ major: index % 5 === 0, hot: loupe && loupe.tick === index % 60 }" />
       </view>
       <text v-for="item in numbers" :key="item.value" class="num" :style="{ left: item.x + '%', top: item.y + '%' }">{{ item.value }}</text>
+      <image class="brand" src="/static/brand/yimu-logo.svg" mode="widthFix" />
       <view class="hand hour" :class="{ active: activeHand === 'hour' }" :style="handStyle(hourDeg)" />
       <view class="hand minute" :class="{ active: activeHand === 'minute' }" :style="handStyle(minuteDeg)" />
       <view v-if="seconds" class="hand second" :class="{ active: activeHand === 'second' }" :style="handStyle(secondDeg)" />
@@ -243,6 +244,15 @@ function onEnd() {
   height: 24rpx;
   margin-left: -3rpx;
   background: #2b3340;
+}
+.brand {
+  position: absolute;
+  top: 27%;
+  left: 50%;
+  width: 21%;
+  opacity: 0.78;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
 .num {
   position: absolute;

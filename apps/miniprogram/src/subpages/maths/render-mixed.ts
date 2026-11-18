@@ -1,6 +1,7 @@
-import { contentWidth, drawBrand, MARGIN_BOTTOM, MARGIN_X, PAGE_H, PAGE_W, textWidth, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
+import { contentWidth, MARGIN_X, textWidth, type SheetPen } from '../print/sheet'
+import { SHEET_TITLES } from './labels'
 import { chainValue, type MixedItem } from './mixed'
-import { bodyTop, drawTitle } from './render'
 
 export const MIXED_PER_ROW = 3
 const ROWS = 10
@@ -21,7 +22,7 @@ export function mixedPerPage() {
 }
 
 export function layoutMixed(options: MixedOptions): MixedPage[] {
-  const pitch = (PAGE_H - MARGIN_BOTTOM - bodyTop()) / ROWS
+  const pitch = sheetBodyHeight() / ROWS
   const colW = contentWidth() / MIXED_PER_ROW
   const pages: MixedPage[] = []
   options.items.forEach((item, index) => {
@@ -32,7 +33,7 @@ export function layoutMixed(options: MixedOptions): MixedPage[] {
     pages[pages.length - 1].items.push({
       item,
       x: MARGIN_X + col * colW + INSET,
-      y: bodyTop() + pitch * (row + 0.5),
+      y: sheetBodyTop() + pitch * (row + 0.5),
     })
   })
   return pages
@@ -80,9 +81,7 @@ function drawItem(pen: SheetPen, item: MixedItem, x: number, y: number) {
 }
 
 export function drawMixedSheet(pen: SheetPen, page: MixedPage, pageIndex: number, pageCount: number) {
-  pen.fillStyle = '#ffffff'
-  pen.fillRect(0, 0, PAGE_W, PAGE_H)
-  drawTitle(pen, 'mixed')
-  for (const entry of page.items) drawItem(pen, entry.item, entry.x, entry.y)
-  drawBrand(pen, pageIndex, pageCount)
+  drawSheetPage(pen, SHEET_TITLES.mixed, pageIndex, pageCount, () => {
+    for (const entry of page.items) drawItem(pen, entry.item, entry.x, entry.y)
+  })
 }

@@ -9,6 +9,7 @@ import AppIcon from '@/components/AppIcon.vue'
 import { t } from '@/i18n'
 import { windowHeight } from '@/utils/system'
 import ClockFace from './ClockFace.vue'
+import ClockPrint from './ClockPrint.vue'
 import DayBar from './DayBar.vue'
 import {
   celestialAt,
@@ -37,7 +38,8 @@ const pageBg = usePageBackground()
 type Motion = 'spring' | 'tick' | 'linear' | 'none'
 const QUESTIONS = 5
 
-const tab = ref<'explore' | 'quiz'>('explore')
+type Tab = 'explore' | 'quiz' | 'print'
+const tab = ref<Tab>('explore')
 
 // ---- 探索 ----
 const total = ref(nowSeconds())
@@ -170,7 +172,6 @@ const options = ref<ClockTime[]>([])
 const picked = ref<ClockTime | null>(null)
 const answer = ref<'' | 'right' | 'wrong'>('')
 const finished = ref(false)
-const showDigits = ref(false)
 const setTotal = ref(0)
 const readTotal = ref(0)
 let advanceTimer: ReturnType<typeof setTimeout> | null = null
@@ -276,14 +277,12 @@ function setLevel(value: Level) {
   newRound()
 }
 
-function setTab(value: 'explore' | 'quiz') {
+function setTab(value: Tab) {
   if (tab.value === value) return
   if (guideIndex.value >= 0) endGuide()
   tab.value = value
-  if (value === 'quiz') {
-    stopPlay()
-    if (!results.value.length) newRound()
-  }
+  if (value !== 'explore') stopPlay()
+  if (value === 'quiz' && !results.value.length) newRound()
 }
 
 onUnmounted(clearAdvance)
@@ -430,11 +429,14 @@ onReady(() => {
   <view class="theme-root page sub clock-page" :class="themeClass">
     <PageHeader safe show-back :title="t('认识时钟')" :caption="t('拨一拨指针，看看时间怎么走')" />
 
-    <view class="seg">
+    <view class="seg three">
       <view class="seg-indicator" :class="tab" />
       <text class="seg-item" :class="{ active: tab === 'explore' }" @click="setTab('explore')">{{ t('探索') }}</text>
       <text id="guide-quiz" class="seg-item" :class="{ active: tab === 'quiz' }" @click="setTab('quiz')">{{ t('小测验') }}</text>
+      <text class="seg-item" :class="{ active: tab === 'print' }" @click="setTab('print')">{{ t('打印题目') }}</text>
     </view>
+
+    <ClockPrint v-if="tab === 'print'" />
 
     <view v-if="tab === 'explore'" class="explore">
       <view class="sky-card" :class="{ night: sky.night }" :style="skyStyle">
@@ -500,7 +502,7 @@ onReady(() => {
       </view>
     </view>
 
-    <view v-else class="card quiz">
+    <view v-else-if="tab === 'quiz'" class="card quiz">
       <view class="seg small">
         <view class="seg-indicator" :class="quizMode === 'set' ? 'explore' : 'quiz'" />
         <text class="seg-item" :class="{ active: quizMode === 'set' }" @click="setQuizMode('set')">{{ t('拨时间') }}</text>
@@ -546,9 +548,6 @@ onReady(() => {
         </view>
 
         <template v-if="quizMode === 'set'">
-          <view class="live press" @click="showDigits = !showDigits">
-            <text class="live-text">{{ showDigits ? formatClock(setParts.h12, setParts.m) : t('点这里看看现在拨到几点') }}</text>
-          </view>
           <view class="feedback" :class="answer">
             <text v-if="answer === 'right'">{{ t('答对了，真棒！') }}</text>
             <text v-else-if="answer === 'wrong'">{{ t('再想想，正确答案是 {time}', { time: targetText }) }}</text>
@@ -650,6 +649,8 @@ onReady(() => {
   transition: transform 0.42s cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 .seg-indicator.quiz { transform: translateX(100%); }
+.seg.three .seg-indicator { width: calc((100% - 8px) / 3); }
+.seg-indicator.print { transform: translateX(200%); }
 .seg-item {
   position: relative;
   z-index: 1;
@@ -742,8 +743,6 @@ onReady(() => {
 .prompt.big { font-size: 17px; }
 .target { margin-top: 2px; color: var(--ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 72rpx; font-weight: 800; }
 .quiz-clock { padding-top: 24rpx; padding-bottom: 8rpx; }
-.live { margin-top: 18px; padding: 6px 14px; border-radius: 999px; background: var(--surface-2); }
-.live-text { color: var(--muted); font-size: 13px; font-weight: 650; }
 .feedback {
   margin-top: 12px;
   padding: 8px 14px;
@@ -754,6 +753,7 @@ onReady(() => {
   text-align: center;
   transition: background 0.25s ease, color 0.25s ease;
 }
+.quiz-clock + .feedback { margin-top: 20px; }
 .feedback.right { background: rgba(52, 199, 123, 0.14); color: #1f9d5c; }
 .feedback.wrong { background: rgba(241, 90, 54, 0.12); color: #d9482a; }
 .action-row { display: flex; align-self: stretch; gap: 10px; margin-top: 14px; }

@@ -1,7 +1,7 @@
-import { SHEET_DATE_LABEL, SHEET_NAME_LABEL, SHEET_TIME_LABEL } from '../print/labels'
-import { contentWidth, drawBrand, MARGIN_BOTTOM, MARGIN_TOP, MARGIN_X, PAGE_H, PAGE_W, textWidth, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
+import { contentWidth, MARGIN_X, type SheetPen } from '../print/sheet'
 import { SHEET_TITLES } from './labels'
-import type { MathKind, Problem, TenKind } from './problems'
+import type { Problem, TenKind } from './problems'
 
 export const MAX_PAGES = 8
 export const PER_ROW = 4
@@ -25,7 +25,6 @@ const ITEM_W = 244
 const ITEM_TOP = -ANSWER / 2
 const ITEM_BOTTOM = 166
 const ITEM_H = ITEM_BOTTOM - ITEM_TOP
-const TITLE_H = 112
 const MIN_ROW_GAP = 36
 
 const X_A = 40
@@ -37,12 +36,8 @@ const SPLIT_TOP = 52
 const JOIN_Y = 114
 const RESULT_TOP = 128
 
-export function bodyTop() {
-  return MARGIN_TOP + TITLE_H
-}
-
 function rowsPerPage() {
-  const avail = PAGE_H - MARGIN_BOTTOM - bodyTop()
+  const avail = sheetBodyHeight()
   return Math.max(1, Math.floor((avail + MIN_ROW_GAP) / (ITEM_H + MIN_ROW_GAP)))
 }
 
@@ -52,7 +47,7 @@ export function perPage() {
 
 export function layoutMath(options: MathOptions): MathPage[] {
   const rows = rowsPerPage()
-  const avail = PAGE_H - MARGIN_BOTTOM - bodyTop()
+  const avail = sheetBodyHeight()
   const gap = rows > 1 ? (avail - rows * ITEM_H) / (rows - 1) : 0
   const colW = contentWidth() / PER_ROW
   const inset = (colW - ITEM_W) / 2
@@ -65,7 +60,7 @@ export function layoutMath(options: MathOptions): MathPage[] {
     pages[pages.length - 1].items.push({
       problem,
       x: MARGIN_X + col * colW + inset,
-      y: bodyTop() + row * (ITEM_H + gap) - ITEM_TOP,
+      y: sheetBodyTop() + row * (ITEM_H + gap) - ITEM_TOP,
     })
   })
   return pages
@@ -149,37 +144,8 @@ function drawProblem(pen: SheetPen, kind: TenKind, problem: Problem, x: number, 
   sign(pen, '+', (restX + edgeX) / 2, resultY - 14)
 }
 
-export function drawTitle(pen: SheetPen, kind: MathKind) {
-  pen.font = '700 34px sans-serif'
-  pen.fillStyle = '#1c2430'
-  pen.textAlign = 'center'
-  pen.textBaseline = 'middle'
-  pen.fillText(SHEET_TITLES[kind], PAGE_W / 2, MARGIN_TOP + 18)
-  const fields = [SHEET_NAME_LABEL, SHEET_DATE_LABEL, SHEET_TIME_LABEL]
-  const y = MARGIN_TOP + 72
-  const slot = contentWidth() / fields.length
-  pen.font = '500 20px sans-serif'
-  pen.fillStyle = '#6b7385'
-  pen.textAlign = 'left'
-  pen.strokeStyle = '#c3c9d4'
-  pen.lineWidth = 1.5
-  pen.setLineDash([])
-  fields.forEach((label, index) => {
-    const left = MARGIN_X + index * slot + 40
-    const text = `${label}：`
-    pen.fillText(text, left, y)
-    const start = left + textWidth(text, 20) + 4
-    pen.beginPath()
-    pen.moveTo(start, y + 14)
-    pen.lineTo(start + 180, y + 14)
-    pen.stroke()
-  })
-}
-
 export function drawMathSheet(pen: SheetPen, page: MathPage, pageIndex: number, pageCount: number, options: MathOptions) {
-  pen.fillStyle = '#ffffff'
-  pen.fillRect(0, 0, PAGE_W, PAGE_H)
-  drawTitle(pen, options.kind)
-  for (const item of page.items) drawProblem(pen, options.kind, item.problem, item.x, item.y, options.hint)
-  drawBrand(pen, pageIndex, pageCount)
+  drawSheetPage(pen, SHEET_TITLES[options.kind], pageIndex, pageCount, () => {
+    for (const item of page.items) drawProblem(pen, options.kind, item.problem, item.x, item.y, options.hint)
+  })
 }
