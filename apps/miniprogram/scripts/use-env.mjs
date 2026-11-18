@@ -56,6 +56,9 @@ if (!appid) console.warn(`[env] ${path.basename(envFile)} 没有填写 WX_APPID�
 if (!env.VITE_CLOUD_ENV && (!env.VITE_CLOUD_ENV_DEV || !env.VITE_CLOUD_ENV_PROD)) {
   console.warn(`[env] ${path.basename(envFile)} 缺少 VITE_CLOUD_ENV_DEV 或 VITE_CLOUD_ENV_PROD，缺的那一档会连到默认云环境。`)
 }
+if (!env.VITE_COPYBOOK_FONT_DEV || !env.VITE_COPYBOOK_FONT_PROD) {
+  console.warn(`[env] ${path.basename(envFile)} 缺少 VITE_COPYBOOK_FONT_DEV 或 VITE_COPYBOOK_FONT_PROD，真机生成字帖会用系统字体而不是楷体。`)
+}
 if (env.VITE_CLOUD_ENV) {
   console.warn(`[env] VITE_CLOUD_ENV=${env.VITE_CLOUD_ENV} 会让体验版和正式版连同一个环境，上传正式版前请删掉。`)
 }

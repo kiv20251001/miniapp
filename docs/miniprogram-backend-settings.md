@@ -17,6 +17,7 @@
 | 开发管理 → 开发设置 | 复制 AppID，填进 `apps/miniprogram/.env` | 全部 |
 | 云开发控制台 | 开通环境，部署云函数 `api`、`remind`，上传 `remind` 的触发器 | 登录、课表、账单、提醒 |
 | 云开发 → 数据库 | `users`、`families`、`invites`、`reminders` 权限改成「所有用户不可读写」 | 数据安全 |
+| 云开发 → 存储 | 上传 `fonts/copybook-kai.woff`，File ID 填进 `.env` | 真机字帖显示楷体 |
 | 功能 → 订阅消息 | 从公共模板库选一个上课提醒模板 | 课前 15 分钟提醒 |
 | 设置 → 服务内容声明 → 用户隐私保护指引 | 勾选「用户信息」「剪切板」「相册（仅写入）」 | 登录头像昵称、邀请码、粘贴作业、保存练习图片 |
 | 设置 → 基本设置 | 名称、头像、简介、服务类目（工具类） | 审核 |
@@ -96,6 +97,19 @@
 
 - 用离屏画布 `wx.createOffscreenCanvas` 画 A4 页面，需要较新的基础库。建议在「设置」→「基本设置」把**基础库最低版本**设为 2.32.3 或更高，太旧的微信会被提示升级，不会生成到一半失败。
 
+**字帖楷体字体（云存储）**
+
+手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。所以字帖的楷体要从云存储下载：
+
+1. 在 `apps/miniprogram` 下执行 `pip3 install fonttools`，再执行 `node scripts/build-copybook-font.mjs`，生成 `fonts/copybook-kai.woff`（约 2MB）。字体是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。`fonts/` 不入库。
+2. 云开发控制台 →「存储」，在**测试和正式两个环境**里各新建 `fonts` 文件夹，上传 `copybook-kai.woff`。
+3. 点文件，复制 File ID（`cloud://` 开头），分别填进 `.env` 的 `VITE_COPYBOOK_FONT_DEV=`、`VITE_COPYBOOK_FONT_PROD=`，重新打包。
+4. 存储权限保持默认的「所有用户可读，仅创建者可读写」即可。
+
+小程序用 `wx.cloud.downloadFile` 下载，第一次打开字帖页时在后台下载，存到用户目录，之后不再下载。不需要配置下载域名。字体用 Data URL 注册，需要基础库 3.7.9 或更高；更低的版本、没填 File ID 或下载失败时，退回系统字体，功能不受影响。
+
+不做的现象：真机生成的字帖是宋体或黑体，模拟器正常。换了字体文件要换个文件名重新上传，并更新 File ID，旧缓存才会失效。
+
 ## 5. 基本信息、类目和成员
 
 - 「设置」→「基本设置」：名称、简称、头像、功能介绍按 [miniprogram-profile.md](miniprogram-profile.md) 填写。
@@ -110,7 +124,7 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| `apps/miniprogram/.env` | `WX_APPID`、`VITE_CLOUD_ENV_DEV`、`VITE_CLOUD_ENV_PROD`。只放公开标识，可以入库 |
+| `apps/miniprogram/.env` | `WX_APPID`、`VITE_CLOUD_ENV_DEV`、`VITE_CLOUD_ENV_PROD`、`VITE_COPYBOOK_FONT_DEV`、`VITE_COPYBOOK_FONT_PROD`。只放公开标识，可以入库 |
 | `apps/miniprogram/src/domain/remind.config.json` | 订阅模板 ID 和字段键名 |
 | `apps/miniprogram/cloudfunctions/api/config.json` | 云函数接口权限 |
 | `apps/miniprogram/cloudfunctions/remind/config.json` | 云函数接口权限和定时触发器 |
@@ -125,6 +139,7 @@
 - [ ] 数据库集合权限是「所有用户不可读写」
 - [ ] 订阅消息模板已选用，字段和 `remind.config.json` 一致
 - [ ] 隐私指引已勾选「用户信息」「剪切板」「相册（仅写入）」，且审核通过
+- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.woff`，File ID 已填进 `.env`
 - [ ] 基础库最低版本 ≥ 2.32.3
 - [ ] 服务类目是不需要资质的工具类
-- [ ] 真机试过：登录选头像昵称、复制邀请码、设置提醒、保存练习图片、保存 PDF
+- [ ] 真机试过：登录选头像昵称、复制邀请码、设置提醒、生成字帖是楷体、保存练习图片、保存 PDF

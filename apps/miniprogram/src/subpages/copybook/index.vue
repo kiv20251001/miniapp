@@ -11,6 +11,7 @@ import { formTip } from '@/utils/form'
 import { randomGradeText, type GradeId } from './grades'
 import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } from './render'
 import { renderSheetFiles } from './export'
+import { loadKaiFont } from './font'
 import { saveSheetImages, saveSheetPdf } from '../print/save'
 import { scrollToFirstSheet } from '../print/scroll'
 
@@ -21,6 +22,7 @@ onShareTimeline(() => toolMoments('copybook'))
 const pageBg = usePageBackground()
 const instance = getCurrentInstance()
 const MAX_SLOTS = 12
+loadKaiFont()
 
 const STYLES: Array<{ value: GridStyle; label: string }> = [
   { value: 'tian', label: '田字格' },
@@ -178,8 +180,10 @@ async function generate() {
     return
   }
   rendering.value = true
-  uni.showLoading({ title: '正在排版…', mask: true })
+  uni.showLoading({ title: '正在加载楷体…', mask: true })
   try {
+    if (!english.value) await loadKaiFont()
+    uni.showLoading({ title: '正在排版…', mask: true })
     images.value = await renderSheetFiles(sheet)
     uni.hideLoading()
     await nextTick()
@@ -399,7 +403,7 @@ async function savePdf() {
   top: 50%;
   transform: translateY(-50%);
   text-align: center;
-  font-family: STKaiti, "Kaiti SC", KaiTi, "\6977\4f53", "\6977\4f53_GB2312", serif;
+  font-family: UdayKai, STKaiti, "Kaiti SC", KaiTi, "\6977\4f53", "\6977\4f53_GB2312", serif;
   line-height: 1;
 }
 .guide { position: absolute; inset: 2px; pointer-events: none; }

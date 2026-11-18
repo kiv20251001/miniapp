@@ -785,6 +785,7 @@ export const EN: Record<string, string> = {
   '内容大约 {n} 页，一次最多 {max} 页，请缩短文字或调小格子': 'About {n} pages. Limit is {max}. Shorten the text or use a smaller grid.',
   '内容大约 {n} 页，一次最多 {max} 页，请缩短文字': 'About {n} pages. Limit is {max}. Shorten the text.',
   '正在排版…': 'Laying out…',
+  '正在加载楷体…': 'Loading font…',
   '当前微信版本不支持生成字帖，请升级微信后再试': 'Update WeChat to generate a copybook.',
   '生成图片失败': "Couldn't create the image",
   '需要相册权限': 'Photos access',
