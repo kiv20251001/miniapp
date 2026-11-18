@@ -32,7 +32,7 @@ export async function saveSheetImages(files: string[]) {
       later(() =>
         uni.showModal({
           title: '需要相册权限',
-          content: '保存字帖图片需要允许访问相册。',
+          content: '保存练习图片需要允许访问相册。',
           confirmText: '去设置',
           success: (result) => {
             if (result.confirm) uni.openSetting({})

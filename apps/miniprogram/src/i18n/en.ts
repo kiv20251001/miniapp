@@ -779,7 +779,7 @@ export const EN: Record<string, string> = {
   '当前微信版本不支持生成字帖，请升级微信后再试': 'Update WeChat to generate a copybook.',
   '生成图片失败': "Couldn't create the image",
   '需要相册权限': 'Photos access',
-  '保存字帖图片需要允许访问相册。': 'Allow photo access to save the copybook.',
+  '保存练习图片需要允许访问相册。': 'Allow photo access to save the worksheets.',
   '去设置': 'Settings',
   '正在保存…': 'Saving…',
   '保存图片失败': "Couldn't save the image",

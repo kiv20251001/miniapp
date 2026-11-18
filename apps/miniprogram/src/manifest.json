@@ -26,7 +26,7 @@
     "lazyCodeLoading": "requiredComponents",
     "permission": {
       "scope.writePhotosAlbum": {
-        "desc": "保存字帖图片到相册，方便打印"
+        "desc": "保存字帖、计算题、时钟练习图片到相册，方便打印"
       }
     },
     "usingComponents": true
