@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { toolMoments, toolShare, type ToolShareKey } from '@/utils/share'
+import { TOOL_SHARE_TITLES, toolMoments, toolShare, useSearchTitle, type ToolShareKey } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -34,6 +34,7 @@ const TAB_SHARE: Record<Tab, ToolShareKey> = { explore: 'pizza', quiz: 'pizzaQui
 const tab = ref<Tab>('explore')
 onShareAppMessage(() => toolShare(TAB_SHARE[tab.value], `/subpages/pizza/index?tab=${tab.value}`))
 onShareTimeline(() => toolMoments(TAB_SHARE[tab.value], `tab=${tab.value}`))
+useSearchTitle(() => t(TOOL_SHARE_TITLES[TAB_SHARE[tab.value]]))
 onLoad((query) => {
   const value = query?.tab
   if (value === 'quiz' || value === 'print') setTab(value)

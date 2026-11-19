@@ -2,7 +2,7 @@
 import { computed, getCurrentInstance, nextTick, ref, shallowRef, watch } from 'vue'
 import { onHide, onReady, onShareAppMessage, onShareTimeline, onShow, onUnload } from '@dcloudio/uni-app'
 import dayjs from 'dayjs'
-import { toolMoments, toolShare } from '@/utils/share'
+import { TOOL_SHARE_TITLES, toolMoments, toolShare, useSearchTitle } from '@/utils/share'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
 import { isEn, t } from '@/i18n'
@@ -13,6 +13,7 @@ import { SolarScene, type CanvasNode, type Mode, type SceneInfo, type TouchPoint
 
 onShareAppMessage(() => toolShare('solar', '/subsolar/index'))
 onShareTimeline(() => toolMoments('solar'))
+useSearchTitle(() => t(TOOL_SHARE_TITLES.solar))
 
 const themeClass = useThemePage()
 const pageBg = usePageBackground()

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { onLoad, onPageScroll, onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-import { appShare, momentsShare, toolMoments, toolShare } from '@/utils/share'
+import { t } from '@/i18n'
+import { TOOL_SHARE_TITLES, appShare, momentsShare, toolMoments, toolShare, useSearchTitle } from '@/utils/share'
 import { syncFamily, useFamilyPage } from '@/composables/useFamilyPage'
 import { useUiStore } from '@/stores/ui'
 import { HOME_PATH, isTabKey, type TabKey } from '@/utils/nav'
@@ -21,6 +22,7 @@ import ToolboxView from '@/views/ToolboxView.vue'
 useFamilyPage()
 const themeClass = useThemePage()
 const ui = useUiStore()
+useSearchTitle(() => (ui.tab === 'tools' ? t(TOOL_SHARE_TITLES.toolbox) : t('Uday 家庭课表')))
 onShareAppMessage(() => (ui.tab === 'tools' ? toolShare('toolbox', `${HOME_PATH}?tab=tools`) : appShare()))
 onShareTimeline(() => (ui.tab === 'tools' ? toolMoments('toolbox', 'tab=tools') : momentsShare()))
 const pageBg = usePageBackground()

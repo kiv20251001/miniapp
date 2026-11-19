@@ -4,29 +4,25 @@ import { t } from '@/i18n'
 import { TOOLS } from '@/data/tools'
 
 defineProps<{ back?: boolean }>()
-
-function openTool(url: string) {
-  uni.navigateTo({ url })
-}
 </script>
 
 <template>
   <view class="page toolbox" :class="{ 'is-page': back }">
-    <PageHeader :safe="back" :show-back="back" :title="t('工具箱')" :caption="t('工欲善其事，必先利其器')" />
+    <PageHeader :safe="back" :show-back="back" :title="t('工具箱')" :caption="t('字帖、计算题、时钟、分数和太阳系')" />
     <view class="tool-grid">
-      <view
+      <navigator
         v-for="tool in TOOLS"
         :key="tool.key"
         class="tool press"
         hover-class="press-on"
         hover-stay-time="80"
-        @click="openTool(tool.url)"
+        :url="tool.url"
       >
         <view class="tool-icon">
           <image class="tool-glyph" :src="tool.image" mode="aspectFit" />
         </view>
         <text class="tool-name">{{ t(tool.name) }}</text>
-      </view>
+      </navigator>
       <view class="tool soon">
         <view class="tool-icon">
           <image class="tool-glyph" src="/static/tools/soon.png" mode="aspectFit" />
@@ -44,6 +40,8 @@ function openTool(url: string) {
 .tool {
   display: flex;
   width: 25%;
+  color: inherit;
+  text-decoration: none;
   box-sizing: border-box;
   flex-direction: column;
   align-items: center;

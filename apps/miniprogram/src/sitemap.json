@@ -1,0 +1,11 @@
+{
+  "rules": [
+    { "action": "disallow", "page": "pages/login/index" },
+    { "action": "disallow", "page": "subpages/bills/index" },
+    { "action": "disallow", "page": "subpages/course-edit/index" },
+    { "action": "disallow", "page": "subpages/course-bills/index" },
+    { "action": "disallow", "page": "subpages/expense-edit/index" },
+    { "action": "disallow", "page": "subpages/family/index" },
+    { "action": "disallow", "page": "subpages/stats/index" }
+  ]
+}

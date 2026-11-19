@@ -120,7 +120,7 @@
 
 ## 6. 基本信息、类目和成员
 
-- 「设置」→「基本设置」：名称、简称、头像、功能介绍按 [miniprogram-profile.md](miniprogram-profile.md) 填写。
+- 「设置」→「基本设置」：名称、简称、头像、功能介绍按 [miniprogram-profile.md](miniprogram-profile.md) 填写。已上线后改功能介绍，以及对外宣传文案，按 [miniprogram-seo.md](miniprogram-seo.md)。
 - 服务类目选个人主体可用、**不需要资质**的工具类（效率、备忘录一类）。不要选教育培训类，会要求办学资质。
 - 「管理」→「成员管理」：
   - 要上传代码、部署云函数的人加为**开发者**。

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
 import { onHide, onLoad, onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { toolMoments, toolShare, type ToolShareKey } from '@/utils/share'
+import { TOOL_SHARE_TITLES, toolMoments, toolShare, useSearchTitle, type ToolShareKey } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -45,6 +45,7 @@ const QUESTIONS = 5
 
 type Tab = 'explore' | 'quiz' | 'print'
 const tab = ref<Tab>('explore')
+useSearchTitle(() => t(TOOL_SHARE_TITLES[TAB_SHARE[tab.value]]))
 
 // ---- 探索 ----
 const total = ref(nowSeconds())

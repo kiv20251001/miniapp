@@ -1,3 +1,5 @@
+import { watch } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { t } from '@/i18n'
 
 /** 右上角转发、朋友圈和邀请家人共用同一张推广图。好友卡片是 5:4，朋友圈缩略图会裁成正方形。 */
@@ -85,6 +87,18 @@ export function toolShare(key: ToolShareKey, path: string): ShareContent {
 /** 朋友圈缩略图会裁成正方形，横图左边的标题会被裁掉，所以仍用居中排版的推广图，只换成工具自己的标题。 */
 export function toolMoments(key: ToolShareKey, query = '') {
   return { title: t(TOOL_SHARE_TITLES[key]), query, imageUrl: SHARE_IMAGE }
+}
+
+/**
+ * 全局是自定义导航，系统标题栏不显示。
+ * 这里仍写入页面标题，供搜一搜理解这一页，界面不变。
+ */
+export function useSearchTitle(title: () => string) {
+  function apply() {
+    uni.setNavigationBarTitle({ title: title() })
+  }
+  onShow(apply)
+  watch(title, apply)
 }
 
 export function inviteShare(code: string): ShareContent {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { toolMoments, toolShare } from '@/utils/share'
+import { toolMoments, toolShare, useSearchTitle, TOOL_SHARE_TITLES } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -13,6 +13,7 @@ useFamilyPage()
 const themeClass = useThemePage()
 onShareAppMessage(() => toolShare('maths', '/subpages/maths/index'))
 onShareTimeline(() => toolMoments('maths'))
+useSearchTitle(() => t(TOOL_SHARE_TITLES.maths))
 const pageBg = usePageBackground()
 
 const previews = reactive<Partial<Record<MathKind, string>>>({})
@@ -27,9 +28,6 @@ onMounted(async () => {
   }
 })
 
-function open(kind: MathKind) {
-  uni.navigateTo({ url: `/subpages/maths/sheet?kind=${kind}` })
-}
 </script>
 
 <template>
@@ -37,13 +35,13 @@ function open(kind: MathKind) {
   <view class="theme-root page sub maths" :class="themeClass">
     <PageHeader safe show-back :title="t('计算题生成')" :caption="t('选一种题型，按 A4 排版打印')" />
     <view class="kind-grid">
-      <view
+      <navigator
         v-for="item in MATH_KINDS"
         :key="item.kind"
         class="kind-card press"
         hover-class="press-on"
         hover-stay-time="80"
-        @click="open(item.kind)"
+        :url="`/subpages/maths/sheet?kind=${item.kind}`"
       >
         <view class="kind-thumb">
           <image v-if="previews[item.kind]" class="thumb-img" :src="previews[item.kind]" mode="widthFix" />
@@ -53,7 +51,7 @@ function open(kind: MathKind) {
           <text class="kind-name">{{ t(item.title) }}</text>
           <text class="kind-summary">{{ t(item.summary) }}</text>
         </view>
-      </view>
+      </navigator>
       <view class="kind-card soon">
         <view class="kind-thumb">
           <view class="soon-mark">
@@ -73,7 +71,11 @@ function open(kind: MathKind) {
 <style scoped>
 .kind-grid { display: flex; flex-wrap: wrap; justify-content: space-between; padding-top: 4px; }
 .kind-card {
+  display: block;
+  box-sizing: border-box;
   width: calc(50% - 6px);
+  color: inherit;
+  text-decoration: none;
   margin-bottom: 12px;
   overflow: hidden;
   border-radius: 18px;

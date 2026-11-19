@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { toolMoments, toolShare } from '@/utils/share'
+import { TOOL_SHARE_TITLES, toolMoments, toolShare, useSearchTitle } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
@@ -19,6 +19,7 @@ useFamilyPage()
 const themeClass = useThemePage()
 onShareAppMessage(() => toolShare('copybook', '/subpages/copybook/index'))
 onShareTimeline(() => toolMoments('copybook'))
+useSearchTitle(() => t(TOOL_SHARE_TITLES.copybook))
 const pageBg = usePageBackground()
 const instance = getCurrentInstance()
 const MAX_SLOTS = 12

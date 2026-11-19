@@ -356,6 +356,7 @@ export const EN: Record<string, string> = {
   '先看看': 'Later',
   '家人只能查看课表和地点': 'Family can only view the schedule and places',
   '家人不能查看账单': "Family can't view bills",
+  'Uday 家庭课表': 'Uday Family Schedule',
   'Uday 家庭课表计划：今天上什么课，家人一起看': "Uday Family Schedule: today's classes, shared with family",
   '今天上什么课，Uday 家庭课表，家人一起看': "What's on today? Uday family schedule, shared with family",
   '邀请你一起看 Uday 家庭课表': 'Join my Uday family schedule',
@@ -577,7 +578,7 @@ export const EN: Record<string, string> = {
   // 工具箱 / 字帖
   '更多工具入口': 'More tools',
   '字帖生成等实用工具': 'Copybook and other tools',
-  '工欲善其事，必先利其器': 'Good tools make good work',
+  '字帖、计算题、时钟、分数和太阳系': 'Copybooks, maths, the clock, fractions and the solar system',
   '字帖生成': 'Copybook',
   '按 A4 排版，可保存图片或 PDF': 'A4 layout, save as image or PDF',
   '要练习的文字': 'Practice text',
