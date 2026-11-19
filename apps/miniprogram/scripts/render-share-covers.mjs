@@ -343,42 +343,42 @@ const PURPLE = ['#7c5cf0', '#f0ecff']
 
 const covers = [
   {
-    file: 'static/share/toolbox.jpg',
+    file: 'share/toolbox.jpg',
     accent: '#ffb45c', accent2: '#7c5cf0',
     title: '孩子练习工具箱', sub: '字帖 · 计算 · 时钟 · 披萨 · 星球',
     tags: [['一键生成', ...ORANGE], ['A4 打印', ...BLUE], ['持续更新', ...PURPLE]],
     art: await toolboxArt(),
   },
   {
-    file: 'static/share/copybook.jpg',
+    file: 'share/copybook.jpg',
     accent: '#3fbf7f', accent2: '#ffb45c',
     title: '字帖生成', sub: '汉字、英文单词都能练',
     tags: [['田字格', ...GREEN], ['拼音', ...ORANGE], ['笔顺', ...BLUE]],
     art: copybookArt(),
   },
   {
-    file: 'static/share/maths.jpg',
+    file: 'share/maths.jpg',
     accent: '#ffb45c', accent2: '#3b82f6',
     title: '计算题生成', sub: '凑十法 · 破十法 · 加减混合',
     tags: [['随机出题', ...ORANGE], ['自定义', ...BLUE], ['A4 打印', ...GREEN]],
     art: mathsArt(),
   },
   {
-    file: 'static/share/clock.jpg',
+    file: 'share/clock.jpg',
     accent: '#7cc4ff', accent2: '#ffb45c',
     title: '认识时钟', sub: '拨一拨指针，天空跟着变',
     tags: [['拖动指针', ...BLUE], ['白天黑夜', ...ORANGE], ['小测验', ...GREEN]],
     art: clockArt(),
   },
   {
-    file: 'static/share/solar.jpg',
+    file: 'share/solar.jpg',
     accent: '#7cc4ff', accent2: '#ffb340',
     title: '3D 太阳系', sub: '行星大小、公转、月相和四季',
     tags: [['动手玩', ...BLUE], ['月相', ...PURPLE], ['四季', ...ORANGE]],
     art: solarArt(),
   },
   {
-    file: 'static/share/pizza.jpg',
+    file: 'share/pizza.jpg',
     accent: '#f7c873', accent2: '#e23b2f',
     title: '认识分数', sub: '切开披萨，认识分子和分母',
     tags: [['动手切', ...ORANGE], ['几分之几', ...GREEN], ['小测验', ...BLUE]],
@@ -390,7 +390,7 @@ const font = await openFontOptions()
 for (const { file, ...cover } of covers) {
   const markup = frame(cover)
   const png = new Resvg(markup, { fitTo: { mode: 'width', value: W * SCALE }, font }).render().asPng()
-  const out = path.join(root, file)
+  const out = path.join(root, 'static', file)
   await mkdir(path.dirname(out), { recursive: true })
   const image = await Jimp.read(png)
   await writeFile(out, await image.quality(80).getBufferAsync(Jimp.MIME_JPEG))

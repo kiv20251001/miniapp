@@ -61,27 +61,24 @@ export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
  * 由 scripts/render-share-covers.mjs 生成。工具里的测验、打印、题型页共用工具那一张，标题各自不同。
  * 分享卡片读不到分包里的图片，所以都放主包，张数越少越省主包体积。
  */
-const MATHS_IMAGE = '/static/share/maths.jpg'
-const CLOCK_IMAGE = '/static/share/clock.jpg'
-const PIZZA_IMAGE = '/static/share/pizza.jpg'
 const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
-  toolbox: '/static/share/toolbox.jpg',
-  copybook: '/static/share/copybook.jpg',
-  maths: MATHS_IMAGE,
-  make10: MATHS_IMAGE,
-  break10: MATHS_IMAGE,
-  mixed: MATHS_IMAGE,
-  clock: CLOCK_IMAGE,
-  clockQuiz: CLOCK_IMAGE,
-  clockPrint: CLOCK_IMAGE,
-  solar: '/static/share/solar.jpg',
-  pizza: PIZZA_IMAGE,
-  pizzaQuiz: PIZZA_IMAGE,
-  pizzaPrint: PIZZA_IMAGE,
+  toolbox: 'toolbox',
+  copybook: 'copybook',
+  maths: 'maths',
+  make10: 'maths',
+  break10: 'maths',
+  mixed: 'maths',
+  clock: 'clock',
+  clockQuiz: 'clock',
+  clockPrint: 'clock',
+  solar: 'solar',
+  pizza: 'pizza',
+  pizzaQuiz: 'pizza',
+  pizzaPrint: 'pizza',
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {
-  return { title: t(TOOL_SHARE_TITLES[key]), path, imageUrl: TOOL_SHARE_IMAGES[key] }
+  return { title: t(TOOL_SHARE_TITLES[key]), path, imageUrl: `/static/share/${TOOL_SHARE_IMAGES[key]}.jpg` }
 }
 
 /** 朋友圈缩略图会裁成正方形，横图左边的标题会被裁掉，所以仍用居中排版的推广图，只换成工具自己的标题。 */

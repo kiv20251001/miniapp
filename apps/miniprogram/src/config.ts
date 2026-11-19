@@ -25,3 +25,16 @@ export const CLOUD_ENV =
   import.meta.env.VITE_CLOUD_ENV ||
   (APP_ENV === 'prod' ? import.meta.env.VITE_CLOUD_ENV_PROD : import.meta.env.VITE_CLOUD_ENV_DEV) ||
   ''
+
+/**
+ * 云存储根目录 cloud://环境.桶。.env 里可以直接粘贴该环境任意一个文件的 File ID，只取开头这一段。
+ * 仓库里 cloud-storage/ 的目录结构要原样上传到这里，见 docs/miniprogram-backend-settings.md。
+ * 现在只放字帖楷体；以后图片多了，大图也放这里，用 cloudFile 取。
+ */
+const CLOUD_STORAGE =
+  ((APP_ENV === 'prod' ? import.meta.env.VITE_CLOUD_STORAGE_PROD : import.meta.env.VITE_CLOUD_STORAGE_DEV) || '').match(/^cloud:\/\/[^/]+/)?.[0] ?? ''
+
+/** 云存储里文件的 File ID，例如 cloudFile('fonts/copybook-kai.woff')。没配置云存储时返回空字符串。 */
+export function cloudFile(path: string) {
+  return CLOUD_STORAGE ? `${CLOUD_STORAGE}/${path}` : ''
+}

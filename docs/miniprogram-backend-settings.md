@@ -17,7 +17,7 @@
 | 开发管理 → 开发设置 | 复制 AppID，填进 `apps/miniprogram/.env` | 全部 |
 | 云开发控制台 | 开通环境，部署云函数 `api`、`remind`，上传 `remind` 的触发器 | 登录、课表、账单、提醒 |
 | 云开发 → 数据库 | `users`、`families`、`invites`、`reminders` 权限改成「所有用户不可读写」 | 数据安全 |
-| 云开发 → 存储 | 上传 `fonts/copybook-kai.woff`，File ID 填进 `.env` | 真机字帖显示楷体 |
+| 云开发 → 存储 | 把 `apps/miniprogram/cloud-storage/fonts` 原样上传，File ID 填进 `.env` 的 `VITE_CLOUD_STORAGE_*` | 真机字帖显示楷体 |
 | 功能 → 订阅消息 | 从公共模板库选一个上课提醒模板 | 课前 15 分钟提醒 |
 | 设置 → 服务内容声明 → 用户隐私保护指引 | 勾选「用户信息」「剪切板」「相册（仅写入）」 | 登录头像昵称、邀请码、粘贴作业、保存练习图片 |
 | 设置 → 基本设置 | 名称、头像、简介、服务类目（工具类） | 审核 |
@@ -97,18 +97,28 @@
 
 - 用离屏画布 `wx.createOffscreenCanvas` 画 A4 页面，需要较新的基础库。建议在「设置」→「基本设置」把**基础库最低版本**设为 2.32.3 或更高，太旧的微信会被提示升级，不会生成到一半失败。
 
-**字帖楷体字体（云存储）**
+**云存储文件（字帖楷体）**
 
-手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。所以字帖的楷体要从云存储下载：
+手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。字体约 2MB，超过分包上限，只能放云存储。仓库里按云存储的目录结构放在 `apps/miniprogram/cloud-storage/`，现在只有 `fonts/copybook-kai.woff`。
 
-1. 在 `apps/miniprogram` 下执行 `pip3 install fonttools`，再执行 `node scripts/build-copybook-font.mjs`，生成 `fonts/copybook-kai.woff`（约 2MB）。字体是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。`.gitignore` 只放行 `fonts/copybook-kai.woff`（OFL 允许分发，2MB），25MB 的源 `.ttf` 和 `chars.txt` 不入库。
-2. 云开发控制台 →「存储」，在**测试和正式两个环境**里各新建 `fonts` 文件夹，上传 `copybook-kai.woff`。
-3. 点文件，复制 File ID（`cloud://` 开头），分别填进 `.env` 的 `VITE_COPYBOOK_FONT_DEV=`、`VITE_COPYBOOK_FONT_PROD=`，重新打包。
+步骤：
+
+1. 云开发控制台 →「存储」→「存储管理」，在**测试和正式两个环境**里各新建 `fonts` 文件夹，上传 `cloud-storage/fonts/copybook-kai.woff`。文件夹名和文件名要和仓库里一样。
+2. 在该环境里点这个文件，复制 File ID（`cloud://` 开头），填进 `.env`：测试环境的填 `VITE_CLOUD_STORAGE_DEV=`，正式环境的填 `VITE_CLOUD_STORAGE_PROD=`。代码只取 `cloud://环境.桶` 这一段，后面的路径不影响。只建了一个环境就两项填同一个。
+3. 重新打包。打包输出里不再有「没有填写 VITE_CLOUD_STORAGE_…」的警告就对了。
 4. 存储权限保持默认的「所有用户可读，仅创建者可读写」即可。
 
-小程序用 `wx.cloud.downloadFile` 下载，第一次打开字帖页时在后台下载，存到用户目录，之后不再下载。不需要配置下载域名。字体用 Data URL 注册，需要基础库 3.7.9 或更高；更低的版本、没填 File ID 或下载失败时，退回系统字体，功能不受影响。
+字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。字体用 Data URL 注册，需要基础库 3.7.9 或更高。
 
-不做的现象：真机生成的字帖是宋体或黑体，模拟器正常。换了字体文件要换个文件名重新上传，并更新 File ID，旧缓存才会失效。
+没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响；开发版、体验版点「生成」会弹窗写明是哪一步失败，正式版不弹。
+
+不做的现象：真机生成的字帖是宋体或黑体，模拟器正常。换了字体文件要改个文件名重新上传并同步改代码里的路径，手机上的旧缓存才会失效。
+
+**代码包图片合计 200K（建议项）**
+
+代码质量扫描的「图片和音频资源大小应不超过 200K」指的是代码包里所有图片、音频**加起来**，不是单个文件。这一项只是建议，不影响上传、审核和发布。
+
+现在合计约 325K：工具分享海报（`static/share/`，6 张约 195K）、工具图标（原图 PNG，约 47K）、界面图标（矢量 SVG，约 38K）、头像图和通用推广图。界面里展示的图标要保持高清，不要用有损压缩换体积，线条图标优先用 SVG。以后图片多了，把分享海报这类大图挪到 `cloud-storage/` 上传云存储，代码里用 `cloudFile('路径')` 取 File ID（分享卡片从基础库 2.8.1 起支持云文件）。
 
 ## 5. 3D 太阳系
 
@@ -132,7 +142,8 @@
 
 | 文件 | 内容 |
 | --- | --- |
-| `apps/miniprogram/.env` | `WX_APPID`、`VITE_CLOUD_ENV_DEV`、`VITE_CLOUD_ENV_PROD`、`VITE_COPYBOOK_FONT_DEV`、`VITE_COPYBOOK_FONT_PROD`。只放公开标识，可以入库 |
+| `apps/miniprogram/.env` | `WX_APPID`、`VITE_CLOUD_ENV_DEV`、`VITE_CLOUD_ENV_PROD`、`VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`。只放公开标识，可以入库 |
+| `apps/miniprogram/cloud-storage/` | 要原样上传到两个环境云存储的文件 |
 | `apps/miniprogram/src/domain/remind.config.json` | 订阅模板 ID 和字段键名 |
 | `apps/miniprogram/cloudfunctions/api/config.json` | 云函数接口权限 |
 | `apps/miniprogram/cloudfunctions/remind/config.json` | 云函数接口权限和定时触发器 |
@@ -147,7 +158,7 @@
 - [ ] 数据库集合权限是「所有用户不可读写」
 - [ ] 订阅消息模板已选用，字段和 `remind.config.json` 一致
 - [ ] 隐私指引已勾选「用户信息」「剪切板」「相册（仅写入）」，且审核通过
-- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.woff`，File ID 已填进 `.env`
+- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.woff`，`.env` 已填 `VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`
 - [ ] 基础库最低版本 ≥ 2.32.3
 - [ ] 服务类目是不需要资质的工具类
 - [ ] 真机试过：登录选头像昵称、复制邀请码、设置提醒、生成字帖是楷体、保存练习图片、保存 PDF、3D 太阳系能拖动旋转、双指缩放、点星球能看到文字讲解

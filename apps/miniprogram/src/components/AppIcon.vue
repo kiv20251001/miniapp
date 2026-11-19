@@ -12,7 +12,7 @@ withDefaults(defineProps<{
 <template>
   <image
     class="app-icon"
-    :src="`/static/icons/${name}-${tone}.png`"
+    :src="`/static/icons/${name}-${tone}.svg`"
     mode="aspectFit"
     :style="{ width: size + 'px', height: size + 'px' }"
   />

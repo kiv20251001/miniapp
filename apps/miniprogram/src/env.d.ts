@@ -7,10 +7,10 @@ interface ImportMetaEnv {
   readonly VITE_CLOUD_ENV_PROD?: string
   /** 临时强制所有版本连接同一个云环境，只写在 .env.*.local */
   readonly VITE_CLOUD_ENV?: string
-  /** 字帖楷体字体：开发版、体验版用的云存储 fileID 或 https 地址 */
-  readonly VITE_COPYBOOK_FONT_DEV?: string
-  /** 字帖楷体字体：正式版用的云存储 fileID 或 https 地址 */
-  readonly VITE_COPYBOOK_FONT_PROD?: string
+  /** 开发版、体验版的云存储根目录 cloud://环境.桶（粘贴任意文件的 File ID 也行） */
+  readonly VITE_CLOUD_STORAGE_DEV?: string
+  /** 正式版的云存储根目录 cloud://环境.桶（粘贴任意文件的 File ID 也行） */
+  readonly VITE_CLOUD_STORAGE_PROD?: string
 }
 
 interface ImportMeta {

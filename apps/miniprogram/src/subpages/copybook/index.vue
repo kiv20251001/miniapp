@@ -11,7 +11,8 @@ import { formTip } from '@/utils/form'
 import { randomGradeText, type GradeId } from './grades'
 import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } from './render'
 import { renderSheetFiles } from './export'
-import { loadKaiFont } from './font'
+import { kaiFontIssue, loadKaiFont } from './font'
+import { WX_ENV_VERSION } from '@/config'
 import { saveSheetImages, saveSheetPdf } from '../print/save'
 import { scrollToFirstSheet } from '../print/scroll'
 
@@ -183,7 +184,10 @@ async function generate() {
   rendering.value = true
   uni.showLoading({ title: '正在加载楷体…', mask: true })
   try {
-    if (!english.value) await loadKaiFont()
+    if (!english.value && !(await loadKaiFont()) && WX_ENV_VERSION !== 'release' && kaiFontIssue) {
+      uni.hideLoading()
+      await new Promise((resolve) => uni.showModal({ title: 'Kai font (dev only)', content: kaiFontIssue, showCancel: false, complete: resolve }))
+    }
     uni.showLoading({ title: '正在排版…', mask: true })
     images.value = await renderSheetFiles(sheet)
     uni.hideLoading()

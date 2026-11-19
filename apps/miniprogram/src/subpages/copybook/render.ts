@@ -1,6 +1,6 @@
 import { readingOfChar } from './readings'
 import { strokesOf } from './strokes'
-import { KAI_FAMILY } from './font'
+import { KAI_FAMILY, kaiFontReady } from './font'
 import {
   contentWidth,
   drawBrand,
@@ -79,7 +79,7 @@ const CELL_ROW_GAP = 8
 const BLANK_GAP = 14
 const TRACE_GREEN = '#17824a'
 /** 不加粗。楷体往往没有粗体，写上 700 会被换成黑体。 */
-const KAI = `"${KAI_FAMILY}", STKaiti, "Kaiti SC", KaiTi, "\u6977\u4f53", "\u6977\u4f53_GB2312", "FZKai-Z03", serif`
+const KAI = 'STKaiti, "Kaiti SC", KaiTi, "\u6977\u4f53", "\u6977\u4f53_GB2312", "FZKai-Z03", serif'
 
 const LATIN = '"Helvetica Neue", Helvetica, Arial, sans-serif'
 const STAFF_H = 78
@@ -87,8 +87,9 @@ const STAFF_GAP = 18
 const STAFF_INSET = 4
 const STAFF_PAD = 10
 
+/** 手机画布对多字体列表支持不一，楷体加载好后只写这一个名字。 */
 function kaiFont(size: number) {
-  return `${Math.round(size)}px ${KAI}`
+  return `${Math.round(size)}px ${kaiFontReady() ? `"${KAI_FAMILY}"` : KAI}`
 }
 
 /** 小写字母正好占四线格的中间一格（x 高约 0.52 em）。 */

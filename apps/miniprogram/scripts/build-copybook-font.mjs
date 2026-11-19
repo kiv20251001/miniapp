@@ -1,4 +1,4 @@
-// 生成字帖用的楷体字体子集 fonts/copybook-kai.woff，再手动上传到云存储（见 docs/miniprogram-backend-settings.md）。
+// 生成字帖用的楷体字体子集 cloud-storage/fonts/copybook-kai.woff，再上传到云存储（见 docs/miniprogram-backend-settings.md）。
 // 字体用霞鹜文楷 GB（SIL OFL 1.1，可免费商用、可随软件分发），只保留 GB2312 6763 字 + 写字表 + 标点，约 2MB。
 // 依赖 Python 的 fonttools：pip3 install fonttools。用法：node scripts/build-copybook-font.mjs
 import { execFileSync } from 'node:child_process'
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = path.join(root, 'fonts')
 const source = path.join(outDir, 'LXGWWenKaiGB-Regular.ttf')
-const output = path.join(outDir, 'copybook-kai.woff')
+const output = path.join(root, 'cloud-storage/fonts/copybook-kai.woff')
 const SOURCE_URL = 'https://github.com/lxgw/LxgwWenkaiGB/releases/latest/download/LXGWWenKaiGB-Regular.ttf'
 
 mkdirSync(outDir, { recursive: true })
@@ -55,4 +55,4 @@ try {
   console.error('需要 fonttools：pip3 install fonttools（或用 PYFTSUBSET=路径 指定 pyftsubset）')
   throw error
 }
-console.log(`已生成 ${path.relative(root, output)}，共 ${chars.size} 个字符。把它上传到两个云环境的云存储，再把 fileID 填进 .env。`)
+console.log(`已生成 ${path.relative(root, output)}，共 ${chars.size} 个字符。把 cloud-storage/ 原样上传到两个云环境的存储。`)

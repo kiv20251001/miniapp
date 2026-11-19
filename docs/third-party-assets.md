@@ -6,7 +6,7 @@
 
 | 素材 | 用在哪里 | 来源 | 许可 | 注意 |
 | --- | --- | --- | --- | --- |
-| 霞鹜文楷 GB（`fonts/copybook-kai.woff`） | 字帖楷体，放云存储 | [lxgw/LxgwWenkaiGB](https://github.com/lxgw/LxgwWenkaiGB) | SIL OFL 1.1，可商用 | 子集化时保留 name 表里的版权和许可（`build-copybook-font.mjs` 已加 `--name-IDs=*`）；不能单独售卖字体 |
+| 霞鹜文楷 GB（`cloud-storage/fonts/copybook-kai.woff`） | 字帖楷体，放云存储 | [lxgw/LxgwWenkaiGB](https://github.com/lxgw/LxgwWenkaiGB) | SIL OFL 1.1，可商用 | 子集化时保留 name 表里的版权和许可（`build-copybook-font.mjs` 已加 `--name-IDs=*`）；不能单独售卖字体 |
 | 思源黑体 Noto Sans SC | 生成分享图、工具图标时的文字 | [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk) | SIL OFL 1.1，可商用 | 只在生成脚本里用（`scripts/open-fonts.mjs`），字体文件不随包发布 |
 | hanzi-writer-data（Make Me a Hanzi） | 字帖笔顺、工具图标和分享图里的「米」等汉字笔画 | [chanind/hanzi-writer-data](https://github.com/chanind/hanzi-writer-data) | Arphic Public License，可商用、可再分发 | 派生数据（`subpages/copybook/strokes.ts`）沿用同一许可，文件头已写明 |
 | pinyin-pro | 字帖读音表（生成后只引用结果） | npm | MIT | — |

@@ -1,8 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Resvg } from '@resvg/resvg-js'
-
 const outDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src/static/icons')
 
 const course = {
@@ -36,6 +34,7 @@ const ui = {
   image: '<path d="M4.5 6.5A2 2 0 0 1 6.5 4.5h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z"/><circle cx="9" cy="9.5" r="1.5"/><path d="m5 16.5 3.6-3.2a1.4 1.4 0 0 1 1.8 0L14 16.2l1.5-1.2a1.4 1.4 0 0 1 1.8 0L20 17"/>',
   share: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/>',
   shuffle: '<path d="M4 7h11M15 7l-3-3M15 7l-3 3M20 17H9M9 17l3-3M9 17l3 3"/>',
+  toolbox: '<g stroke-width="1.5"><rect x="2.65" y="8.85" width="18.7" height="11.65" rx="2.6"/><path d="M8 9.6V8.4c0-1.5 1.7-2.4 4-2.4s4 .9 4 2.4v1.2M2.65 14.1h7.25m4.2 0h7.25"/><rect x="9.9" y="12.2" width="4.2" height="3.6" rx="1"/></g>',
   eraser: '<path d="M4.2 13.2 12.8 4.6a2 2 0 0 1 2.8 0l3.8 3.8a2 2 0 0 1 0 2.8L11 19.6H6.6L4.2 17a2.2 2.2 0 0 1 0-3.8Z"/><path d="M7 19.6h13"/>',
 }
 
@@ -48,11 +47,11 @@ const tones = {
 }
 
 function svg(body, color) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
 }
 
 function dots(color) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="${color}"/><circle cx="12" cy="12" r="1.6" fill="${color}"/><circle cx="12" cy="19" r="1.6" fill="${color}"/></svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>`
 }
 
 await mkdir(outDir, { recursive: true })
@@ -71,9 +70,9 @@ for (const [tone, color] of Object.entries(tones)) {
   jobs.push([`dots-${tone}`, dots(color)])
 }
 
+// 输出矢量 SVG：任何尺寸、任何屏幕都清晰，单个只有几百字节（代码包图片合计要在 200K 以内）。
 for (const [name, markup] of jobs) {
-  const png = new Resvg(markup, { fitTo: { mode: 'width', value: 64 } }).render().asPng()
-  await writeFile(path.join(outDir, `${name}.png`), png)
+  await writeFile(path.join(outDir, `${name}.svg`), markup)
 }
 
 console.log(`rendered ${jobs.length} icons`)
