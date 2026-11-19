@@ -1,5 +1,6 @@
 node_modules
 dist/
 .DS_Store
-apps/miniprogram/fonts/
+apps/miniprogram/fonts/*
+!apps/miniprogram/fonts/copybook-kai.woff
 apps/miniprogram/src/subsolar/vendor/

@@ -9,7 +9,6 @@ import { isEn, t } from '@/i18n'
 import { LATITUDE, OBLIQUITY, daysSinceJ2000, moonPhase, mod360, seasonInfo, type MoonPhase, type SeasonInfo } from './astro'
 import { BODY_MAP, PICKER_ORDER, factsOf, lunarDayText, nameOf, type BodyKey } from './bodies'
 import { GUIDES, MODE_HINTS, PHASE_LESSONS, SEASON_BETWEEN, SEASON_POINTS, pick, type GuideStep } from './lessons'
-import { disposeSpeech, onSpeechState, speak, speechAvailable, stopSpeech, type SpeechState } from './speech'
 import { SolarScene, type CanvasNode, type Mode, type SceneInfo, type TouchPoint } from './scene'
 
 onShareAppMessage(() => toolShare('solar', '/subsolar/index'))
@@ -37,8 +36,6 @@ const dateText = ref('')
 const phase = ref<MoonPhase | null>(null)
 const season = ref<SeasonInfo | null>(null)
 const scene = shallowRef<SolarScene | null>(null)
-const canSpeak = ref(false)
-const speech = ref<SpeechState>('idle')
 const instance = getCurrentInstance()
 let lastInfoKey = ''
 
@@ -168,7 +165,6 @@ function reveal(target: typeof pickerInto, id: string) {
 }
 
 function select(key: BodyKey | null) {
-  if (selected.value !== key) stopSpeech()
   selected.value = key
   scene.value?.focus(key)
   const index = key ? PICKER_ORDER.indexOf(key) : -1
@@ -178,7 +174,6 @@ function select(key: BodyKey | null) {
 
 function setMode(next: Mode) {
   if (mode.value === next) return
-  stopSpeech()
   if (guideIndex.value >= 0) endGuide()
   selected.value = null
   lastInfoKey = ''
@@ -201,15 +196,25 @@ function queryCanvas(callback: (result: { node?: CanvasNode; width?: number; hei
   }).exec()
 }
 
+/** 画布的显示尺寸。原生画布不跟着百分比高度变，必须写成具体像素，否则底部会留出一块白底。 */
+const canvasBox = ref<{ width: number; height: number } | null>(null)
+const canvasStyle = computed(() => (canvasBox.value ? `width:${canvasBox.value.width}px;height:${canvasBox.value.height}px;` : ''))
+
 function fitCanvas() {
-  queryCanvas((result) => {
-    if (result?.width && result?.height) scene.value?.resize(result.width, result.height)
+  measure('guide-stage').then((rect) => {
+    if (!rect?.width || !rect.height) return
+    const width = Math.round(rect.width)
+    const height = Math.round(rect.height)
+    const same = canvasBox.value?.width === width && canvasBox.value?.height === height
+    canvasBox.value = { width, height }
+    // 先让组件按这个像素尺寸排好，再改绘图缓冲区，避免缓冲区比组件矮
+    nextTick(() => setTimeout(() => scene.value?.resize(width, height), same ? 0 : 30))
   })
 }
 
-// 下面的面板高度随模式和介绍卡片变化，画布跟着变高变矮
+// 下面的面板高度随模式和介绍卡片变化，画布跟着变高变矮。引导卡片插入后要等排版结束再量。
 watch(() => [mode.value, Boolean(card.value), Boolean(phase.value), Boolean(season.value), guideIndex.value >= 0], () => {
-  nextTick(() => setTimeout(fitCanvas, 30))
+  nextTick(() => setTimeout(fitCanvas, 160))
 })
 
 function togglePlay() {
@@ -225,19 +230,6 @@ function changeSpeed(event: { detail: { value: number } }) {
 function backToToday() {
   lastInfoKey = ''
   scene.value?.resetToday()
-}
-
-async function toggleSpeech() {
-  if (!card.value) return
-  if (speech.value !== 'idle') {
-    stopSpeech()
-    return
-  }
-  try {
-    await speak(`${card.value.name}。${card.value.intro}`, en.value)
-  } catch {
-    uni.showToast({ title: t('语音讲解暂不可用'), icon: 'none' })
-  }
 }
 
 /** 画布触摸事件的 touches 自带相对画布的 x、y，旧版本基础库没有时退回 clientX、clientY。 */
@@ -328,20 +320,23 @@ const guideText = computed(() => {
 
 const guideKey = (value: Mode) => `uday-solar-guide-${value}-v1`
 
-/** 镂空四周的半透明挡板，中间留出要操作的区域。 */
+/**
+ * 镂空四周的半透明挡板，中间留出要操作的区域。
+ * 挡板比屏幕多伸出一截：小程序里 bottom:0 会停在安全区上方，底部会露出页面的白底，挡板盖不住。
+ * 也不向外扩镂空，否则会扩进卡片左右的浅色页边。
+ */
 const blockers = computed(() => {
   const rect = guideRect.value
   if (!rect) return []
-  const pad = 6
-  const top = Math.max(0, rect.top - pad)
-  const bottom = rect.top + rect.height + pad
-  const left = Math.max(0, rect.left - pad)
-  const right = rect.left + rect.width + pad
+  const top = Math.max(0, rect.top)
+  const bottom = rect.top + rect.height
+  const left = Math.max(0, rect.left)
+  const right = rect.left + rect.width
   return [
-    { top: '0px', left: '0px', right: '0px', height: `${top}px` },
-    { top: `${bottom}px`, left: '0px', right: '0px', bottom: '0px' },
-    { top: `${top}px`, left: '0px', width: `${left}px`, height: `${bottom - top}px` },
-    { top: `${top}px`, left: `${right}px`, right: '0px', height: `${bottom - top}px` },
+    { top: '-80px', left: '-80px', width: '140vw', height: `${top + 80}px` },
+    { top: `${bottom}px`, left: '-80px', width: '140vw', height: '140vh' },
+    { top: `${top}px`, left: '-80px', width: `${left + 80}px`, height: `${bottom - top}px` },
+    { top: `${top}px`, left: `${right}px`, width: '140vw', height: `${bottom - top}px` },
   ]
 })
 
@@ -361,10 +356,11 @@ async function focusGuide() {
   const step = guideStep.value
   if (!step) return
   guidePassed.value = false
-  guideRect.value = null
-  // 等引导卡片排进去、画布缩好以后再量位置
+  // 量新位置时留着上一块挡板。先清掉的话，下一步之间遮罩会整屏闪一下。
   await nextTick()
   await new Promise((resolve) => setTimeout(resolve, 160))
+  fitCanvas()
+  await new Promise((resolve) => setTimeout(resolve, 40))
   const rect = await measure(step.target)
   if (guideStep.value !== step) return
   if (!rect) {
@@ -411,10 +407,6 @@ function endGuide() {
 }
 
 onReady(() => {
-  canSpeak.value = speechAvailable()
-  onSpeechState((state) => {
-    speech.value = state
-  })
   dateText.value = dayjs(J2000 + daysSinceJ2000() * 86400000).format(t('YYYY年M月D日'))
   initScene()
 })
@@ -422,17 +414,16 @@ onReady(() => {
 onShow(() => scene.value?.start())
 onHide(() => {
   scene.value?.stop()
-  stopSpeech()
 })
 onUnload(() => {
-  disposeSpeech()
   scene.value?.dispose()
   scene.value = null
 })
 </script>
 
 <template>
-  <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
+  <!-- 窗口底色用星空色：原生画布盖不住的缝会透出窗口底色，浅色主题下就是一条白边 -->
+  <page-meta :page-style="pageBg.style" background-color="#03040a" background-color-top="#03040a" background-color-bottom="#03040a" root-background-color="#03040a" :background-text-style="pageBg.text" />
   <view class="theme-root solar-page" :class="themeClass">
     <PageHeader safe show-back :title="t('3D 太阳系')" :caption="t('看行星、比大小，动手玩月相和四季')" />
     <view class="solar">
@@ -477,6 +468,7 @@ onUnload(() => {
         <canvas
           id="solar-canvas"
           class="stage"
+          :style="canvasStyle"
           type="webgl"
           disable-scroll
           @touchstart="onTouchStart"
@@ -494,9 +486,6 @@ onUnload(() => {
             <view class="card-title">
               <text class="card-name">{{ card.name }}</text>
               <text class="card-tag">{{ card.tagline }}</text>
-            </view>
-            <view v-if="canSpeak" class="voice press" :class="{ on: speech !== 'idle' }" hover-class="press-on" @click="toggleSpeech">
-              {{ speech === 'loading' ? t('正在准备语音…') : speech === 'playing' ? t('停止讲解') : t('听讲解') }}
             </view>
             <view class="card-close press" hover-class="press-on" @click="select(null)">×</view>
           </view>
@@ -756,6 +745,8 @@ onUnload(() => {
   left: 0;
   width: 100%;
   height: 100%;
+  /* 原生画布默认白底，没铺满时先垫上和星空一样的颜色，挡板盖不住这一层 */
+  background: #03040a;
 }
 
 .bottom {
@@ -793,18 +784,6 @@ onUnload(() => {
   display: block;
   color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
-}
-.voice {
-  margin-right: 8px;
-  padding: 5px 12px;
-  border-radius: 15px;
-  background: linear-gradient(90deg, #ffb45c, #ff7a45);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.voice.on {
-  background: rgba(255, 255, 255, 0.16);
 }
 .card-close {
   width: 30px;

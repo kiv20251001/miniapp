@@ -13,7 +13,6 @@
 | Natural Earth 1:110m 陆地 | 「3D 太阳系」地球的海陆轮廓 `subsolar/earth-mask.ts` | [naturalearthdata.com](https://www.naturalearthdata.com/about/terms-of-use/) | 公有领域 | 不需要署名 |
 | three.js r162 | 「3D 太阳系」3D 渲染 | npm `three` | MIT | 打包后的 `subsolar/vendor/three.js` 保留了文件头的版权声明，不要删 |
 | dayjs、vue、pinia、uni-app | 运行时 | npm | MIT / Apache-2.0 | — |
-| 微信同声传译插件 | 「3D 太阳系」语音讲解 | 微信官方插件 `wx069ba97219f66d99` | 微信插件使用条款，免费 | 声音由插件现场合成，不随包带音频文件 |
 
 ## 项目自己画或自己写的
 
