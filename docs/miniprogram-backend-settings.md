@@ -17,7 +17,7 @@
 | 开发管理 → 开发设置 | 复制 AppID，填进 `apps/miniprogram/.env` | 全部 |
 | 云开发控制台 | 开通环境，部署云函数 `api`、`remind`，上传 `remind` 的触发器 | 登录、课表、账单、提醒 |
 | 云开发 → 数据库 | `users`、`families`、`invites`、`reminders` 权限改成「所有用户不可读写」 | 数据安全 |
-| 云开发 → 存储 | 把 `apps/miniprogram/cloud-storage/fonts` 原样上传，File ID 填进 `.env` 的 `VITE_CLOUD_STORAGE_*` | 真机字帖显示楷体 |
+| 云开发 → 存储 | 把 `apps/miniprogram/cloud-storage/` 下的 `fonts`、`body` 两个文件夹原样上传，File ID 填进 `.env` 的 `VITE_CLOUD_STORAGE_*` | 真机字帖显示楷体、「3D 人体器官」显示写实人体 |
 | 功能 → 订阅消息 | 从公共模板库选一个上课提醒模板 | 课前 15 分钟提醒 |
 | 设置 → 服务内容声明 → 用户隐私保护指引 | 勾选「用户信息」「剪切板」「相册（仅写入）」 | 登录头像昵称、邀请码、粘贴作业、保存练习图片 |
 | 设置 → 基本设置 | 名称、头像、简介、服务类目（工具类） | 审核 |
@@ -99,7 +99,7 @@
 
 **云存储文件（字帖楷体）**
 
-手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。字体约 2MB，超过分包上限，只能放云存储。仓库里按云存储的目录结构放在 `apps/miniprogram/cloud-storage/`，现在只有 `fonts/copybook-kai.woff`。
+手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。字体约 2MB，超过分包上限，只能放云存储。仓库里按云存储的目录结构放在 `apps/miniprogram/cloud-storage/`，现在有 `fonts/copybook-kai.woff` 和下面的 `body/body-v1.bin`。
 
 步骤：
 
@@ -111,6 +111,12 @@
 字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。字体用 Data URL 注册，需要基础库 3.7.9 或更高。
 
 没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响；开发版、体验版点「生成」会弹窗写明是哪一步失败，正式版不弹。
+
+**云存储文件（3D 人体模型）**
+
+「3D 人体器官」的写实人体是 `cloud-storage/body/body-v1.bin`（约 1MB，BodyParts3D 和 HuBMAP 肺，CC BY 4.0），和字体一样在**测试和正式两个环境**里各新建 `body` 文件夹上传，文件夹名和文件名不要改。用的是同一个 `VITE_CLOUD_STORAGE_*`，不用再填别的。
+
+第一次打开工具时用 `wx.cloud.downloadFile` 下载，存到用户目录，之后直接读。下载期间画面上显示「正在准备人体模型…」，超过 20 秒或下载失败就先显示代码画的简化人体，下次打开再试。模型用 `node scripts/build-body-model.mjs` 重新生成；改了模型要换文件名（`body-v2.bin`，同时改 `src/subsolar/body/realistic.ts` 里的 `FILE`），不然用户手机上的旧缓存不会更新。
 
 不做的现象：真机生成的字帖是宋体或黑体，模拟器正常。换了字体文件要改个文件名重新上传并同步改代码里的路径，手机上的旧缓存才会失效。
 

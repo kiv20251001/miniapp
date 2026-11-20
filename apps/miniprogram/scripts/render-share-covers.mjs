@@ -382,6 +382,42 @@ function unitsArt() {
     ${ticks}${labels}`)
 }
 
+/** 3D 人体器官：左边一个玻璃小人露出器官，右边三个演示的小标签。 */
+function bodyArt() {
+  const callout = (y, color, title, sub, line) => `
+    <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6" stroke-dasharray="3 3"/>
+    <rect x="128" y="${y}" width="84" height="44" rx="12" fill="#ffffff" stroke="${color}" stroke-width="1.6"/>
+    <circle cx="142" cy="${y + 22}" r="6" fill="${color}"/>
+    <text x="154" y="${y + 19}" font-family="${SANS}" font-size="12" font-weight="800" fill="${INK}">${title}</text>
+    <text x="154" y="${y + 34}" font-family="${SANS}" font-size="9.5" font-weight="700" fill="#7a8396">${sub}</text>`
+  return card(`
+    <defs>
+      <linearGradient id="glassB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef7ff"/><stop offset="1" stop-color="#c7e3fb"/></linearGradient>
+      <radialGradient id="lungB" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#ffd6dd"/><stop offset="1" stop-color="#ff8fa3"/></radialGradient>
+    </defs>
+    <g fill="url(#glassB)" stroke="#8cc4f5" stroke-width="2" stroke-linejoin="round">
+      <path d="M50 252l4-92M90 252l-4-92" stroke-width="15" stroke-linecap="round"/>
+      <path d="M30 70c-8 14-12 50-12 82M110 70c8 14 12 50 12 82" stroke-width="12" stroke-linecap="round"/>
+      <path d="M44 62h52c8 0 13 6 13 13l-5 86c-1 10-8 16-18 16H54c-10 0-17-6-18-16l-5-86c0-7 5-13 13-13z"/>
+      <circle cx="70" cy="34" r="22"/>
+    </g>
+    <g stroke="none">
+      <path d="M62 74c-13 0-20 15-20 31 0 10 5 14 11 14 9 0 14-6 14-18V80c0-3-2-6-5-6z" fill="url(#lungB)"/>
+      <path d="M78 74c13 0 20 15 20 31 0 10-5 14-11 14-9 0-14-6-14-18V80c0-3 2-6 5-6z" fill="url(#lungB)"/>
+      <path d="M70 56v18M70 74l-8 7M70 74l8 7" stroke="#6fc0ec" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M73 124c-8-6-15-10-15-17 0-4 3-7 7-7 3 0 6 2 8 5 2-3 5-5 8-5 4 0 7 3 7 7 0 7-7 11-15 17z" fill="#ff4f66"/>
+      <path d="M68 128c12-5 24 0 24 9 0 7-7 11-16 11-6 0-9-3-9-6 0-4 6-5 6-9 0-2-3-4-5-5z" fill="#ffa064"/>
+      <path d="M52 152c6-4 30-4 36 0v16c-6 4-30 4-36 0z" fill="#e0a04e"/>
+      <path d="M58 156c4 3 20 3 24 0M58 162c4 3 20 3 24 0" stroke="#ffb3a0" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+    <circle cx="63" cy="32" r="2.6" fill="#2c3654"/>
+    <circle cx="77" cy="32" r="2.6" fill="#2c3654"/>
+    <path d="M63 41c4 3 10 3 14 0" stroke="#2c3654" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    ${callout(40, '#ff8fa3', '肺的呼吸', '吸气 · 呼气', 'M98 96 C112 92 116 70 128 64')}
+    ${callout(112, '#ff4f66', '心脏跳动', '血液绕全身', 'M88 113 C106 116 114 132 128 134')}
+    ${callout(184, '#ffa064', '食物旅行', '从嘴巴到大肠', 'M92 140 C110 150 112 196 128 206')}`)
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
@@ -391,6 +427,7 @@ async function toolboxArt() {
     ['static/tools/solar.png', '3D 太阳系'],
     ['static/tools/cube.png', '3D 几何体'],
     ['static/tools/units.png', '单位换算'],
+    ['static/tools/body.png', '3D 人体'],
   ]
   const parts = []
   // 工具排成三列，最后一行不满时居中
@@ -478,6 +515,13 @@ const covers = [
     title: '单位换算', sub: '量一量、称一称，单位一看就懂',
     tags: [['小天平', ...ORANGE], ['卷尺', ...BLUE], ['A4 打印', ...GREEN]],
     art: unitsArt(),
+  },
+  {
+    file: 'share/body.jpg',
+    accent: '#7cc4ff', accent2: '#ff4f66',
+    title: '3D 人体器官', sub: '一层层剖开，看看身体里有什么',
+    tags: [['剖开看', ...BLUE], ['心跳呼吸', ...ORANGE], ['食物旅行', ...GREEN]],
+    art: bodyArt(),
   },
 ]
 

@@ -202,6 +202,31 @@ function units() {
     ${ticks}`
 }
 
+/** 3D 人体器官：一个淡蓝色的玻璃小人，胸口露出两片肺和一颗心，下面一个胃。 */
+function body() {
+  return `
+    <defs>
+      <linearGradient id="glassBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3f2ff"/><stop offset="1" stop-color="#b9dcfb"/></linearGradient>
+      <radialGradient id="lung" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#ffd0d8"/><stop offset="1" stop-color="#ff8fa3"/></radialGradient>
+      <radialGradient id="heart" cx="0.4" cy="0.3" r="0.8"><stop offset="0" stop-color="#ff7d8f"/><stop offset="1" stop-color="#e8304a"/></radialGradient>
+      <linearGradient id="stomach" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffc58a"/><stop offset="1" stop-color="#ff8a45"/></linearGradient>
+    </defs>
+    <g fill="url(#glassBody)" stroke="#86bff2" stroke-width="2">
+      <path d="M36 46c-6 12-9 28-9 46M84 46c6 12 9 28 9 46" fill="none" stroke="#86bff2" stroke-width="13" stroke-linecap="round"/>
+      <path d="M36 46c-6 12-9 28-9 46M84 46c6 12 9 28 9 46" fill="none" stroke="#d4eafd" stroke-width="9" stroke-linecap="round"/>
+      <path d="M38 40h44c4 0 7 3 7 7l-3 46c0 6-5 11-11 11H45c-6 0-11-5-11-11l-3-46c0-4 3-7 7-7z"/>
+      <circle cx="60" cy="22" r="14"/>
+    </g>
+    <path d="M52 48c-8 0-12 9-12 19 0 6 3 9 7 9 6 0 9-4 9-11V52c0-2-2-4-4-4z" fill="url(#lung)"/>
+    <path d="M68 48c8 0 12 9 12 19 0 6-3 9-7 9-6 0-9-4-9-11V52c0-2 2-4 4-4z" fill="url(#lung)"/>
+    <path d="M60 32v14M60 46l-6 5M60 46l6 5" stroke="#7cc6ee" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M62 78c-5-4-10-7-10-12 0-3 2-5 5-5 2 0 4 1 5 3 1-2 3-3 5-3 3 0 5 2 5 5 0 5-5 8-10 12z" fill="url(#heart)"/>
+    <path d="M58 82c8-3 16 0 16 6 0 5-5 8-11 8-4 0-6-2-6-4 0-3 4-3 4-6 0-2-2-3-3-4z" fill="url(#stomach)"/>
+    <circle cx="55" cy="20" r="1.8" fill="#2c3654"/>
+    <circle cx="65" cy="20" r="1.8" fill="#2c3654"/>
+    <path d="M55 26c3 2.4 7 2.4 10 0" stroke="#2c3654" stroke-width="1.8" stroke-linecap="round"/>`
+}
+
 function soon() {
   return `
     <defs>
@@ -214,7 +239,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, pizza, solar, cube, units, soon }
+const icons = { copybook, maths, clock, pizza, solar, cube, units, body, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()

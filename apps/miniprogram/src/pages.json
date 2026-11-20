@@ -42,6 +42,10 @@
         {
           "path": "cube/index",
           "style": { "navigationBarTitleText": "3D 几何体" }
+        },
+        {
+          "path": "body/index",
+          "style": { "navigationBarTitleText": "3D 人体器官" }
         }
       ]
     }

@@ -4,3 +4,4 @@ dist/
 apps/miniprogram/fonts/*
 !apps/miniprogram/fonts/copybook-kai.woff
 apps/miniprogram/src/subsolar/vendor/
+apps/miniprogram/.cache/

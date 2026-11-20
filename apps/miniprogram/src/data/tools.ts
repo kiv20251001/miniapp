@@ -1,5 +1,5 @@
 /**
- * 新增小工具：在这里加一项，并在 pages.json 的 subpages 分包里登记页面（用到 three.js 的 3D 工具放 subsolar 分包，例如 3D 太阳系、3D 几何体）。
+ * 新增小工具：在这里加一项，并在 pages.json 的 subpages 分包里登记页面（用到 three.js 的 3D 工具放 subsolar 分包，例如 3D 太阳系、3D 几何体、3D 人体器官）。
  * 图标在 scripts/render-tool-icons.mjs 里画，输出到 static/tools。
  */
 export type ToolEntry = {
@@ -51,5 +51,11 @@ export const TOOLS: ToolEntry[] = [
     name: '单位换算',
     image: '/static/tools/units.png',
     url: '/subpages/units/index',
+  },
+  {
+    key: 'body',
+    name: '3D 人体器官',
+    image: '/static/tools/body.png',
+    url: '/subsolar/body/index',
   },
 ]
