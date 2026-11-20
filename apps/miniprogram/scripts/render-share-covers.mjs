@@ -347,6 +347,41 @@ function cubeArt() {
     <g stroke="#2c3654" stroke-width="1.6" stroke-linejoin="round">${net}</g>`)
 }
 
+/** 单位换算：天平左边一袋面粉、右边两个 500 克砝码，下面一把拉出卷尺的尺子。 */
+function unitsArt() {
+  const weight = (x, label) => `
+    <path d="M${x - 14} 116l3-20h22l3 20z" fill="url(#gold)"/>
+    <rect x="${x - 5}" y="90" width="10" height="7" rx="3" fill="#d99a2b"/>
+    <text x="${x}" y="111" text-anchor="middle" font-family="${SANS}" font-size="8" font-weight="800" fill="#6b3f05">${label}</text>`
+  const ticks = Array.from({ length: 51 }, (_, index) => {
+    const x = 24 + index * 3.36
+    const h = index % 10 === 0 ? 12 : index % 5 === 0 ? 8 : 5
+    return `<path d="M${x.toFixed(2)} 222v${h}" stroke="#6b5313" stroke-width="${index % 10 === 0 ? 1.4 : 0.8}"/>`
+  }).join('')
+  const labels = [0, 1, 2, 3, 4, 5].map((n) => `<text x="${24 + n * 33.6}" y="246" text-anchor="middle" font-family="${NUM}" font-size="10" font-weight="800" fill="#6b5313">${n}</text>`).join('')
+  return card(`
+    <defs>
+      <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#d48a1f"/></linearGradient>
+      <linearGradient id="beamG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7be0a8"/><stop offset="1" stop-color="#34c77b"/></linearGradient>
+    </defs>
+    <rect x="104" y="46" width="8" height="96" rx="4" fill="#a3acbd"/>
+    <rect x="80" y="140" width="56" height="10" rx="5" fill="#7d889e"/>
+    <rect x="26" y="42" width="164" height="8" rx="4" fill="url(#beamG)"/>
+    <circle cx="108" cy="46" r="6" fill="#2c3654"/>
+    <path d="M40 50l-20 68M40 50l20 68M176 50l-20 68M176 50l20 68" stroke="#9aa3b5" stroke-width="1.4"/>
+    <path d="M14 118h52a26 9 0 0 1-52 0zM150 118h52a26 9 0 0 1-52 0z" fill="#9aa3b5"/>
+    <path d="M22 80c0-8 36-8 36 0v32a5 5 0 0 1-5 5H27a5 5 0 0 1-5-5z" fill="#f3e2c3"/>
+    <path d="M22 80c0-8 36-8 36 0-7 3-29 3-36 0z" fill="#e2c899"/>
+    <g fill="#e8b04a"><ellipse cx="36" cy="96" rx="2.6" ry="4.6" transform="rotate(-30 36 96)"/><ellipse cx="44" cy="96" rx="2.6" ry="4.6" transform="rotate(30 44 96)"/><ellipse cx="36" cy="104" rx="2.6" ry="4.6" transform="rotate(-30 36 104)"/><ellipse cx="44" cy="104" rx="2.6" ry="4.6" transform="rotate(30 44 104)"/></g>
+    ${weight(161, '500克')}
+    ${weight(191, '500克')}
+    <text x="108" y="184" text-anchor="middle" font-family="${SANS}" font-size="19" font-weight="800" fill="#ff6a33">1 千克 = 1000 克</text>
+    <rect x="24" y="200" width="114" height="12" rx="3" fill="#ff9a4d"/>
+    <rect x="134" y="196" width="8" height="20" rx="3" fill="#f15a36"/>
+    <rect x="14" y="220" width="188" height="34" rx="4" fill="#fff1c4" stroke="#f0cf74"/>
+    ${ticks}${labels}`)
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
@@ -355,21 +390,23 @@ async function toolboxArt() {
     ['static/tools/pizza.png', '认识分数'],
     ['static/tools/solar.png', '3D 太阳系'],
     ['static/tools/cube.png', '3D 几何体'],
+    ['static/tools/units.png', '单位换算'],
   ]
   const parts = []
-  // 工具排成两列，最后一行只有一个时居中
-  const tile = 62
-  const colPitch = 104
-  const rowPitch = 90
+  // 工具排成三列，最后一行不满时居中
+  const cols = 3
+  const tile = 54
+  const colPitch = 76
+  const rowPitch = 88
   for (const [index, [file, label]] of tiles.entries()) {
-    const row = Math.floor(index / 2)
-    const lastRowSingle = index === tiles.length - 1 && tiles.length % 2 === 1
-    const x = lastRowSingle ? (216 - tile) / 2 : 14 + (index % 2) * colPitch
-    const y = 4 + row * rowPitch
+    const row = Math.floor(index / cols)
+    const inRow = Math.min(cols, tiles.length - row * cols)
+    const x = (216 - (inRow - 1) * colPitch - tile) / 2 + (index % cols) * colPitch
+    const y = 10 + row * rowPitch
     parts.push(`
-      <rect x="${x}" y="${y}" width="${tile}" height="${tile}" rx="18" fill="url(#glass)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
-      <image href="${await dataUri(file)}" x="${x + 12}" y="${y + 12}" width="38" height="38"/>
-      <text x="${x + tile / 2}" y="${y + tile + 16}" text-anchor="middle" font-family="${SANS}" font-size="12" font-weight="700" fill="${INK}">${label}</text>`)
+      <rect x="${x}" y="${y}" width="${tile}" height="${tile}" rx="16" fill="url(#glass)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
+      <image href="${await dataUri(file)}" x="${x + 10}" y="${y + 10}" width="34" height="34"/>
+      <text x="${x + tile / 2}" y="${y + tile + 15}" text-anchor="middle" font-family="${SANS}" font-size="11" font-weight="700" fill="${INK}">${label}</text>`)
   }
   return `
     <defs>
@@ -434,6 +471,13 @@ const covers = [
     title: '3D 几何体', sub: '正方体、棱柱、棱锥，展开看看',
     tags: [['展开图', ...ORANGE], ['三视图', ...BLUE], ['小测验', ...GREEN]],
     art: cubeArt(),
+  },
+  {
+    file: 'share/units.jpg',
+    accent: '#ffcf4d', accent2: '#34c77b',
+    title: '单位换算', sub: '量一量、称一称，单位一看就懂',
+    tags: [['小天平', ...ORANGE], ['卷尺', ...BLUE], ['A4 打印', ...GREEN]],
+    art: unitsArt(),
   },
 ]
 

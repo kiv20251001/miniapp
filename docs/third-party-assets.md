@@ -23,6 +23,7 @@
 - `src/static/logo-u.svg`、`src/static/brand/yimu-logo.svg`：本项目品牌标识，源文件在 `docs/prd/UI/`。
 - 「3D 太阳系」的星球表面：`src/subsolar/textures.ts` 用着色器现场生成，没有贴图文件；天体讲解文字为本项目原创，数字取自公开天文常数。
 - 「3D 几何体」：几何体的顶点由代码算出（`src/subsolar/cube/solids.ts`），面上的字和颜色由 `src/subsolar/cube/textures.ts` 在画布上现场画，没有贴图文件；知识点和题目为本项目原创，参考网站只借鉴了交互方式。
+- 「单位换算」：天平、砝码、尺子、量杯、物品小图标都是 `src/subpages/units/art.ts` 里手写的 SVG（运行时转成 data URI，没有图片文件），天平和刻度用 view + CSS 画；工具箱图标 `static/tools/units.png` 和分享图 `static/share/units.jpg` 由 `scripts/render-tool-icons.mjs`、`scripts/render-share-covers.mjs` 生成；物品重量、长度等常识数据和题目为本项目原创。
 - 页面文字：小程序运行时用手机系统字体显示，不随包带字体文件。
 
 ## 待确认

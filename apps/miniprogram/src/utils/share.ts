@@ -39,7 +39,7 @@ export function momentsShare() {
 
 /** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
 export const TOOL_SHARE_TITLES = {
-  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体，孩子练习的小工具都在这',
+  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体、单位换算，孩子练习的小工具都在这',
   copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
   maths: '凑十法、破十法、加减混合，一键生成计算练习题',
   make10: '凑十法练习题一键生成，A4 打印直接练',
@@ -55,6 +55,9 @@ export const TOOL_SHARE_TITLES = {
   cube: '3D 几何体：正方体、棱柱、棱锥，转一转、数一数、展开看看',
   cubeQuiz: '正方体小测验：展开图、找对面、数方块、三视图，你能答对几题？',
   cubePrint: '正方体和长方体练习题：展开图、三视图、表面积体积，A4 打印',
+  units: '单位换算：卷尺量长度、天平称重量、方格铺面积、量杯倒容积',
+  unitsQuiz: '单位换算小测验：换一换、比一比、填单位、称一称，你能答对几题？',
+  unitsPrint: '单位换算练习题：换算填空、比大小、填单位、量一量，A4 打印',
 } as const
 
 export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
@@ -81,6 +84,9 @@ const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   cube: 'cube',
   cubeQuiz: 'cube',
   cubePrint: 'cube',
+  units: 'units',
+  unitsQuiz: 'units',
+  unitsPrint: 'units',
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {

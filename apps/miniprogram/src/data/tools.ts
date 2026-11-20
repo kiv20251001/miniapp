@@ -46,4 +46,10 @@ export const TOOLS: ToolEntry[] = [
     image: '/static/tools/cube.png',
     url: '/subsolar/cube/index',
   },
+  {
+    key: 'units',
+    name: '单位换算',
+    image: '/static/tools/units.png',
+    url: '/subpages/units/index',
+  },
 ]

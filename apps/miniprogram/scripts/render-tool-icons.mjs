@@ -173,6 +173,35 @@ function cube() {
     </g>`
 }
 
+/** 单位换算：一架天平，左盘一个苹果、右盘一个砝码，下面一把尺子。 */
+function units() {
+  const ticks = Array.from({ length: 17 }, (_, index) => {
+    const x = 22 + index * 4.75
+    const h = index % 4 === 0 ? 7 : 4
+    return `<path d="M${x.toFixed(2)} 88v${h}" stroke="#8a6a1c" stroke-width="${index % 4 === 0 ? 1.6 : 1}"/>`
+  }).join('')
+  return `
+    <defs>
+      <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#f2a93b"/></linearGradient>
+      <linearGradient id="post" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a95ab"/><stop offset="0.5" stop-color="#c3c9d6"/><stop offset="1" stop-color="#8a95ab"/></linearGradient>
+      <linearGradient id="weight" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#d48a1f"/></linearGradient>
+      <radialGradient id="apple" cx="0.38" cy="0.35" r="0.7"><stop offset="0" stop-color="#ff8a7a"/><stop offset="1" stop-color="#e23b2f"/></radialGradient>
+    </defs>
+    <rect x="57" y="26" width="6" height="50" rx="3" fill="url(#post)"/>
+    <rect x="44" y="74" width="32" height="7" rx="3.5" fill="#7d889e"/>
+    <rect x="18" y="24" width="84" height="6" rx="3" fill="url(#beam)"/>
+    <circle cx="60" cy="27" r="4.5" fill="#2c3654"/>
+    <path d="M24 30l-9 26M24 30l9 26M96 30l-9 26M96 30l9 26" stroke="#9aa3b5" stroke-width="1.4"/>
+    <path d="M11 56h26a13 6 0 0 1-26 0zM83 56h26a13 6 0 0 1-26 0z" fill="#9aa3b5"/>
+    <circle cx="24" cy="46" r="10" fill="url(#apple)"/>
+    <path d="M24 36c1-3 3-5 5-6" stroke="#7a4a2a" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M26 35c3-3 7-3 8-1-3 3-6 3-8 1z" fill="#3fbf7f"/>
+    <path d="M89 56l3-14h8l3 14z" fill="url(#weight)"/>
+    <rect x="93" y="38" width="6" height="5" rx="2" fill="#d99a2b"/>
+    <rect x="18" y="86" width="84" height="18" rx="3" fill="#ffe08a" stroke="#e8b84a" stroke-width="1.2"/>
+    ${ticks}`
+}
+
 function soon() {
   return `
     <defs>
@@ -185,7 +214,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, pizza, solar, cube, soon }
+const icons = { copybook, maths, clock, pizza, solar, cube, units, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()
