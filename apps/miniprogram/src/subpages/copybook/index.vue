@@ -13,8 +13,8 @@ import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } f
 import { renderSheetFiles } from './export'
 import { kaiFontIssue, loadKaiFont } from './font'
 import { WX_ENV_VERSION } from '@/config'
-import { saveSheetImages, saveSheetPdf } from '../print/save'
-import { scrollToFirstSheet } from '../print/scroll'
+import { saveSheetImages, saveSheetPdf } from '@/print/save'
+import { scrollToFirstSheet } from '@/print/scroll'
 
 useFamilyPage()
 const themeClass = useThemePage()

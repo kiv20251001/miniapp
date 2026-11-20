@@ -11,7 +11,7 @@
 | hanzi-writer-data（Make Me a Hanzi） | 字帖笔顺、工具图标和分享图里的「米」等汉字笔画 | [chanind/hanzi-writer-data](https://github.com/chanind/hanzi-writer-data) | Arphic Public License，可商用、可再分发 | 派生数据（`subpages/copybook/strokes.ts`）沿用同一许可，文件头已写明 |
 | pinyin-pro | 字帖读音表（生成后只引用结果） | npm | MIT | — |
 | Natural Earth 1:110m 陆地 | 「3D 太阳系」地球的海陆轮廓 `subsolar/earth-mask.ts` | [naturalearthdata.com](https://www.naturalearthdata.com/about/terms-of-use/) | 公有领域 | 不需要署名 |
-| three.js r162 | 「3D 太阳系」3D 渲染 | npm `three` | MIT | 打包后的 `subsolar/vendor/three.js` 保留了文件头的版权声明，不要删 |
+| three.js r162 | 「3D 太阳系」「3D 几何体」3D 渲染 | npm `three` | MIT | 打包后的 `subsolar/vendor/three.js` 保留了文件头的版权声明，不要删 |
 | dayjs、vue、pinia、uni-app | 运行时 | npm | MIT / Apache-2.0 | — |
 
 ## 项目自己画或自己写的
@@ -22,6 +22,7 @@
 - `src/static/tools/`、`src/static/share/`、`src/static/share-cover.jpg`：`render-tool-icons.mjs`、`render-share-covers.mjs`、`render-share-cover.mjs` 生成，文字用思源黑体。
 - `src/static/logo-u.svg`、`src/static/brand/yimu-logo.svg`：本项目品牌标识，源文件在 `docs/prd/UI/`。
 - 「3D 太阳系」的星球表面：`src/subsolar/textures.ts` 用着色器现场生成，没有贴图文件；天体讲解文字为本项目原创，数字取自公开天文常数。
+- 「3D 几何体」：几何体的顶点由代码算出（`src/subsolar/cube/solids.ts`），面上的字和颜色由 `src/subsolar/cube/textures.ts` 在画布上现场画，没有贴图文件；知识点和题目为本项目原创，参考网站只借鉴了交互方式。
 - 页面文字：小程序运行时用手机系统字体显示，不随包带字体文件。
 
 ## 待确认

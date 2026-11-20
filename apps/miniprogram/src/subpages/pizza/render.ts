@@ -1,5 +1,5 @@
-import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
-import { contentWidth, MARGIN_X, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '@/print/frame'
+import { contentWidth, MARGIN_X, type SheetPen } from '@/print/sheet'
 import { PIZZA_SHEET_TITLE } from './labels'
 import { TOPPINGS, crustWobble, inSlice } from './pizza-art'
 import type { Fraction } from './fraction'

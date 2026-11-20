@@ -1,5 +1,5 @@
-import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
-import { contentWidth, MARGIN_X, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '@/print/frame'
+import { contentWidth, MARGIN_X, type SheetPen } from '@/print/sheet'
 import { drawYimu } from './brand'
 import { CLOCK_SHEET_TITLE } from './labels'
 import { formatSheetTime, type ClockItem, type PerRow } from './worksheet'

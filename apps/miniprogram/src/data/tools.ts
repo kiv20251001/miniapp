@@ -1,5 +1,5 @@
 /**
- * 新增小工具：在这里加一项，并在 pages.json 的 subpages 分包里登记页面（体积大的工具单独开分包，例如 subsolar）。
+ * 新增小工具：在这里加一项，并在 pages.json 的 subpages 分包里登记页面（用到 three.js 的 3D 工具放 subsolar 分包，例如 3D 太阳系、3D 几何体）。
  * 图标在 scripts/render-tool-icons.mjs 里画，输出到 static/tools。
  */
 export type ToolEntry = {
@@ -39,5 +39,11 @@ export const TOOLS: ToolEntry[] = [
     name: '3D 太阳系',
     image: '/static/tools/solar.png',
     url: '/subsolar/index',
+  },
+  {
+    key: 'cube',
+    name: '3D 几何体',
+    image: '/static/tools/cube.png',
+    url: '/subsolar/cube/index',
   },
 ]

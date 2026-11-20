@@ -1,4 +1,4 @@
-import { renderPages } from '../print/export'
+import { renderPages } from '@/print/export'
 import { drawClockSheet, layoutClocks, type ClockSheetOptions } from './render'
 
 export function renderClockFiles(options: ClockSheetOptions) {

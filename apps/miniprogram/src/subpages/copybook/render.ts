@@ -12,9 +12,9 @@ import {
   PAGE_W,
   textWidth,
   type SheetPen,
-} from '../print/sheet'
+} from '@/print/sheet'
 
-export { PAGE_H, PAGE_W, type SheetPen } from '../print/sheet'
+export { PAGE_H, PAGE_W, type SheetPen } from '@/print/sheet'
 export const MAX_PAGES = 8
 
 export type GridStyle = 'tian' | 'mi' | 'line'

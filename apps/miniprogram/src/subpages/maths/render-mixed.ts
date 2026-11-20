@@ -1,5 +1,5 @@
-import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
-import { contentWidth, MARGIN_X, textWidth, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '@/print/frame'
+import { contentWidth, MARGIN_X, textWidth, type SheetPen } from '@/print/sheet'
 import { SHEET_TITLES } from './labels'
 import { chainValue, type MixedItem } from './mixed'
 

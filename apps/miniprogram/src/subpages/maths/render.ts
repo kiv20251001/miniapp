@@ -1,5 +1,5 @@
-import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '../print/frame'
-import { contentWidth, MARGIN_X, type SheetPen } from '../print/sheet'
+import { drawSheetPage, sheetBodyHeight, sheetBodyTop } from '@/print/frame'
+import { contentWidth, MARGIN_X, type SheetPen } from '@/print/sheet'
 import { SHEET_TITLES } from './labels'
 import type { Problem, TenKind } from './problems'
 

@@ -19,7 +19,7 @@ const NUM = OPEN_SANS
 const INK = '#1c2430'
 const DIAL = '#2b3340'
 
-const sheetSource = await readFile(path.join(root, 'subpages/print/sheet.ts'), 'utf8')
+const sheetSource = await readFile(path.join(root, 'print/sheet.ts'), 'utf8')
 const U_PATH = sheetSource.match(/const LOGO_PATH = '([^']+)'/)[1]
 const YIMU_PATH = (await readFile(path.join(root, 'static/brand/yimu-logo.svg'), 'utf8')).match(/ d="([^"]+)"/)[1]
 
@@ -304,6 +304,49 @@ function pizzaArt(eaten) {
     ${pepperoni}`
 }
 
+/** 3D 几何体：上面一个正方体和一个四棱锥，箭头指向下面四棱锥的展开图。 */
+function cubeArt() {
+  const p = (pt) => `${pt[0].toFixed(1)} ${pt[1].toFixed(1)}`
+  const poly = (points, fill) => `<path d="M${points.map(p).join('L')}Z" fill="${fill}"/>`
+  const s = 40
+  const c = s * Math.cos(Math.PI / 6)
+  const T = [64, 30]
+  const L = [T[0] - c, T[1] + s / 2]
+  const R = [T[0] + c, T[1] + s / 2]
+  const M = [T[0], T[1] + s]
+  const LB = [L[0], L[1] + s]
+  const RB = [R[0], R[1] + s]
+  const B = [T[0], M[1] + s]
+  const apex = [160, 30]
+  const baseL = [124, 96]
+  const baseF = [156, 112]
+  const baseR = [194, 94]
+  // 四棱锥展开图：中间正方形，四边各接一个三角形
+  const cx = 108
+  const cy = 212
+  const h = 17
+  const sq = [[cx - h, cy - h], [cx + h, cy - h], [cx + h, cy + h], [cx - h, cy + h]]
+  const tri = 30
+  const net = [
+    poly([sq[0], sq[1], [cx, cy - h - tri]], '#4fa3ff'),
+    poly([sq[1], sq[2], [cx + h + tri, cy]], '#2fcf8a'),
+    poly([sq[2], sq[3], [cx, cy + h + tri]], '#ff8f5a'),
+    poly([sq[3], sq[0], [cx - h - tri, cy]], '#a07bff'),
+    poly(sq, '#ffcf4d'),
+  ].join('')
+  return card(`
+    <g stroke="#2c3654" stroke-width="2" stroke-linejoin="round">
+      ${poly([T, R, M, L], '#ffcf4d')}
+      ${poly([L, M, B, LB], '#ff8f5a')}
+      ${poly([M, R, RB, B], '#ffb26b')}
+      ${poly([apex, baseL, baseF], '#4fa3ff')}
+      ${poly([apex, baseF, baseR], '#2f86f6')}
+    </g>
+    <path d="M176 122 C182 146 172 160 152 170" fill="none" stroke="#ff7a45" stroke-width="2.4" stroke-dasharray="5 4"/>
+    <path d="M150 162 L150 172 L160 173" fill="none" stroke="#ff7a45" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <g stroke="#2c3654" stroke-width="1.6" stroke-linejoin="round">${net}</g>`)
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
@@ -311,9 +354,10 @@ async function toolboxArt() {
     ['static/tools/clock.png', '认识时钟'],
     ['static/tools/pizza.png', '认识分数'],
     ['static/tools/solar.png', '3D 太阳系'],
+    ['static/tools/cube.png', '3D 几何体'],
   ]
   const parts = []
-  // 五个工具排成两列，最后一行只有一个时居中
+  // 工具排成两列，最后一行只有一个时居中
   const tile = 62
   const colPitch = 104
   const rowPitch = 90
@@ -345,7 +389,7 @@ const covers = [
   {
     file: 'share/toolbox.jpg',
     accent: '#ffb45c', accent2: '#7c5cf0',
-    title: '孩子练习工具箱', sub: '字帖 · 计算 · 时钟 · 披萨 · 星球',
+    title: '孩子练习工具箱', sub: '字帖 · 计算 · 时钟 · 分数 · 3D',
     tags: [['一键生成', ...ORANGE], ['A4 打印', ...BLUE], ['持续更新', ...PURPLE]],
     art: await toolboxArt(),
   },
@@ -383,6 +427,13 @@ const covers = [
     title: '认识分数', sub: '切开披萨，认识分子和分母',
     tags: [['动手切', ...ORANGE], ['几分之几', ...GREEN], ['小测验', ...BLUE]],
     art: pizzaArt(3),
+  },
+  {
+    file: 'share/cube.jpg',
+    accent: '#7cc4ff', accent2: '#ff7a45',
+    title: '3D 几何体', sub: '正方体、棱柱、棱锥，展开看看',
+    tags: [['展开图', ...ORANGE], ['三视图', ...BLUE], ['小测验', ...GREEN]],
+    art: cubeArt(),
   },
 ]
 

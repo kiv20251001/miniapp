@@ -1,4 +1,4 @@
-import type { SheetPen } from '../print/sheet'
+import type { SheetPen } from '@/print/sheet'
 
 /** 表盘上的 YIMU 品牌字，和 static/brand/yimu-logo.svg 同一个形状，只用 M/C/L/Z 方便在画布上画。 */
 const YIMU_PATH =

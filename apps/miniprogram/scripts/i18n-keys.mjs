@@ -8,7 +8,7 @@ import { build } from 'esbuild'
 const root = fileURLToPath(new URL('..', import.meta.url))
 const src = join(root, 'src')
 const CJK = /[\u3400-\u9fff]/
-const SKIP = [/^i18n\//, /^domain\/remind\.ts$/, /^env\.d\.ts$/, /\.spec\.ts$/, /^subpages\/copybook\/(grades|readings|strokes|font)\.ts$/, /^subpages\/print\/labels\.ts$/, /^subpages\/maths\/labels\.ts$/, /^subpages\/(clock|pizza)\/labels\.ts$/, /^subpages\/pizza\/fraction\.ts$/, /^subsolar\/(bodies|lessons|earth-mask)\.ts$/]
+const SKIP = [/^i18n\//, /^domain\/remind\.ts$/, /^env\.d\.ts$/, /\.spec\.ts$/, /^subpages\/copybook\/(grades|readings|strokes|font)\.ts$/, /^print\/labels\.ts$/, /^subpages\/maths\/labels\.ts$/, /^subpages\/(clock|pizza)\/labels\.ts$/, /^subpages\/pizza\/fraction\.ts$/, /^subsolar\/(bodies|lessons|earth-mask)\.ts$/, /^subsolar\/cube\/(lessons|labels)\.ts$/]
 /** 云端和共享规则返回给页面的文案也要能翻。 */
 const SHARED = [
   join(root, '../../server/src/domain'),

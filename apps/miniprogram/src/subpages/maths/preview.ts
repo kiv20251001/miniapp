@@ -1,4 +1,4 @@
-import { renderPages } from '../print/export'
+import { renderPages } from '@/print/export'
 import { placeBlanks, randomChains } from './mixed'
 import { randomProblems, type MathKind } from './problems'
 import { drawMathSheet, layoutMath, perPage } from './render'

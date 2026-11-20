@@ -10,7 +10,7 @@ const HEIGHT_PX = 22
 
 export type Label = { sprite: Sprite; aspect: number }
 
-function offscreen(width: number, height: number) {
+export function offscreen(width: number, height: number) {
   try {
     // #ifdef MP-WEIXIN
     return wx.createOffscreenCanvas?.({ type: '2d', width, height }) ?? null
@@ -21,13 +21,14 @@ function offscreen(width: number, height: number) {
   return null
 }
 
-export function createLabel(text: string, color = '#ffffff'): Label | null {
-  const font = `600 ${FONT_PX * SCALE}px sans-serif`
+/** pill：在浅色背景上用，文字下面垫一块圆角底色，不加阴影。 */
+export function createLabel(text: string, color = '#ffffff', pill?: string): Label | null {
+  const font = `${pill ? 700 : 600} ${FONT_PX * SCALE}px sans-serif`
   const probe = offscreen(8, 8)
   if (!probe) return null
   const probeCtx = probe.getContext('2d')
   probeCtx.font = font
-  const width = Math.ceil(probeCtx.measureText(text).width + 12 * SCALE)
+  const width = Math.ceil(probeCtx.measureText(text).width + (pill ? 16 : 12) * SCALE)
   const height = HEIGHT_PX * SCALE
   const canvas = offscreen(width, height)
   if (!canvas) return null
@@ -35,8 +36,21 @@ export function createLabel(text: string, color = '#ffffff'): Label | null {
   ctx.font = font
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
-  ctx.shadowBlur = 4 * SCALE
+  if (pill) {
+    const r = height / 2 - SCALE
+    ctx.fillStyle = pill
+    ctx.beginPath()
+    ctx.moveTo(r + SCALE, SCALE)
+    ctx.lineTo(width - r - SCALE, SCALE)
+    ctx.arc(width - r - SCALE, height / 2, r, -Math.PI / 2, Math.PI / 2)
+    ctx.lineTo(r + SCALE, height - SCALE)
+    ctx.arc(r + SCALE, height / 2, r, Math.PI / 2, Math.PI * 1.5)
+    ctx.closePath()
+    ctx.fill()
+  } else {
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)'
+    ctx.shadowBlur = 4 * SCALE
+  }
   ctx.fillStyle = color
   ctx.fillText(text, width / 2, height / 2)
   const source = ctx.getImageData(0, 0, width, height).data

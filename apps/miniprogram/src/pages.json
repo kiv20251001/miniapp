@@ -37,6 +37,10 @@
         {
           "path": "index",
           "style": { "navigationBarTitleText": "3D 太阳系", "disableScroll": true }
+        },
+        {
+          "path": "cube/index",
+          "style": { "navigationBarTitleText": "3D 几何体" }
         }
       ]
     }

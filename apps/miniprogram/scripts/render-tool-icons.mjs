@@ -125,6 +125,54 @@ function pizza() {
     <circle cx="86" cy="86" r="3" fill="#3fbf7f"/>`
 }
 
+/** 3D 几何体：后面一个四棱锥，前面一个等轴测正方体和一个正八面体。 */
+function cube() {
+  const p = (pt) => `${pt[0].toFixed(1)} ${pt[1].toFixed(1)}`
+  const poly = (points, fill) => `<path d="M${points.map(p).join('L')}Z" fill="${fill}"/>`
+  // 正方体
+  const s = 30
+  const c = s * Math.cos(Math.PI / 6)
+  const T = [44, 52]
+  const L = [T[0] - c, T[1] + s / 2]
+  const R = [T[0] + c, T[1] + s / 2]
+  const M = [T[0], T[1] + s]
+  const LB = [L[0], L[1] + s]
+  const RB = [R[0], R[1] + s]
+  const B = [T[0], M[1] + s]
+  // 四棱锥：底面是等轴测的正方形，只画前面两个三角形
+  const apex = [82, 20]
+  const baseL = [58, 58]
+  const baseF = [82, 70]
+  const baseR = [106, 58]
+  // 正八面体
+  const top = [90, 70]
+  const bottom = [90, 114]
+  const left = [73, 93]
+  const right = [107, 93]
+  const front = [86, 97]
+  return `
+    <defs>
+      <linearGradient id="cubeTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#ffb84d"/></linearGradient>
+      <linearGradient id="cubeLeft" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a5c"/><stop offset="1" stop-color="#f15a36"/></linearGradient>
+      <linearGradient id="cubeRight" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb26b"/><stop offset="1" stop-color="#ff7a45"/></linearGradient>
+      <linearGradient id="pyrLeft" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8d8ff"/><stop offset="1" stop-color="#5aa9ff"/></linearGradient>
+      <linearGradient id="pyrRight" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fb6ff"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+      <linearGradient id="octTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9af0c8"/><stop offset="1" stop-color="#3fcf8e"/></linearGradient>
+      <linearGradient id="octBottom" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fcf8e"/><stop offset="1" stop-color="#14a86b"/></linearGradient>
+    </defs>
+    <g stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round">
+      ${poly([apex, baseL, baseF], 'url(#pyrLeft)')}
+      ${poly([apex, baseF, baseR], 'url(#pyrRight)')}
+      ${poly([T, R, M, L], 'url(#cubeTop)')}
+      ${poly([L, M, B, LB], 'url(#cubeLeft)')}
+      ${poly([M, R, RB, B], 'url(#cubeRight)')}
+      ${poly([top, left, front], 'url(#octTop)')}
+      ${poly([top, front, right], 'url(#octTop)')}
+      ${poly([left, bottom, front], 'url(#octBottom)')}
+      ${poly([front, bottom, right], 'url(#octBottom)')}
+    </g>`
+}
+
 function soon() {
   return `
     <defs>
@@ -137,7 +185,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, pizza, solar, soon }
+const icons = { copybook, maths, clock, pizza, solar, cube, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()
