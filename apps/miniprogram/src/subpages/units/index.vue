@@ -101,6 +101,9 @@ function resetMode() {
   tick.value = 0
   lengthObject.value = null
   zoomCount.value = 0
+  // 数一数、铺格子、搭方块都靠定时器收尾。定时器被清掉后，这里也要把进行中的标记放下，否则下次点击会被拦住
+  zooming.value = false
+  filling.value = false
   pan.value = []
   massObject.value = 0
   cells.value = Array(100).fill(false)

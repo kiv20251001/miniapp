@@ -4,6 +4,7 @@ import { buildPdf } from './pdf'
 type Offscreen = {
   width: number
   height: number
+  loadFont?: (path: string) => string
   getContext: (kind: '2d') => SheetPen
 }
 
@@ -57,10 +58,16 @@ function exportJpeg(canvas: Offscreen, quality: number) {
 }
 
 /** 逐页画到离屏画布，返回可预览的临时图片。 */
-export async function renderPages(count: number, draw: (pen: SheetPen, index: number) => void, quality = 0.92) {
+export async function renderPages(
+  count: number,
+  draw: (pen: SheetPen, index: number) => void,
+  quality = 0.92,
+  prepare?: (canvas: Offscreen) => void,
+) {
   const files: string[] = []
   for (let index = 0; index < count; index += 1) {
     const canvas = createCanvas()
+    prepare?.(canvas)
     draw(canvas.getContext('2d'), index)
     files.push(await exportJpeg(canvas, quality))
   }

@@ -21,3 +21,13 @@ if (!existsSync(output) || statSync(output).mtimeMs < statSync(source).mtimeMs) 
   writeFileSync(path.join(outDir, 'README.md'), `three.js ${version}，由 scripts/vendor-three.mjs 从 node_modules 复制，不要手改、不要提交。\n`)
   console.log(`[three] 已复制 three.js ${version} 到 src/subsolar/vendor/`)
 }
+
+// 小程序里全局 self 是 null。three.js 把动画上下文设成 self，页面卸载时
+// WebGLRenderer.dispose() 调 animation.stop()，就会读 null.cancelAnimationFrame。
+const bundled = readFileSync(output, 'utf8')
+const stop = 'context.cancelAnimationFrame( requestId );'
+const guarded = 'if ( context ) context.cancelAnimationFrame( requestId );'
+if (bundled.includes(stop) && !bundled.includes(guarded)) {
+  writeFileSync(output, bundled.replace(stop, guarded))
+  console.log('[three] 已补上动画停止的空判断')
+}

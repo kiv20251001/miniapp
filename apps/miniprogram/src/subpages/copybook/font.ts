@@ -3,6 +3,9 @@ import { cloudFile } from '@/config'
 /**
  * 手机上没有楷体，字帖要从云存储下载字体（scripts/build-copybook-font.mjs 生成，放在 cloud-storage/fonts），
  * 第一次下载后存在本地，之后直接读。没配置或加载失败时退回系统字体，原因记在 kaiFontIssue。
+ *
+ * 字帖画在离屏画布上。wx.loadFontFace 只注册给页面，离屏画布不认这个名字，
+ * 要在每一张画布上调用 canvas.loadFont(本地文件)，用它返回的字体名来写。
  */
 export const KAI_FAMILY = 'UdayKai'
 
@@ -17,16 +20,21 @@ type Pen = {
   getImageData: (x: number, y: number, w: number, h: number) => { data: ArrayLike<number> }
 }
 
+type FontCanvas = {
+  width: number
+  height: number
+  loadFont?: (path: string) => string
+  getContext: (kind: '2d') => Pen
+}
+
 type FontApi = {
-  loadFontFace: (options: { family: string; source: string; global?: boolean; scopes?: string[]; success?: () => void; fail?: Fail }) => void
   getFileSystemManager: () => {
     access: (options: { path: string; success?: () => void; fail?: Fail }) => void
     copyFile: (options: { srcPath: string; destPath: string; success?: () => void; fail?: Fail }) => void
-    readFile: (options: { filePath: string; encoding: 'base64'; success?: (res: { data: string }) => void; fail?: Fail }) => void
   }
   env: { USER_DATA_PATH: string }
   cloud?: { downloadFile: (options: { fileID: string; success?: (res: { tempFilePath: string }) => void; fail?: Fail }) => void }
-  createOffscreenCanvas?: (options: { type: '2d'; width: number; height: number }) => { getContext: (kind: '2d') => Pen }
+  createOffscreenCanvas?: (options: { type: '2d'; width: number; height: number }) => FontCanvas
   getAppBaseInfo?: () => { SDKVersion?: string }
 }
 
@@ -34,6 +42,9 @@ const SOURCE = cloudFile('fonts/copybook-kai.woff')
 
 let loading: Promise<boolean> | null = null
 let ready = false
+let fontFile = ''
+/** canvas.loadFont 返回的字体名，写 ctx.font 时用它，不能用自己起的别名 */
+let face = ''
 /** 最近一次没用上楷体的原因，开发版、体验版生成时弹出来方便排查。 */
 export let kaiFontIssue = SOURCE ? '' : '没有配置云存储：.env 的 VITE_CLOUD_STORAGE_DEV / VITE_CLOUD_STORAGE_PROD 是空的，填好后要重新打包'
 
@@ -82,58 +93,68 @@ async function localFile() {
   })
 }
 
-function readBase64(filePath: string) {
-  return new Promise<string>((resolve, reject) => {
-    api().getFileSystemManager().readFile({
-      filePath,
-      encoding: 'base64',
-      success: (res) => resolve(res.data),
-      fail: (err) => reject(new Error(`读取字体文件失败：${err?.errMsg || ''}`)),
-    })
-  })
+/** 有空格的字体名必须加引号，否则画布只认第一个词。 */
+function cssFamily(family: string) {
+  const name = family.replace(/"/g, '')
+  return /[\s,]/.test(name) ? `"${name}"` : name
 }
 
-function register(base64: string) {
-  return new Promise<void>((resolve, reject) => {
-    api().loadFontFace({
-      family: KAI_FAMILY,
-      source: `url("data:font/woff;base64,${base64}")`,
-      global: true,
-      scopes: ['webview', 'native'],
-      success: () => resolve(),
-      fail: (err) => reject(new Error(`注册字体失败（基础库 ${sdkVersion()}，需要 3.7.9 以上）：${err?.status || err?.errMsg || ''}`)),
-    })
-  })
+/** 供排版写 ctx.font。楷体还没挂到画布上时返回空字符串。 */
+export function kaiFontFace() {
+  return face ? cssFamily(face) : ''
 }
 
-/** 同一个字分别用楷体和系统字体画一遍，像素不同才说明画布真的用上了楷体。 */
-function canvasUsesKai() {
-  const canvas = api().createOffscreenCanvas?.({ type: '2d', width: 48, height: 48 })
-  if (!canvas) return true
+/**
+ * 把已下载的字体挂到这一张离屏画布上。每张画布都要挂一次，改画布宽高会把字体清掉，所以要在设完宽高之后调用。
+ */
+export function mountKaiFont(canvas: { loadFont?: (path: string) => string }) {
+  if (!fontFile || !canvas.loadFont) return
+  try {
+    const family = canvas.loadFont(fontFile)
+    if (family) face = family
+  } catch (error) {
+    console.warn('[copybook] canvas.loadFont failed', error)
+  }
+}
+
+/** 同一个字分别用楷体和系统字体画一遍，像素不同才说明这张画布真的用上了楷体。 */
+function canvasUsesKai(canvas: FontCanvas, family: string) {
   const pen = canvas.getContext('2d')
-  const draw = (family: string) => {
-    pen.clearRect(0, 0, 48, 48)
-    pen.font = `40px ${family}`
+  const draw = (css: string) => {
+    pen.clearRect(0, 0, canvas.width, canvas.height)
+    pen.font = `48px ${css}`
     pen.fillStyle = '#000'
     pen.textBaseline = 'top'
-    pen.fillText('\u6c38', 4, 4)
-    return Array.from(pen.getImageData(0, 0, 48, 48).data)
+    pen.fillText('\u6c38', 2, 2)
+    return Array.from(pen.getImageData(0, 0, canvas.width, canvas.height).data)
   }
-  const kai = draw(`"${KAI_FAMILY}"`)
+  const kai = draw(cssFamily(family))
   const plain = draw('sans-serif')
+  const ink = (data: number[]) => data.reduce((count, value, index) => count + (index % 4 === 3 && value > 48 ? 1 : 0), 0)
+  // 开发者工具有时读不回文字像素，两边都是空白时无法比较，不据此判失败
+  if (ink(kai) < 10 && ink(plain) < 10) return true
   let diff = 0
-  for (let index = 3; index < kai.length; index += 4) if (Math.abs(kai[index] - plain[index]) > 64) diff += 1
-  return diff > 20
+  for (let index = 3; index < kai.length; index += 4) if (Math.abs(kai[index] - plain[index]) > 48) diff += 1
+  return diff > 30
 }
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function load() {
   try {
-    await register(await readBase64(await localFile()))
-    if (!canvasUsesKai()) {
-      await wait(300)
-      if (!canvasUsesKai()) throw new Error(`字体已下载并注册，但画布没有用上（基础库 ${sdkVersion()}）`)
+    fontFile = await localFile()
+    const canvas = api().createOffscreenCanvas?.({ type: '2d', width: 64, height: 64 })
+    if (!canvas?.loadFont) throw new Error(`当前基础库 ${sdkVersion()} 的画布不能加载字体文件`)
+    canvas.width = 64
+    canvas.height = 64
+    const family = canvas.loadFont(fontFile)
+    if (!family) throw new Error(`画布没有用上字体文件（基础库 ${sdkVersion()}）`)
+    face = family
+    // 字体挂上之后要等一帧，马上画读到的还是系统字体
+    await wait(150)
+    if (!canvasUsesKai(canvas, family)) {
+      await wait(400)
+      if (!canvasUsesKai(canvas, family)) throw new Error(`字体已下载，但画布没有用上（基础库 ${sdkVersion()}）`)
     }
     ready = true
     kaiFontIssue = ''

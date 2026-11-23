@@ -1,6 +1,6 @@
 import { readingOfChar } from './readings'
 import { strokesOf } from './strokes'
-import { KAI_FAMILY, kaiFontReady } from './font'
+import { kaiFontFace } from './font'
 import {
   contentWidth,
   drawBrand,
@@ -89,7 +89,7 @@ const STAFF_PAD = 10
 
 /** 手机画布对多字体列表支持不一，楷体加载好后只写这一个名字。 */
 function kaiFont(size: number) {
-  return `${Math.round(size)}px ${kaiFontReady() ? `"${KAI_FAMILY}"` : KAI}`
+  return `${Math.round(size)}px ${kaiFontFace() || KAI}`
 }
 
 /** 小写字母正好占四线格的中间一格（x 高约 0.52 em）。 */
