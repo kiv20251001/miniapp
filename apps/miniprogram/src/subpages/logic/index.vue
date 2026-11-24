@@ -7,7 +7,7 @@ import { usePageBackground, useThemePage } from '@/utils/wx-theme'
 import PageHeader from '@/components/PageHeader.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { isEn, t } from '@/i18n'
-import { BRIEF, HOWTO, NAMES, NOTES, WEIGH, pick, type Text } from './lessons'
+import { BRIEF, CAGE, HOWTO, NAMES, NOTES, WEIGH, pick, type Text } from './lessons'
 import LogicBalance from './Balance.vue'
 import CipherLock from './CipherLock.vue'
 import { hitAt, paint, stageHeight, type Scene } from './draw'
@@ -17,6 +17,8 @@ import {
   boardRider,
   boxStep,
   boxWon,
+  cageStep,
+  cageWon,
   canDrop,
   canSlide,
   crossRiver,
@@ -97,6 +99,7 @@ function clearTimers() {
 
 const cleared = ref(readCleared())
 const at = ref(Math.min(cleared.value + 1, last))
+const fresh = ref(-1)
 const round = ref<Round>(makeRound(at.value))
 const serial = ref(0)
 const mark = ref<'' | 'right' | 'wrong'>('')
@@ -112,6 +115,7 @@ const note = ref<Text | null>(null)
 const scrollLeft = ref(0)
 const boatT = ref(0)
 const hop = ref<Scene['hop']>(null)
+const cagePop = ref<Scene['cagePop']>(null)
 const eat = ref<Scene['eat']>(null)
 const dragId = ref(-1)
 const dragX = ref(0)
@@ -214,6 +218,11 @@ function scene(): Scene {
     dragY: dragY.value,
     flowPath: [...flowPath],
     carry: touchMode === 'scale',
+    headsLabel: pick(CAGE.heads, en.value),
+    feetLabel: pick(CAGE.feet, en.value),
+    henLabel: pick(CAGE.hen, en.value),
+    rabbitLabel: pick(CAGE.rabbit, en.value),
+    cagePop: cagePop.value,
   }
 }
 
@@ -249,6 +258,10 @@ function frame() {
   if (hop.value) {
     const next = hop.value.t + 0.08
     hop.value = next >= 1 ? null : { ...hop.value, t: next }
+  }
+  if (cagePop.value) {
+    const next = cagePop.value.t + 0.12
+    cagePop.value = next >= 1 ? null : { ...cagePop.value, t: next }
   }
   if (eat.value) {
     const next = eat.value.t + 0.025
@@ -292,6 +305,7 @@ function deal() {
   moves.value = 0
   note.value = null
   hop.value = null
+  cagePop.value = null
   eat.value = null
   dragId.value = -1
   dragX.value = 0
@@ -315,6 +329,7 @@ function deal() {
 function openGate(index: number) {
   if (index < 0 || index > last || index > cleared.value + 1) return
   if (index === at.value && mark.value !== 'right') return
+  if (index !== fresh.value) fresh.value = -1
   at.value = index
   deal()
   focusStone(index)
@@ -332,6 +347,7 @@ function succeed() {
   }
   vibrate('light')
   if (isNew && at.value < last) {
+    fresh.value = at.value + 1
     advancing.value = true
     const next = at.value + 1
     later(() => openGate(next), 1400)
@@ -438,6 +454,15 @@ function apply(move: Move): number | string {
     if (traceWon(item)) succeed()
     return 280
   }
+  if (move.op === 'cage' && item.kind === 'cage') {
+    const next = cageStep(item, move.who, move.delta)
+    if (typeof next === 'string') return next
+    round.value = next
+    cagePop.value = move.delta > 0 ? { who: move.who, t: 0 } : null
+    moved()
+    if (cageWon(next)) succeed()
+    return 220
+  }
   if (move.op === 'pan' && item.kind === 'scale') {
     const left = item.left.filter((id) => id !== move.id)
     const right = item.right.filter((id) => id !== move.id)
@@ -541,6 +566,7 @@ function playAnswer() {
   shake.value = false
   stuck.value = false
   hop.value = null
+  cagePop.value = null
   eat.value = null
   dragId.value = -1
   dragX.value = 0
@@ -622,6 +648,12 @@ function onScalePlace(zone: 'left' | 'right' | 'tray') {
 
 function onTap(name: string) {
   const item = round.value
+  if (item.kind === 'cage' && (name.startsWith('hen:') || name.startsWith('rabbit:'))) {
+    const who = name.startsWith('hen:') ? 'hen' : 'rabbit'
+    const result = apply({ op: 'cage', who, delta: name.endsWith(':-') ? -1 : 1 })
+    if (typeof result === 'string' && result) say(result)
+    return
+  }
   if (item.kind === 'frog' && name.startsWith('frog:')) {
     const index = Number(name.slice(5))
     if (item.pads[index] === '.') return
@@ -1126,13 +1158,20 @@ onUnload(() => {
           :id="`gate-${index}`"
           :key="item.id"
           class="stone press"
-          :class="{ now: index === at, done: index <= cleared, lock: index > cleared + 1 }"
+          :class="{ now: index === at, done: index <= cleared, lock: index > cleared + 1, fresh: index === fresh }"
           hover-class="press-on"
           hover-stay-time="80"
           @click="openGate(index)"
         >
-          <text class="stone-no">{{ index + 1 }}</text>
-          <text class="stone-name">{{ t(item.name) }}</text>
+          <view v-if="index > 0" class="stone-link" />
+          <view class="stone-gem">
+            <text v-if="index <= cleared + 1" class="stone-no">{{ index + 1 }}</text>
+            <view v-else class="padlock">
+              <view class="shackle" />
+              <view class="latch" />
+            </view>
+          </view>
+          <text class="stone-name">{{ index <= cleared + 1 ? t(item.name) : '' }}</text>
         </view>
       </view>
     </scroll-view>
@@ -1245,18 +1284,48 @@ onUnload(() => {
 <style scoped>
 .logic-page { padding-bottom: calc(40px + var(--safe-bottom)); }
 .road { width: 100%; margin-bottom: 12px; white-space: nowrap; }
-.road-row { display: flex; gap: 8px; padding: 2px 2px 8px; }
-.stone { display: inline-flex; width: 56px; flex: none; flex-direction: column; align-items: center; }
-.stone-no {
-  display: flex; width: 36px; height: 36px; align-items: center; justify-content: center;
-  border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 14px; font-weight: 800;
+.road-row { display: flex; gap: 10px; padding: 10px 4px 4px; }
+.stone { position: relative; display: inline-flex; width: 72px; flex: none; flex-direction: column; align-items: center; }
+.stone-link {
+  position: absolute; z-index: 0; top: 19px; left: -25px; width: 40px; height: 4px;
+  border-radius: 2px; background: #e4e8f0;
 }
-.stone-name { width: 56px; margin-top: 4px; color: var(--muted); font-size: 10px; font-weight: 700; text-align: center; }
-.stone.now .stone-no { background: #ff6a33; color: #fff; transform: translateY(-2px); }
-.stone.now .stone-name { color: var(--accent-text); }
-.stone.done .stone-no { background: #34c77b; color: #fff; }
-.stone.done.now .stone-no { box-shadow: 0 0 0 3px rgba(255, 106, 51, 0.35); }
-.stone.lock { opacity: 0.38; }
+.stone.done .stone-link, .stone.now .stone-link { background: #8ed9b0; }
+.stone-gem {
+  position: relative; z-index: 1; box-sizing: border-box;
+  display: flex; width: 42px; height: 42px; align-items: center; justify-content: center;
+  border-radius: 50%; background: var(--surface-2);
+  box-shadow: inset 0 0 0 2px #e6ebf2;
+  transition: transform 0.42s cubic-bezier(0.34, 1.3, 0.64, 1), background 0.3s ease, box-shadow 0.3s ease;
+}
+.stone-no { color: var(--muted); font-size: 15px; font-weight: 800; }
+.stone-name {
+  width: 68px; min-height: 16px; margin-top: 6px;
+  color: var(--muted); font-size: 10px; font-weight: 700; line-height: 1.3; text-align: center;
+}
+.stone.done .stone-gem { background: #34c77b; box-shadow: none; }
+.stone.done .stone-no { color: #fff; }
+.stone.now .stone-gem {
+  background: #ff6a33; box-shadow: 0 8px 16px -8px rgba(255, 106, 51, 0.9), 0 0 0 4px rgba(255, 106, 51, 0.2);
+  transform: translateY(-3px) scale(1.06);
+}
+.stone.now .stone-no { color: #fff; }
+.stone.now .stone-name { color: #ff6a33; }
+.stone.done.now .stone-gem { background: #34c77b; box-shadow: 0 0 0 4px rgba(255, 106, 51, 0.28); }
+.stone.lock .stone-gem { background: var(--paper); border: 2px dashed #d5dbe6; box-shadow: none; }
+.padlock { position: relative; width: 16px; height: 18px; }
+.shackle {
+  position: absolute; top: 0; left: 3px; width: 10px; height: 8px; box-sizing: border-box;
+  border: 2px solid #b7c0d0; border-bottom: 0; border-radius: 6px 6px 0 0;
+}
+.latch { position: absolute; right: 0; bottom: 0; left: 0; height: 10px; border-radius: 3px; background: #b7c0d0; }
+.stone.fresh .stone-gem { animation: gate-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.stone.fresh .stone-name { animation: fade-up 0.35s ease; }
+@keyframes gate-pop {
+  0% { transform: scale(0.55); }
+  60% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
 .stage { padding: 12px 14px 16px; border-radius: 28px; }
 .stage-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; padding: 0 2px 8px; }
 .stage-hint { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }

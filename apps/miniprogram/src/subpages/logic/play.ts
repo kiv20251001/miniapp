@@ -15,6 +15,7 @@ export type Kind =
   | 'lights'
   | 'pipes'
   | 'trace'
+  | 'cage'
   | 'scale'
   | 'box'
   | 'slide'
@@ -45,7 +46,7 @@ export const STAGES: Stage[] = [
   { id: 'fox', kind: 'river', name: '过河' },
   { id: 'lamp1', kind: 'lights', name: '关灯' },
   { id: 'pipe', kind: 'pipes', name: '水管' },
-  { id: 'star', kind: 'trace', name: '一笔画' },
+  { id: 'cage', kind: 'cage', name: '鸡兔同笼' },
   { id: 'frog3', kind: 'frog', name: '青蛙' },
   { id: 'family', kind: 'river', name: '过河' },
   { id: 'scale', kind: 'scale', name: '天平' },
@@ -89,6 +90,8 @@ export type LightsRound = { kind: 'lights'; on: number[]; n: number }
 export type PipeTile = { base: number; rot: number; lock: boolean }
 export type PipesRound = { kind: 'pipes'; tiles: PipeTile[]; cols: number; sink: number }
 export type TraceRound = { kind: 'trace'; nodes: Array<{ x: number; y: number }>; edges: Array<[number, number]>; path: number[]; used: string[]; oddStart: boolean }
+export type CageWho = 'hen' | 'rabbit'
+export type CageRound = { kind: 'cage'; hens: number; rabbits: number; heads: number; feet: number }
 export type Weighing = { left: number[]; right: number[]; result: 'L' | 'R' | '=' }
 export type ScaleRound = { kind: 'scale'; weights: number[]; heavy: number; left: number[]; right: number[]; limit: number; used: number; log: Weighing[] }
 export type BoxRound = { kind: 'box'; w: number; h: number; walls: boolean[]; goals: boolean[]; boxes: boolean[]; player: number }
@@ -97,14 +100,7 @@ export type Block = { id: number; r: number; c: number; h: number; w: number; ro
 export type KlotskiRound = { kind: 'klotski'; rows: number; cols: number; blocks: Block[]; goal: { r: number; c: number } }
 export type HanoiRound = { kind: 'hanoi'; pegs: number[][] }
 
-export type Round = FrogRound | RiverRound | LightsRound | PipesRound | TraceRound | ScaleRound | BoxRound | SlideRound | KlotskiRound | HanoiRound | MoreRound
-
-function starNodes() {
-  return Array.from({ length: 5 }, (_, index) => {
-    const angle = -Math.PI / 2 + index * 2 * Math.PI / 5
-    return { x: +(50 + Math.cos(angle) * 34).toFixed(2), y: +(50 + Math.sin(angle) * 34).toFixed(2) }
-  })
-}
+export type Round = FrogRound | RiverRound | LightsRound | PipesRound | TraceRound | CageRound | ScaleRound | BoxRound | SlideRound | KlotskiRound | HanoiRound | MoreRound
 
 const HOUSE = {
   nodes: [{ x: 50, y: 14 }, { x: 18, y: 42 }, { x: 82, y: 42 }, { x: 18, y: 84 }, { x: 82, y: 84 }],
@@ -177,16 +173,7 @@ export function makeRound(index: number): Round {
   if (stage.id === 'lamp1') return { kind: 'lights', on: [1, 1, 0, 1, 0, 1, 0, 1, 1], n: 3 }
   if (stage.id === 'lamp2') return { kind: 'lights', on: [1, 1, 1, 1, 1, 0, 1, 0, 0], n: 3 }
   if (stage.id === 'pipe') return { kind: 'pipes', tiles: pipes(), cols: 3, sink: 8 }
-  if (stage.id === 'star') {
-    return {
-      kind: 'trace',
-      nodes: starNodes(),
-      edges: [0, 1, 2, 3, 4].map((node) => [node, (node + 2) % 5]),
-      path: [],
-      used: [],
-      oddStart: false,
-    }
-  }
+  if (stage.id === 'cage') return { kind: 'cage', hens: 0, rabbits: 0, heads: 35, feet: 94 }
   if (stage.id === 'house') {
     return { kind: 'trace', nodes: HOUSE.nodes.map((node) => ({ ...node })), edges: HOUSE.edges.map((edge) => [...edge] as [number, number]), path: [], used: [], oddStart: true }
   }
@@ -358,6 +345,18 @@ export function traceWon(round: TraceRound) {
   return round.used.length === round.edges.length
 }
 
+export function cageStep(round: CageRound, who: CageWho, delta: number): CageRound | 'cage-none' | 'cage-full' {
+  const count = who === 'hen' ? round.hens : round.rabbits
+  const next = count + delta
+  if (next < 0) return 'cage-none'
+  if (next > 40) return 'cage-full'
+  return who === 'hen' ? { ...round, hens: next } : { ...round, rabbits: next }
+}
+
+export function cageWon(round: CageRound) {
+  return round.hens + round.rabbits === round.heads && round.hens * 2 + round.rabbits * 4 === round.feet
+}
+
 export function weigh(round: ScaleRound): 'L' | 'R' | '=' | 'same' | 'limit' {
   if (round.used >= round.limit) return 'limit'
   if (!round.left.length || round.left.length !== round.right.length) return 'same'
@@ -455,6 +454,7 @@ export type Move =
   | { op: 'light'; index: number }
   | { op: 'pipe'; index: number }
   | { op: 'trace'; node: number }
+  | { op: 'cage'; who: CageWho; delta: number }
   | { op: 'pan'; id: number; zone: 'left' | 'right' | 'tray' }
   | { op: 'weigh' }
   | { op: 'accuse'; id: number }
@@ -568,6 +568,15 @@ function solvePipes(start: PipesRound): Move[] {
     const taps = (4 - (tile.rot % 4)) % 4
     for (let step = 0; step < taps; step += 1) moves.push({ op: 'pipe', index })
   })
+  return moves
+}
+
+function solveCage(start: CageRound): Move[] {
+  const rabbits = (start.feet - start.heads * 2) / 2
+  const hens = start.heads - rabbits
+  const moves: Move[] = []
+  for (let count = start.hens; count < hens; count += 1) moves.push({ op: 'cage', who: 'hen', delta: 1 })
+  for (let count = start.rabbits; count < rabbits; count += 1) moves.push({ op: 'cage', who: 'rabbit', delta: 1 })
   return moves
 }
 
@@ -694,6 +703,7 @@ export function solve(round: Round): Move[] {
   if (round.kind === 'lights') return solveLights(round)
   if (round.kind === 'pipes') return solvePipes(round)
   if (round.kind === 'trace') return solveTrace(round)
+  if (round.kind === 'cage') return solveCage(round)
   if (round.kind === 'scale') return solveScale(round)
   if (round.kind === 'box') return solveBox(round)
   if (round.kind === 'slide') return solveSlide(round)

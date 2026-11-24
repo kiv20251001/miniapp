@@ -30,6 +30,13 @@ export const NAMES: Record<string, Text> = {
   sis: { zh: '妹', en: 'Sis' },
 }
 
+export const CAGE = {
+  heads: { zh: '头', en: 'Heads' },
+  feet: { zh: '脚', en: 'Feet' },
+  hen: { zh: '鸡', en: 'Chickens' },
+  rabbit: { zh: '兔', en: 'Rabbits' },
+}
+
 export const WEIGH: Record<string, Text> = {
   L: { zh: '左边沉', en: 'Left side down' },
   R: { zh: '右边沉', en: 'Right side down' },
@@ -51,6 +58,8 @@ export const NOTES: Record<string, Text> = {
   wall: { zh: '这边过不去。', en: 'That way is blocked.' },
   disk: { zh: '大盘不能压在小盘上面。', en: 'A bigger disk cannot sit on a smaller one.' },
   trace: { zh: '这条线不能这么走。', en: 'That line does not connect.' },
+  'cage-none': { zh: '这边已经没有可以拿出来的了。', en: 'There is none left to take out.' },
+  'cage-full': { zh: '笼子里放不下更多了。', en: 'The cage cannot hold any more.' },
   flow: { zh: '这条线交叉了，或没连到同色。', en: 'That path crosses another, or it does not reach its color.' },
   peg: { zh: '这样跳不了。要隔着一颗跳进空位。', en: 'That jump is not allowed. Jump over one peg into an empty hole.' },
   match: { zh: '只能从有火柴的地方搬到空位。', en: 'Move a match from a filled slot into an empty one.' },
@@ -97,9 +106,9 @@ export const HOWTO: Record<string, Text[]> = {
     { zh: '点一格，管子就转一下。', en: 'Tap a tile to turn the pipe.' },
     { zh: '让水从橙色的点流到绿色的点。', en: 'Connect the water from the orange dot to the green dot.' },
   ],
-  star: [
-    { zh: '用手指沿着线画，画到下一个点再继续。', en: 'Draw with your finger from dot to dot.' },
-    { zh: '每条线只画一次，画成一颗星。', en: 'Use each line once, and finish the star.' },
+  cage: [
+    { zh: '点下面的鸡或兔，它会跳进笼子。点减号可以拿出来。', en: 'Tap a chicken or a rabbit below. It hops into the cage. Tap minus to take one out.' },
+    { zh: '头要正好 35 个，脚要正好 94 只。兔子一只 4 只脚，鸡一只 2 只脚。', en: 'You need exactly 35 heads and 94 feet. A rabbit has 4 feet, a chicken has 2.' },
   ],
   house: [
     { zh: '从橙色的点开始，手指沿着线画。', en: 'Start at an orange dot and draw along the lines.' },
@@ -210,9 +219,9 @@ export const BRIEF: Record<string, { prompt: Text; praise: Text }> = {
     prompt: { zh: '转动管子，让水从橙色流到绿色。', en: 'Turn the pipes so water runs from orange to green.' },
     praise: { zh: '水亮到哪儿，就接到哪儿。断掉的那一格转一下。', en: 'Water shows how far you are connected. Turn the tile where it stops.' },
   },
-  star: {
-    prompt: { zh: '用手指把这颗星一笔画完，线不重复。', en: 'Draw the star in one stroke. Do not reuse a line.' },
-    praise: { zh: '每个角都连着两条线，从哪个角开始都能画完。', en: 'Every point has two lines, so any start works.' },
+  cage: {
+    prompt: { zh: '鸡兔同笼：一共 35 个头，94 只脚。鸡和兔各有几只？', en: 'Chickens and rabbits share a cage: 35 heads and 94 feet. How many of each?' },
+    praise: { zh: '如果 35 只全是鸡，只有 70 只脚。还差 24 只脚，每换成一只兔就多 2 只，所以兔 12 只，鸡 23 只。', en: 'If all 35 were chickens, there would be only 70 feet. The extra 24 feet means 12 rabbits, and so 23 chickens.' },
   },
   frog3: {
     prompt: { zh: '三对三。空位只有一个，更要想好谁先跳。', en: 'Three against three, and only one empty pad. Decide who jumps first.' },

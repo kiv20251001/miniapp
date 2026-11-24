@@ -25,6 +25,11 @@ export type Scene = {
   dragY: number
   flowPath?: number[]
   carry?: boolean
+  headsLabel: string
+  feetLabel: string
+  henLabel: string
+  rabbitLabel: string
+  cagePop: { who: 'hen' | 'rabbit'; t: number } | null
 }
 
 export type Spot = { name: string; x: number; y: number; w: number; h: number }
@@ -37,6 +42,7 @@ export function stageHeight(kind: Round['kind']) {
   if (kind === 'lights') return 228
   if (kind === 'pipes') return 246
   if (kind === 'trace') return 250
+  if (kind === 'cage') return 348
   if (kind === 'scale') return 300
   if (kind === 'box') return 268
   if (kind === 'hanoi') return 236
@@ -61,6 +67,7 @@ export function paint(ctx: Pen, scene: Scene) {
   else if (round.kind === 'lights') paintLights(ctx, scene)
   else if (round.kind === 'pipes') paintPipes(ctx, scene)
   else if (round.kind === 'trace') paintTrace(ctx, scene)
+  else if (round.kind === 'cage') paintCage(ctx, scene)
   else if (round.kind === 'scale') paintScale(ctx, scene)
   else if (round.kind === 'box') paintBox(ctx, scene)
   else if (round.kind === 'slide') paintSlide(ctx, scene)
@@ -80,6 +87,7 @@ function hots(scene: Scene): Spot[] {
   if (round.kind === 'klotski') return round.blocks.map((block) => blockSpot(scene, block))
   if (round.kind === 'hanoi') return pegSpots(scene)
   if (round.kind === 'trace') return round.nodes.map((node, index) => ({ name: `node:${index}`, x: (node.x / 100) * scene.w - 18, y: (node.y / 100) * scene.h - 18, w: 36, h: 36 }))
+  if (round.kind === 'cage') return cageSpots(scene)
   return moreSpots(scene)
 }
 
@@ -787,6 +795,300 @@ function paintHanoi(ctx: Pen, scene: Scene) {
     roundBox(ctx, scene.dragX - width / 2, scene.dragY - 7, width, 14, 7)
     ctx.fill()
   }
+}
+
+type CageBox = { x: number; y: number; w: number; h: number }
+
+function cageFrame(scene: Scene) {
+  const cage: CageBox = { x: 10, y: 50, w: scene.w - 20, h: 148 }
+  const gap = 8
+  const btnW = (scene.w - 20 - gap) / 2
+  const left: CageBox = { x: 10, y: 208, w: btnW, h: 128 }
+  const right: CageBox = { x: 10 + btnW + gap, y: 208, w: btnW, h: 128 }
+  return { cage, left, right }
+}
+
+function cageSpots(scene: Scene): Spot[] {
+  const { left, right } = cageFrame(scene)
+  const pad = (box: CageBox, who: 'hen' | 'rabbit'): Spot[] => {
+    const plus = { name: `${who}:+`, x: box.x + box.w - 40, y: box.y + box.h - 44, w: 32, h: 32 }
+    const minus = { name: `${who}:-`, x: box.x + box.w - 108, y: box.y + box.h - 44, w: 32, h: 32 }
+    const body = { name: `${who}:+`, x: box.x + 8, y: box.y + 8, w: box.w - 16, h: box.h - 56 }
+    return [body, minus, plus]
+  }
+  return [...pad(left, 'hen'), ...pad(right, 'rabbit')]
+}
+
+function paintCage(ctx: Pen, scene: Scene) {
+  const round = scene.round
+  if (round.kind !== 'cage') return
+  const { cage, left, right } = cageFrame(scene)
+  const won = round.hens + round.rabbits === round.heads && round.hens * 2 + round.rabbits * 4 === round.feet
+  meter(ctx, 10, 8, (scene.w - 28) / 2, scene.headsLabel, round.hens + round.rabbits, round.heads)
+  meter(ctx, 18 + (scene.w - 28) / 2, 8, (scene.w - 28) / 2, scene.feetLabel, round.hens * 2 + round.rabbits * 4, round.feet)
+  drawCageBox(ctx, cage)
+  const floor = cage.y + cage.h - 36
+  flock(ctx, scene, 'hen', round.hens, cage.x + 28, floor, cage.w / 2 - 36, won)
+  flock(ctx, scene, 'rabbit', round.rabbits, cage.x + cage.w / 2 + 8, floor, cage.w / 2 - 36, won)
+  animalPad(ctx, scene, left, 'hen', round.hens, scene.henLabel)
+  animalPad(ctx, scene, right, 'rabbit', round.rabbits, scene.rabbitLabel)
+}
+
+function meter(ctx: Pen, x: number, y: number, w: number, title: string, value: number, goal: number) {
+  const over = value > goal
+  const done = value === goal
+  ctx.fillStyle = done ? '#e7f8ee' : over ? '#fdeceb' : '#fff7f2'
+  roundBox(ctx, x, y, w, 36, 12)
+  ctx.fill()
+  ctx.fillStyle = done ? '#1f9d5c' : over ? '#e5492d' : '#1c2430'
+  ctx.font = '700 13px sans-serif'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(title, x + 10, y + 18)
+  ctx.textAlign = 'right'
+  ctx.font = '800 15px sans-serif'
+  ctx.fillText(`${value}/${goal}`, x + w - 10, y + 18)
+}
+
+function drawCageBox(ctx: Pen, box: CageBox) {
+  ctx.fillStyle = '#d7f0c2'
+  roundBox(ctx, box.x, box.y, box.w, box.h, 16)
+  ctx.fill()
+  ctx.fillStyle = '#b7e39a'
+  ctx.beginPath()
+  ctx.ellipse(box.x + box.w * 0.3, box.y + box.h - 18, box.w * 0.22, 8, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#c9844a'
+  ctx.lineWidth = 4
+  const bars = 7
+  for (let index = 0; index < bars; index += 1) {
+    const x = box.x + 16 + ((box.w - 32) * index) / (bars - 1)
+    ctx.beginPath()
+    ctx.moveTo(x, box.y + 10)
+    ctx.lineTo(x, box.y + box.h - 12)
+    ctx.stroke()
+  }
+  ctx.strokeStyle = '#a86b32'
+  ctx.lineWidth = 6
+  roundBox(ctx, box.x, box.y, box.w, box.h, 16)
+  ctx.stroke()
+  ctx.fillStyle = '#e7b56a'
+  ctx.fillRect(box.x + 8, box.y + 14, box.w - 16, 6)
+  ctx.fillRect(box.x + 8, box.y + box.h - 20, box.w - 16, 6)
+}
+
+function flock(ctx: Pen, scene: Scene, who: 'hen' | 'rabbit', count: number, x: number, floor: number, width: number, won: boolean) {
+  const shown = Math.min(count, 5)
+  for (let index = 0; index < shown; index += 1) {
+    const slot = shown === 1 ? width / 2 : (width * index) / (shown - 1)
+    const bob = Math.sin(scene.time * 0.16 + index) * (won ? 5 : 1.6)
+    const pop = scene.cagePop
+    const popping = pop?.who === who && index === shown - 1
+    const jump = popping && pop ? Math.sin(pop.t * Math.PI) * 26 : 0
+    ctx.save()
+    ctx.translate(x + slot, floor - bob - jump)
+    ctx.scale(0.62, 0.62)
+    if (who === 'hen') drawChicken(ctx, scene.time * 0.08 + index)
+    else drawRabbit(ctx, scene.time * 0.08 + index)
+    ctx.restore()
+  }
+  if (count > shown) {
+    ctx.fillStyle = '#fff'
+    ctx.beginPath()
+    ctx.arc(x + width, floor - 28, 11, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#1c2430'
+    ctx.font = '800 11px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(String(count), x + width, floor - 28)
+  }
+}
+
+function animalPad(ctx: Pen, scene: Scene, box: CageBox, who: 'hen' | 'rabbit', count: number, title: string) {
+  ctx.fillStyle = '#fff'
+  roundBox(ctx, box.x, box.y, box.w, box.h, 16)
+  ctx.fill()
+  ctx.fillStyle = '#1c2430'
+  ctx.font = '700 12px sans-serif'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(title, box.x + 12, box.y + 16)
+  ctx.save()
+  ctx.translate(box.x + 46, box.y + 62)
+  ctx.scale(0.85, 0.85)
+  const mood = scene.time * 0.09 + (who === 'hen' ? 0 : 1.4)
+  if (who === 'hen') drawChicken(ctx, mood)
+  else drawRabbit(ctx, mood)
+  ctx.restore()
+  const y = box.y + box.h - 28
+  stepButton(ctx, box.x + box.w - 92, y, '−', '#eef1f6', '#1c2430')
+  ctx.fillStyle = '#1c2430'
+  ctx.font = '800 18px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(String(count), box.x + box.w - 60, y)
+  stepButton(ctx, box.x + box.w - 24, y, '+', '#ff7a45', '#fff')
+}
+
+function stepButton(ctx: Pen, x: number, y: number, mark: string, fill: string, ink: string) {
+  ctx.fillStyle = fill
+  ctx.beginPath()
+  ctx.arc(x, y, 14, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = ink
+  ctx.font = '800 18px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(mark, x, y + 1)
+}
+
+function drawChicken(ctx: Pen, mood: number) {
+  const peck = Math.max(0, Math.sin(mood * 1.7)) * 0.45
+  ctx.fillStyle = 'rgba(90, 60, 20, 0.16)'
+  ctx.beginPath()
+  ctx.ellipse(2, 30, 18, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#e2a63a'
+  ctx.beginPath()
+  ctx.moveTo(-6, 2)
+  ctx.quadraticCurveTo(-28, -16, -16, 8)
+  ctx.quadraticCurveTo(-26, 0, -8, 12)
+  ctx.quadraticCurveTo(-18, 8, -4, 14)
+  ctx.fill()
+  ctx.fillStyle = '#ffd56a'
+  ctx.beginPath()
+  ctx.ellipse(-1, 8, 17, 12, -0.15, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f0b429'
+  ctx.beginPath()
+  ctx.ellipse(3, 10, 8, 6, 0.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#e07a2f'
+  ctx.lineWidth = 2
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(-5, 18)
+  ctx.lineTo(-7, 28)
+  ctx.moveTo(-11, 28)
+  ctx.lineTo(-5, 28)
+  ctx.lineTo(-2, 25)
+  ctx.moveTo(7, 16)
+  ctx.lineTo(9, 28)
+  ctx.moveTo(5, 28)
+  ctx.lineTo(11, 28)
+  ctx.lineTo(14, 25)
+  ctx.stroke()
+  ctx.save()
+  ctx.translate(12, 2)
+  ctx.rotate(peck)
+  ctx.fillStyle = '#ffd56a'
+  ctx.beginPath()
+  ctx.ellipse(0, 2, 5, 8, 0.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(5, -8, 7.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#e23b4a'
+  ctx.beginPath()
+  ctx.arc(2, -14, 2.3, 0, Math.PI * 2)
+  ctx.arc(5.4, -15.4, 2.6, 0, Math.PI * 2)
+  ctx.arc(8.6, -13.4, 2.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(8, -2, 2.1, 3.2, 0.2, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f08a24'
+  ctx.beginPath()
+  ctx.moveTo(10, -8)
+  ctx.lineTo(19, -6)
+  ctx.lineTo(10, -4)
+  ctx.closePath()
+  ctx.fill()
+  const blink = Math.sin(mood * 0.35) > 0.97
+  ctx.fillStyle = '#fff'
+  ctx.beginPath()
+  ctx.ellipse(6.5, -9, 2.5, blink ? 0.6 : 2.5, 0, 0, Math.PI * 2)
+  ctx.fill()
+  if (!blink) {
+    ctx.fillStyle = '#1c2430'
+    ctx.beginPath()
+    ctx.arc(7.1, -9, 1.15, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+function drawRabbit(ctx: Pen, mood: number) {
+  const twitch = Math.sin(mood * 1.3) * 0.12
+  ctx.fillStyle = 'rgba(90, 60, 20, 0.16)'
+  ctx.beginPath()
+  ctx.ellipse(0, 30, 18, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#fff'
+  ctx.beginPath()
+  ctx.arc(-16, 6, 5.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f6f0e4'
+  ctx.beginPath()
+  ctx.ellipse(-2, 10, 16, 12, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#efe4d2'
+  ctx.beginPath()
+  ctx.ellipse(-8, 14, 8, 7, 0.4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f6f0e4'
+  ctx.beginPath()
+  ctx.ellipse(-1, 22, 9, 3.4, 0.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(11, 2, 9, 0, Math.PI * 2)
+  ctx.fill()
+  ear(ctx, 7, -6, -0.45 + twitch, 0.85)
+  ear(ctx, 13, -7, 0.18 - twitch, 1)
+  ctx.fillStyle = '#f6f0e4'
+  ctx.beginPath()
+  ctx.ellipse(16, 10, 4, 2.4, 0.2, 0, Math.PI * 2)
+  ctx.ellipse(20, 12, 3.2, 2, 0.4, 0, Math.PI * 2)
+  ctx.fill()
+  const blink = Math.sin(mood * 0.4 + 1) > 0.97
+  ctx.fillStyle = '#fff'
+  ctx.beginPath()
+  ctx.ellipse(13, 1, 2.3, blink ? 0.5 : 2.3, 0, 0, Math.PI * 2)
+  ctx.fill()
+  if (!blink) {
+    ctx.fillStyle = '#1c2430'
+    ctx.beginPath()
+    ctx.arc(13.4, 1, 1.1, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.fillStyle = '#f3a3b5'
+  ctx.beginPath()
+  ctx.ellipse(18, 4, 1.6, 1.2, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#c9bba6'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(18, 5)
+  ctx.lineTo(26, 3)
+  ctx.moveTo(18, 6)
+  ctx.lineTo(26, 7)
+  ctx.stroke()
+}
+
+function ear(ctx: Pen, x: number, y: number, rot: number, scale: number) {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(rot)
+  ctx.scale(scale, scale)
+  ctx.fillStyle = '#f6f0e4'
+  ctx.beginPath()
+  ctx.ellipse(0, -12, 3.4, 11, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f6c1cf'
+  ctx.beginPath()
+  ctx.ellipse(0, -12, 1.6, 7, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
 }
 
 export { gridBox } from './draw-more'

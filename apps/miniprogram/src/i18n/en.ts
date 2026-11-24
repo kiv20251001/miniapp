@@ -1161,6 +1161,7 @@ export const EN: Record<string, string> = {
   '数独': 'Sudoku',
   '滑块': 'Slide',
   '一笔画': 'One stroke',
+  '鸡兔同笼': 'Chickens and rabbits',
   '华容道': 'Sliding blocks',
   '汉诺塔': 'Tower of Hanoi',
   '连线': 'Flow',
