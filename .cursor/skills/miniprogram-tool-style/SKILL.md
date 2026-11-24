@@ -16,6 +16,7 @@ description: >-
 | --- | --- | --- |
 | 拖、点、数，然后做题、打印 | `subpages/units`（模式多）、`subpages/clock`（一种玩法）、`subpages/pizza`、`subsolar/cube` | 探索 / 小测验 / 打印题目 |
 | 只看、听讲解，没有对错 | `subsolar/body`、`subsolar/index`（太阳系） | 身体探索 / 工作演示，或单场景。不要硬加测验 |
+| 连续小游戏，对错就在台上 | `subpages/logic` | 一条闯关，画布上拖、点、推或称。问号和下面的说明都是这一关怎么操作，并有看答案。不要按题型分成固定分段，不要另开测验和打印，也不要做成点一下就过的选项题 |
 | 填参数后出一张卷子 | `subpages/copybook`、`subpages/maths` | 没有探索台。表单 + 生成 + 保存 |
 
 用户没指定时，认识类新工具用第一行。

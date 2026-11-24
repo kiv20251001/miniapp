@@ -108,7 +108,7 @@
 3. 重新打包。打包输出里不再有「没有填写 VITE_CLOUD_STORAGE_…」的警告就对了。
 4. 存储权限保持默认的「所有用户可读，仅创建者可读写」即可。
 
-字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时用离屏画布的 `loadFont` 挂上这个本地文件。`wx.loadFontFace` 只对页面文字生效，画布不认。
+字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时用 `wx.loadFontFace` 注册这份本地文件（`scopes` 包含 `native`），离屏画布按返回的字体名来写。基础库 3.17 的离屏画布没有 `loadFont`。
 
 没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响；开发版、体验版点「生成」会弹窗写明是哪一步失败，正式版不弹。
 

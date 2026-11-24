@@ -28,6 +28,7 @@
 - 「3D 几何体」：几何体的顶点由代码算出（`src/subsolar/cube/solids.ts`），面上的字和颜色由 `src/subsolar/cube/textures.ts` 在画布上现场画，没有贴图文件；知识点和题目为本项目原创，参考网站只借鉴了交互方式。
 - 「单位换算」：天平、砝码、尺子、量杯、物品小图标都是 `src/subpages/units/art.ts` 里手写的 SVG（运行时转成 data URI，没有图片文件），天平和刻度用 view + CSS 画；工具箱图标 `static/tools/units.png` 和分享图 `static/share/units.jpg` 由 `scripts/render-tool-icons.mjs`、`scripts/render-share-covers.mjs` 生成；物品重量、长度等常识数据和题目为本项目原创。
 - 「3D 人体器官」：写实人体用上表的 BodyParts3D 和 HuBMAP 肺；下载不到时退回的简化人体由 `src/subsolar/body/procedural.ts` 用代码生成（球体变形、管道、车削体），器官位置和形状按常识自己摆，没有描摹任何图谱或参考网站的模型。食物旅行、呼吸、血液循环的路线由 `scripts/build-body-model.mjs` 从网格算出。讲解文字、演示文案为本项目原创；工具箱图标 `static/tools/body.png` 和分享图 `static/share/body.jpg` 由 `scripts/render-tool-icons.mjs`、`scripts/render-share-covers.mjs` 生成。
+- 「逻辑思维」：青蛙、河岸、船、人物、灯、水管、天平、箱子、方块、连线、跳子、火柴、拼板、桥、滚珠、摩天楼、马步、皇后、破译、点灯、骨牌、齿轮、围栏、扫雷、密码盘都是页面画布里用代码画的，没有图片素材，局面和线索为本项目原创。工具箱图标 `static/tools/logic.png` 和分享图 `static/share/logic.jpg` 由 `scripts/render-tool-icons.mjs`、`scripts/render-share-covers.mjs` 生成。
 - 页面文字：小程序运行时用手机系统字体显示，不随包带字体文件。
 
 ## 待确认

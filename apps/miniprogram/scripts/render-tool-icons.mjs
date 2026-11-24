@@ -227,6 +227,16 @@ function body() {
     <path d="M55 26c3 2.4 7 2.4 10 0" stroke="#2c3654" stroke-width="1.8" stroke-linecap="round"/>`
 }
 
+/** 逻辑思维：一条镜子，左右盖子颜色对称。 */
+function logic() {
+  return `
+    <rect x="56" y="22" width="8" height="76" rx="4" fill="#5aa6e6"/>
+    <circle cx="32" cy="40" r="16" fill="#8b6cf0"/>
+    <circle cx="32" cy="80" r="16" fill="#ffd15c"/>
+    <circle cx="88" cy="40" r="16" fill="#8b6cf0"/>
+    <circle cx="88" cy="80" r="16" fill="#ffd15c"/>`
+}
+
 function soon() {
   return `
     <defs>
@@ -239,7 +249,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, pizza, solar, cube, units, body, soon }
+const icons = { copybook, maths, clock, pizza, solar, cube, units, body, logic, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()

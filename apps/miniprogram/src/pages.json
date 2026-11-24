@@ -29,7 +29,8 @@
         { "path": "maths/sheet", "style": { "navigationBarTitleText": "计算题" } },
         { "path": "clock/index", "style": { "navigationBarTitleText": "认识时钟" } },
         { "path": "pizza/index", "style": { "navigationBarTitleText": "认识分数" } },
-        { "path": "units/index", "style": { "navigationBarTitleText": "单位换算" } }
+        { "path": "units/index", "style": { "navigationBarTitleText": "单位换算" } },
+        { "path": "logic/index", "style": { "navigationBarTitleText": "逻辑思维" } }
       ]
     },
     {

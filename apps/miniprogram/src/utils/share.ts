@@ -39,7 +39,7 @@ export function momentsShare() {
 
 /** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
 export const TOOL_SHARE_TITLES = {
-  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体、单位换算、3D 人体器官，孩子练习的小工具都在这',
+  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体、单位换算、3D 人体器官、逻辑思维，孩子练习的小工具都在这',
   copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
   maths: '凑十法、破十法、加减混合，一键生成计算练习题',
   make10: '凑十法练习题一键生成，A4 打印直接练',
@@ -60,6 +60,7 @@ export const TOOL_SHARE_TITLES = {
   unitsPrint: '单位换算练习题：换算填空、比大小、填单位、量一量，A4 打印',
   body: '3D 人体器官：一层层剖开身体，看看心脏、肺、胃都在哪',
   bodyDemo: '心脏怎么跳、肺怎么呼吸、食物在肚子里走多久？3D 演示一看就懂',
+  logic: '逻辑思维：过河、关灯、华容道，动手解开每一关',
 } as const
 
 export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
@@ -91,6 +92,7 @@ const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   unitsPrint: 'units',
   body: 'body',
   bodyDemo: 'body',
+  logic: 'logic',
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {

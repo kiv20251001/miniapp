@@ -58,4 +58,10 @@ export const TOOLS: ToolEntry[] = [
     image: '/static/tools/body.png',
     url: '/subsolar/body/index',
   },
+  {
+    key: 'logic',
+    name: '逻辑思维',
+    image: '/static/tools/logic.png',
+    url: '/subpages/logic/index',
+  },
 ]

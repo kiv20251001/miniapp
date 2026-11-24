@@ -418,6 +418,23 @@ function bodyArt() {
     ${callout(184, '#ffa064', '食物旅行', '从嘴巴到大肠', 'M92 140 C110 150 112 196 128 206')}`)
 }
 
+/** 逻辑思维：过河的船，和要点灭的灯。 */
+function logicArt() {
+  const lamps = [0, 1, 2].map((index) => {
+    const x = 28 + index * 52
+    const on = index !== 1
+    return `<circle cx="${x}" cy="48" r="16" fill="${on ? '#ffd15c' : '#2a3142'}"/>`
+  }).join('')
+  return card(`
+    ${lamps}
+    <rect x="24" y="118" width="64" height="78" rx="16" fill="#e7f6ea"/>
+    <rect x="132" y="118" width="64" height="78" rx="16" fill="#e7f6ea"/>
+    <rect x="96" y="132" width="36" height="64" rx="14" fill="#d7b48a"/>
+    <circle cx="46" cy="150" r="10" fill="#f15a36"/>
+    <circle cx="70" cy="168" r="10" fill="#ffd15c"/>
+    <circle cx="154" cy="156" r="10" fill="#5aa6e6"/>`)
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
@@ -428,6 +445,7 @@ async function toolboxArt() {
     ['static/tools/cube.png', '3D 几何体'],
     ['static/tools/units.png', '单位换算'],
     ['static/tools/body.png', '3D 人体'],
+    ['static/tools/logic.png', '逻辑思维'],
   ]
   const parts = []
   // 工具排成三列，最后一行不满时居中
@@ -522,6 +540,13 @@ const covers = [
     title: '3D 人体器官', sub: '一层层剖开，看看身体里有什么',
     tags: [['剖开看', ...BLUE], ['心跳呼吸', ...ORANGE], ['食物旅行', ...GREEN]],
     art: bodyArt(),
+  },
+  {
+    file: 'share/logic.jpg',
+    accent: '#7eb6ff', accent2: '#8b6cf0',
+    title: '逻辑思维', sub: '过河、关灯，动手解开',
+    tags: [['闯关', ...ORANGE], ['过河', ...BLUE], ['关灯', ...GREEN]],
+    art: logicArt(),
   },
 ]
 
