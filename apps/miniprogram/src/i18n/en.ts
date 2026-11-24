@@ -579,6 +579,7 @@ export const EN: Record<string, string> = {
   '更多工具入口': 'More tools',
   '字帖生成等实用工具': 'Copybook and other tools',
   '字帖、计算题、时钟、分数、太阳系、几何体、单位和逻辑思维': 'Copybooks, maths, the clock, fractions, planets, 3D shapes, units and logic',
+  '工欲善其事，必先利其器': 'Good work starts with sharp tools',
   '字帖生成': 'Copybook',
   '按 A4 排版，可保存图片或 PDF': 'A4 layout, save as image or PDF',
   '要练习的文字': 'Practice text',

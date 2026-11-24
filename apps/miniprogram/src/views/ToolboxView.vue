@@ -8,7 +8,7 @@ defineProps<{ back?: boolean }>()
 
 <template>
   <view class="page toolbox" :class="{ 'is-page': back }">
-    <PageHeader :safe="back" :show-back="back" :title="t('工具箱')" :caption="t('字帖、计算题、时钟、分数、太阳系、几何体、单位和逻辑思维')" />
+    <PageHeader :safe="back" :show-back="back" :title="t('工具箱')" :caption="t('工欲善其事，必先利其器')" />
     <view class="tool-grid">
       <navigator
         v-for="tool in TOOLS"
