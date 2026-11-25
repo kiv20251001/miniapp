@@ -17,7 +17,7 @@
 | 开发管理 → 开发设置 | 复制 AppID，填进 `apps/miniprogram/.env` | 全部 |
 | 云开发控制台 | 开通环境，部署云函数 `api`、`remind`，上传 `remind` 的触发器 | 登录、课表、账单、提醒 |
 | 云开发 → 数据库 | `users`、`families`、`invites`、`reminders` 权限改成「所有用户不可读写」 | 数据安全 |
-| 云开发 → 存储 | 把 `apps/miniprogram/cloud-storage/` 下的 `fonts`、`body` 两个文件夹原样上传，File ID 填进 `.env` 的 `VITE_CLOUD_STORAGE_*` | 真机字帖显示楷体、「3D 人体器官」显示写实人体 |
+| 云开发 → 存储 | 把 `apps/miniprogram/cloud-storage/` 下的 `fonts`、`body`、`pinyin`、`share` 四个文件夹原样上传，File ID 填进 `.env` 的 `VITE_CLOUD_STORAGE_*` | 真机字帖显示楷体、「3D 人体器官」显示写实人体、「拼音听写」能发声、工具转发卡片显示各自的图 |
 | 功能 → 订阅消息 | 从公共模板库选一个上课提醒模板 | 课前 15 分钟提醒 |
 | 设置 → 服务内容声明 → 用户隐私保护指引 | 勾选「用户信息」「剪切板」「相册（仅写入）」 | 登录头像昵称、邀请码、粘贴作业、保存练习图片 |
 | 设置 → 基本设置 | 名称、头像、简介、服务类目（工具类） | 审核 |
@@ -108,7 +108,7 @@
 3. 重新打包。打包输出里不再有「没有填写 VITE_CLOUD_STORAGE_…」的警告就对了。
 4. 存储权限保持默认的「所有用户可读，仅创建者可读写」即可。
 
-字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时用 `wx.loadFontFace` 注册这份本地文件（`scopes` 包含 `native`），离屏画布按返回的字体名来写。基础库 3.17 的离屏画布没有 `loadFont`。
+字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时把这份本地文件读成 Data URL，用 `wx.loadFontFace` 注册（`scopes` 包含 `native`）。不要把 `wxfile` 路径直接传给 `loadFontFace`，那个调用在真机上经常不回调，页面会误报下载超时。Data URL 失败时再用云存储临时 https 链接。离屏画布按注册的字体名来写。基础库 3.17 的离屏画布没有 `loadFont`。
 
 没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响；开发版、体验版点「生成」会弹窗写明是哪一步失败，正式版不弹。
 
@@ -118,13 +118,21 @@
 
 第一次打开工具时用 `wx.cloud.downloadFile` 下载，存到用户目录，之后直接读。下载期间画面上显示「正在准备人体模型…」，超过 20 秒或下载失败就先显示代码画的简化人体，下次打开再试。模型用 `node scripts/build-body-model.mjs` 重新生成；改了模型要换文件名（`body-v2.bin`，同时改 `src/subsolar/body/realistic.ts` 里的 `FILE`），不然用户手机上的旧缓存不会更新。
 
+**云存储文件（拼音读音）**
+
+「拼音听写」的读音是 `cloud-storage/pinyin/pinyin-v1.bin`（412 个音节各 5 个声调的 MP3 打包在一起，Kokoro-82M 离线合成，Apache-2.0），同样在**测试和正式两个环境**里各新建 `pinyin` 文件夹上传，文件夹名和文件名不要改。打开工具时下载一次存到用户目录，页面顶部显示下载进度；没上传或下载失败时探索、测验、打印都能用，只是没有声音，听写按钮会提示重试。用 `node scripts/build-pinyin-audio.mjs` 重新生成（要先按脚本开头的说明在 `.cache/tts` 装好模型和 Python 依赖）；改了声音要换文件名（`pinyin-v2.bin`，同时改 `src/subpinyin/voice.ts` 里的 `FILE`）。
+
+**云存储文件（工具分享图）**
+
+工具页右上角转发的 5:4 卡片图是 `cloud-storage/share/*.jpg`（11 张约 370K，`node scripts/render-share-covers.mjs` 生成），放云存储是为了不占主包体积（代码质量扫描要求主包小于 1.5M）。同样在**测试和正式两个环境**里各新建 `share` 文件夹上传，文件名不要改。没上传或没配置云存储时，转发卡片退回主包里的通用推广图 `static/share-cover.jpg`，功能不受影响。
+
 不做的现象：真机生成的字帖是宋体或黑体，模拟器正常。换了字体文件要改个文件名重新上传并同步改代码里的路径，手机上的旧缓存才会失效。
 
 **代码包图片合计 200K（建议项）**
 
 代码质量扫描的「图片和音频资源大小应不超过 200K」指的是代码包里所有图片、音频**加起来**，不是单个文件。这一项只是建议，不影响上传、审核和发布。
 
-现在合计约 375K：工具分享海报（`static/share/`，7 张约 223K）、工具图标（原图 PNG，约 62K）、界面图标（矢量 SVG，约 45K）、头像图和通用推广图。界面里展示的图标要保持高清，不要用有损压缩换体积，线条图标优先用 SVG。以后图片多了，把分享海报这类大图挪到 `cloud-storage/` 上传云存储，代码里用 `cloudFile('路径')` 取 File ID（分享卡片从基础库 2.8.1 起支持云文件）。
+现在合计约 150K：工具图标（原图 PNG，约 62K）、界面图标（矢量 SVG，约 45K）、头像图和通用推广图。界面里展示的图标要保持高清，不要用有损压缩换体积，线条图标优先用 SVG。工具分享海报已经挪到 `cloud-storage/share/`；以后图片多了，大图也这样处理，代码里用 `cloudFile('路径')` 取 File ID（分享卡片从基础库 2.8.1 起支持云文件）。
 
 ## 5. 3D 太阳系和 3D 几何体
 

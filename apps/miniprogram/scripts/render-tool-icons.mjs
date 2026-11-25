@@ -237,6 +237,25 @@ function logic() {
     <circle cx="88" cy="80" r="16" fill="#ffd15c"/>`
 }
 
+/** 拼音听写：四线格里一个带一声的 ā，右边是声波。 */
+function pinyin() {
+  return `
+    <defs>
+      <linearGradient id="letterA" gradientUnits="userSpaceOnUse" x1="30" y1="46" x2="70" y2="84"><stop offset="0" stop-color="#7cc4ff"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+      <linearGradient id="macron" gradientUnits="userSpaceOnUse" x1="32" y1="0" x2="68" y2="0"><stop offset="0" stop-color="#ffb45c"/><stop offset="1" stop-color="#f15a36"/></linearGradient>
+    </defs>
+    <path d="M14 24h92M14 46h92M14 92h92" stroke="#c6d3e6" stroke-width="1.6"/>
+    <path d="M14 82h92" stroke="#f1a3a3" stroke-width="1.8"/>
+    <circle cx="47" cy="66" r="14" stroke="url(#letterA)" stroke-width="8"/>
+    <path d="M65 50v32" stroke="url(#letterA)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M34 33h32" stroke="url(#macron)" stroke-width="7" stroke-linecap="round"/>
+    <g stroke="#8b6cf0" stroke-width="4.5" stroke-linecap="round" fill="none">
+      <path d="M82 58a10 10 0 0 1 0 16"/>
+      <path d="M90 51a20 20 0 0 1 0 30" opacity="0.7"/>
+      <path d="M98 44a30 30 0 0 1 0 44" opacity="0.45"/>
+    </g>`
+}
+
 function soon() {
   return `
     <defs>
@@ -249,7 +268,7 @@ function soon() {
     <circle cx="60" cy="91" r="6.5" fill="url(#mark)"/>`
 }
 
-const icons = { copybook, maths, clock, pizza, solar, cube, units, body, logic, soon }
+const icons = { copybook, maths, clock, pizza, solar, cube, units, body, logic, pinyin, soon }
 
 await mkdir(outDir, { recursive: true })
 const font = await openFontOptions()

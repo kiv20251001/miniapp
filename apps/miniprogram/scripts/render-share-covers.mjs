@@ -1,6 +1,7 @@
 // 工具页右上角转发用的 5:4 卡片图。好友卡片按 5:4 显示，页面截图是竖的会被压扁，所以每页单独画一张。
 // 左边是标题和卖点，右边是这个工具的示意图；时钟、田字格、YIMU 字和小程序里画法一致。
-// 图都放主包 static/share：分享卡片读不到分包里的图片。
+// 图输出到 cloud-storage/share，上传云存储后分享卡片用 cloud:// File ID 读取（基础库 2.8.1 起支持），
+// 不占主包体积；云存储没配置时分享退回主包里的通用推广图 static/share-cover.jpg。
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -435,6 +436,27 @@ function logicArt() {
     <circle cx="154" cy="156" r="10" fill="#5aa6e6"/>`)
 }
 
+/** 拼音听写：四线格里的 pīn yīn，下面一个喇叭和两个田字格。 */
+function pinyinArt() {
+  const strip = (y) => [0, 1, 2, 3].map((index) => `<path d="M24 ${y + index * 16}h168" stroke="${index === 2 ? '#f1a3a3' : '#c6d3e6'}" stroke-width="1.4"/>`).join('')
+  const tian = (x) => `
+    <rect x="${x}" y="150" width="56" height="56" fill="#ffffff" stroke="#7d8ba3" stroke-width="2"/>
+    <path d="M${x + 28} 150v56M${x} 178h56" stroke="#c9d1de" stroke-width="1.4" stroke-dasharray="4 3"/>`
+  return card(`
+    ${strip(40)}
+    <text x="108" y="72" text-anchor="middle" font-family="${SANS}" font-size="34" font-weight="700" fill="#3b82f6">pīn yīn</text>
+    ${tian(80)}${tian(140)}
+    <text x="108" y="190" text-anchor="middle" font-family="${SANS}" font-size="36" font-weight="700" fill="${INK}">拼</text>
+    <text x="168" y="190" text-anchor="middle" font-family="${SANS}" font-size="36" font-weight="700" fill="${INK}">音</text>
+    <circle cx="42" cy="178" r="24" fill="#ff7a45"/>
+    <path d="M32 172h6l8-7v26l-8-7h-6z" fill="#ffffff"/>
+    <path d="M50 171a9 9 0 0 1 0 14" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M28 236h160" stroke="#edf0f5" stroke-width="2"/>
+    <g font-family="${SANS}" font-size="15" font-weight="700" text-anchor="middle">
+      <text x="48" y="262" fill="#ff7a45">ā</text><text x="88" y="262" fill="#34c77b">á</text><text x="128" y="262" fill="#3b82f6">ǎ</text><text x="168" y="262" fill="#8b6cf0">à</text>
+    </g>`)
+}
+
 async function toolboxArt() {
   const tiles = [
     ['static/tools/copybook.png', '字帖生成'],
@@ -446,13 +468,15 @@ async function toolboxArt() {
     ['static/tools/units.png', '单位换算'],
     ['static/tools/body.png', '3D 人体'],
     ['static/tools/logic.png', '逻辑思维'],
+    ['static/tools/pinyin.png', '拼音听写'],
   ]
   const parts = []
   // 工具排成三列，最后一行不满时居中
   const cols = 3
-  const tile = 54
+  const dense = tiles.length > 9
+  const tile = dense ? 46 : 54
   const colPitch = 76
-  const rowPitch = 88
+  const rowPitch = dense ? 72 : 88
   for (const [index, [file, label]] of tiles.entries()) {
     const row = Math.floor(index / cols)
     const inRow = Math.min(cols, tiles.length - row * cols)
@@ -460,7 +484,7 @@ async function toolboxArt() {
     const y = 10 + row * rowPitch
     parts.push(`
       <rect x="${x}" y="${y}" width="${tile}" height="${tile}" rx="16" fill="url(#glass)" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
-      <image href="${await dataUri(file)}" x="${x + 10}" y="${y + 10}" width="34" height="34"/>
+      <image href="${await dataUri(file)}" x="${x + tile * 0.18}" y="${y + tile * 0.18}" width="${tile * 0.64}" height="${tile * 0.64}"/>
       <text x="${x + tile / 2}" y="${y + tile + 15}" text-anchor="middle" font-family="${SANS}" font-size="11" font-weight="700" fill="${INK}">${label}</text>`)
   }
   return `
@@ -481,7 +505,7 @@ const covers = [
   {
     file: 'share/toolbox.jpg',
     accent: '#ffb45c', accent2: '#7c5cf0',
-    title: '孩子练习工具箱', sub: '字帖 · 计算 · 时钟 · 分数 · 3D',
+    title: '孩子练习工具箱', sub: '字帖 · 计算 · 拼音 · 分数 · 3D',
     tags: [['一键生成', ...ORANGE], ['A4 打印', ...BLUE], ['持续更新', ...PURPLE]],
     art: await toolboxArt(),
   },
@@ -548,13 +572,20 @@ const covers = [
     tags: [['闯关', ...ORANGE], ['过河', ...BLUE], ['关灯', ...GREEN]],
     art: logicArt(),
   },
+  {
+    file: 'share/pinyin.jpg',
+    accent: '#7cc4ff', accent2: '#ff7a45',
+    title: '拼音听写', sub: '认一认、拼一拼、听一听、写一写',
+    tags: [['四声', ...ORANGE], ['手机报听写', ...BLUE], ['A4 打印', ...GREEN]],
+    art: pinyinArt(),
+  },
 ]
 
 const font = await openFontOptions()
 for (const { file, ...cover } of covers) {
   const markup = frame(cover)
   const png = new Resvg(markup, { fitTo: { mode: 'width', value: W * SCALE }, font }).render().asPng()
-  const out = path.join(root, 'static', file)
+  const out = path.join(root, '../cloud-storage', file)
   await mkdir(path.dirname(out), { recursive: true })
   const image = await Jimp.read(png)
   await writeFile(out, await image.quality(80).getBufferAsync(Jimp.MIME_JPEG))

@@ -64,4 +64,10 @@ export const TOOLS: ToolEntry[] = [
     image: '/static/tools/logic.png',
     url: '/subpages/logic/index',
   },
+  {
+    key: 'pinyin',
+    name: '拼音听写',
+    image: '/static/tools/pinyin.png',
+    url: '/subpinyin/index',
+  },
 ]

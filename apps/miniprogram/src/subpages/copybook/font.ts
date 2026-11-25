@@ -6,6 +6,8 @@ import { cloudFile } from '@/config'
  *
  * 字帖画在离屏画布上。基础库 3.17 的离屏画布已经没有 loadFont，
  * 要用 wx.loadFontFace，并且 scopes 带上 native，画布才会用这套楷体。
+ * loadFontFace 只接受 https 和 Data URL。把本地 wxfile 路径传进去时，成功和失败回调经常都不来，
+ * 外层 15 秒就会误报成「下载超时」。所以用已经下好的文件读成 Data URL，临时链接只作备用。
  * 有 loadFont 的旧基础库仍优先用它，每张画布各挂一次。
  */
 export const KAI_FAMILY = 'UdayKai'
@@ -47,6 +49,7 @@ type FontApi = {
 const SOURCE = cloudFile('fonts/copybook-kai.woff')
 
 let loading: Promise<boolean> | null = null
+let loadId = 0
 let ready = false
 let fontFile = ''
 /** 写 ctx.font 时用的字体名。loadFont 会返回系统起的名字，loadFontFace 用 KAI_FAMILY。 */
@@ -148,6 +151,22 @@ function canvasUsesKai(canvas: FontCanvas, family: string) {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
 function readBase64(path: string) {
   return new Promise<string>((resolve, reject) => {
     api().getFileSystemManager().readFile({
@@ -175,36 +194,56 @@ function tempUrl() {
   })
 }
 
-/** 先用已经下好的本地文件。失败再读成 Data URL，最后才用云存储临时链接。 */
+/**
+ * 本地文件先读成 Data URL，不走网络。
+ * 不用 url("wxfile://...")：这个地址不在 loadFontFace 支持范围内，真机上回调经常一直不来。
+ */
 function fontSources(file: string) {
   return [
-    { family: KAI_FAMILY, source: () => Promise.resolve(`url("${file}")`) },
-    { family: `${KAI_FAMILY}2`, source: async () => `url("data:font/woff;base64,${await readBase64(file)}")` },
-    { family: `${KAI_FAMILY}3`, source: async () => `url("${await tempUrl()}")` },
+    {
+      family: KAI_FAMILY,
+      source: async () => {
+        const data = await withTimeout(readBase64(file), 8000, '读取本地楷体超时')
+        return `url("data:font/woff;base64,${data}")`
+      },
+    },
+    {
+      family: `${KAI_FAMILY}2`,
+      source: async () => {
+        const url = await withTimeout(tempUrl(), 8000, '获取楷体链接超时')
+        return `url("${url}")`
+      },
+    },
   ]
 }
 
 function registerFace(family: string, source: string) {
-  return new Promise<void>((resolve, reject) => {
+  const pending = new Promise<void>((resolve, reject) => {
     const loadFontFace = api().loadFontFace
     if (!loadFontFace) return reject(new Error(`当前基础库 ${sdkVersion()} 不能加载字体`))
     loadFontFace({
       family,
       source,
       global: true,
-      scopes: ['webview', 'native', 'skyline'],
+      scopes: ['webview', 'native'],
       success: () => resolve(),
       fail: (err) => reject(new Error(err?.errMsg || err?.status || `加载字体失败（基础库 ${sdkVersion()}）`)),
     })
   })
+  return withTimeout(pending, 8000, `注册楷体超时（基础库 ${sdkVersion()}）`)
 }
 
-/** 字体挂上之后要等一帧，马上画读到的还是系统字体。 */
+/** 字体挂上之后要等一帧，马上画读到的还是系统字体。读不回像素时不据此判失败。 */
 async function faceApplied(canvas: FontCanvas, family: string) {
-  await wait(150)
-  if (canvasUsesKai(canvas, family)) return true
-  await wait(400)
-  return canvasUsesKai(canvas, family)
+  try {
+    await wait(150)
+    if (canvasUsesKai(canvas, family)) return true
+    await wait(400)
+    return canvasUsesKai(canvas, family)
+  } catch (error) {
+    console.warn('[copybook] font pixel check skipped', error)
+    return true
+  }
 }
 
 async function resolveFamily(canvas: FontCanvas, file: string) {
@@ -232,19 +271,23 @@ async function resolveFamily(canvas: FontCanvas, file: string) {
   throw new Error(`当前基础库 ${sdkVersion()} 没能把楷体画进画布：${errors.join('；')}`)
 }
 
-async function load() {
+async function load(id: number) {
   try {
     useCanvasLoadFont = false
     fontFile = await localFile()
+    if (id !== loadId) return false
     const canvas = api().createOffscreenCanvas?.({ type: '2d', width: 64, height: 64 })
     if (!canvas) throw new Error(`当前基础库 ${sdkVersion()} 不能创建离屏画布`)
     canvas.width = 64
     canvas.height = 64
-    face = await resolveFamily(canvas, fontFile)
+    const family = await resolveFamily(canvas, fontFile)
+    if (id !== loadId) return false
+    face = family
     ready = true
     kaiFontIssue = ''
     return true
   } catch (error) {
+    if (id !== loadId) return false
     face = ''
     ready = false
     useCanvasLoadFont = false
@@ -263,7 +306,11 @@ export function kaiFontReady() {
 /** 页面打开时先调一次预下载；生成前再等它，最多等 timeout 毫秒。 */
 export function loadKaiFont(timeout = 15000) {
   if (!SOURCE) return Promise.resolve(false)
-  if (!loading) loading = load()
+  if (!loading) {
+    const id = ++loadId
+    loading = load(id)
+  }
+  const id = loadId
   let settled = false
   return Promise.race([
     loading.then((ok) => {
@@ -272,7 +319,13 @@ export function loadKaiFont(timeout = 15000) {
     }),
     new Promise<boolean>((resolve) =>
       setTimeout(() => {
-        if (!settled) kaiFontIssue = `下载楷体超过 ${timeout / 1000} 秒，网络较慢，这次先用系统字体`
+        if (!settled && id === loadId) {
+          loadId += 1
+          loading = null
+          kaiFontIssue = fontFile
+            ? `楷体已经在手机上，但基础库 ${sdkVersion()} 还没注册完成，这次先用系统字体`
+            : `下载楷体超过 ${timeout / 1000} 秒，网络较慢，这次先用系统字体`
+        }
         resolve(ready)
       }, timeout),
     ),

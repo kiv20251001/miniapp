@@ -1,4 +1,4 @@
-// 用 pinyin-pro 生成字帖分包里的常用字读音表。小程序打包会把 node_modules 抽进主包，所以页面只引用生成结果。
+// 用 pinyin-pro 生成常用字读音表，字帖分包和拼音听写分包各写一份（分包之间不能互相引用 JS）。小程序打包会把 node_modules 抽进主包，所以页面只引用生成结果。
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,8 +13,8 @@ for (let code = 0x4e00; code <= 0x9fff; code += 1) {
   lines.push(char + value)
 }
 
-const target = join(dirname(fileURLToPath(import.meta.url)), '../src/subpages/copybook/readings.ts')
-const source = `/** 常用汉字的默认读音。由 scripts/gen-copybook-readings.mjs 生成，不要手改。 */
+const root = join(dirname(fileURLToPath(import.meta.url)), '../src')
+const source = `/** 常用汉字的默认读音。由 scripts/gen-copybook-readings.mjs 生成，不要手改。字帖和拼音听写两个分包各有一份，分包之间不能互相引用。 */
 const RAW = ${JSON.stringify(lines.join('\n'))}
 
 let readings: Map<string, string> | undefined
@@ -27,5 +27,5 @@ export function readingOfChar(char: string) {
   return readings.get(char) ?? ''
 }
 `
-writeFileSync(target, source)
+for (const target of ['subpages/copybook/readings.ts', 'subpinyin/readings.ts']) writeFileSync(join(root, target), source)
 console.log(`readings ${lines.length} chars, ${source.length} bytes`)

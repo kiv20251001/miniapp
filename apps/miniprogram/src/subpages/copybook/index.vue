@@ -8,7 +8,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { t } from '@/i18n'
 import { formTip } from '@/utils/form'
-import { randomGradeText, type GradeId } from './grades'
+import { GRADE_CHOICES, randomGradeText } from './grades'
 import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } from './render'
 import { renderSheetFiles } from './export'
 import { kaiFontIssue, loadKaiFont } from './font'
@@ -32,25 +32,8 @@ const STYLES: Array<{ value: GridStyle; label: string }> = [
   { value: 'line', label: '四线格' },
 ]
 
-const GRADE_CHOICES: Array<{ id: GradeId | 'all'; label: string }> = [
-  { id: 'all', label: '全部年级' },
-  { id: '1a', label: '一年级上册' },
-  { id: '1b', label: '一年级下册' },
-  { id: '2a', label: '二年级上册' },
-  { id: '2b', label: '二年级下册' },
-  { id: '3a', label: '三年级上册' },
-  { id: '3b', label: '三年级下册' },
-  { id: '4a', label: '四年级上册' },
-  { id: '4b', label: '四年级下册' },
-  { id: '5a', label: '五年级上册' },
-  { id: '5b', label: '五年级下册' },
-  { id: '6a', label: '六年级上册' },
-  { id: '6b', label: '六年级下册' },
-]
-
 const text = ref('')
 const gradeIndex = ref(0)
-const gradePicked = ref(false)
 const gradeLabels = computed(() => GRADE_CHOICES.map((item) => t(item.label)))
 const style = ref<GridStyle>('tian')
 const traceCount = ref(2)
@@ -147,14 +130,9 @@ function clearText() {
 
 function onGrade(event: { detail: { value: string | number } }) {
   gradeIndex.value = Number(event.detail.value)
-  gradePicked.value = true
 }
 
 function fillGrade() {
-  if (!gradePicked.value) {
-    formTip('请先选择年级')
-    return
-  }
   text.value = randomGradeText(GRADE_CHOICES[gradeIndex.value].id, 20)
 }
 
@@ -234,7 +212,7 @@ async function savePdf() {
           <picker class="grade-picker" mode="selector" :range="gradeLabels" :value="gradeIndex" @change="onGrade">
             <view class="tool-btn ghost press" hover-class="press-on" hover-stay-time="80">
               <AppIcon name="book" tone="accent" :size="15" />
-              <text class="grade-name">{{ gradePicked ? gradeLabels[gradeIndex] : t('按年级选择') }}</text>
+              <text class="grade-name">{{ gradeLabels[gradeIndex] }}</text>
               <text class="caret">▾</text>
             </view>
           </picker>

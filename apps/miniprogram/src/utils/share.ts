@@ -1,5 +1,6 @@
 import { watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { cloudFile } from '@/config'
 import { t } from '@/i18n'
 
 /** 右上角转发、朋友圈和邀请家人共用同一张推广图。好友卡片是 5:4，朋友圈缩略图会裁成正方形。 */
@@ -39,7 +40,7 @@ export function momentsShare() {
 
 /** 工具箱和各个工具转发时的标题，写清楚能用它做什么。 */
 export const TOOL_SHARE_TITLES = {
-  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体、单位换算、3D 人体器官、逻辑思维，孩子练习的小工具都在这',
+  toolbox: '字帖、计算题、认识时钟、3D 太阳系、认识分数、3D 几何体、单位换算、3D 人体器官、逻辑思维、拼音听写，孩子练习的小工具都在这',
   copybook: '输入汉字或英文单词，一键生成田字格字帖，A4 直接打印',
   maths: '凑十法、破十法、加减混合，一键生成计算练习题',
   make10: '凑十法练习题一键生成，A4 打印直接练',
@@ -61,6 +62,10 @@ export const TOOL_SHARE_TITLES = {
   body: '3D 人体器官：一层层剖开身体，看看心脏、肺、胃都在哪',
   bodyDemo: '心脏怎么跳、肺怎么呼吸、食物在肚子里走多久？3D 演示一看就懂',
   logic: '逻辑思维：过河、关灯、华容道，动手解开每一关',
+  pinyin: '拼音听写：声母韵母、整体认读、拼读和声调，点一点就会读',
+  pinyinQuiz: '拼音小测验：听声调、标声调、认音节、读汉字，你能答对几题？',
+  pinyinDictate: '拼音听写：家长输好词语，手机一个个报，孩子写完一起对答案',
+  pinyinPrint: '拼音练习题：看拼音写词语、给汉字注音、标声调、前后鼻音，A4 打印',
 } as const
 
 export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
@@ -68,7 +73,7 @@ export type ToolShareKey = keyof typeof TOOL_SHARE_TITLES
 /**
  * 好友卡片是 5:4 横图，竖屏页面截图放进去看不全，所以每个工具一张专门画的图，
  * 由 scripts/render-share-covers.mjs 生成。工具里的测验、打印、题型页共用工具那一张，标题各自不同。
- * 分享卡片读不到分包里的图片，所以都放主包，张数越少越省主包体积。
+ * 图放云存储（cloud-storage/share，不占主包体积），没配置云存储时退回通用推广图。
  */
 const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   toolbox: 'toolbox',
@@ -93,10 +98,14 @@ const TOOL_SHARE_IMAGES: Record<ToolShareKey, string> = {
   body: 'body',
   bodyDemo: 'body',
   logic: 'logic',
+  pinyin: 'pinyin',
+  pinyinQuiz: 'pinyin',
+  pinyinDictate: 'pinyin',
+  pinyinPrint: 'pinyin',
 }
 
 export function toolShare(key: ToolShareKey, path: string): ShareContent {
-  return { title: t(TOOL_SHARE_TITLES[key]), path, imageUrl: `/static/share/${TOOL_SHARE_IMAGES[key]}.jpg` }
+  return { title: t(TOOL_SHARE_TITLES[key]), path, imageUrl: cloudFile(`share/${TOOL_SHARE_IMAGES[key]}.jpg`) || SHARE_IMAGE }
 }
 
 /** 朋友圈缩略图会裁成正方形，横图左边的标题会被裁掉，所以仍用居中排版的推广图，只换成工具自己的标题。 */

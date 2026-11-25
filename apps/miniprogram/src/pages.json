@@ -34,6 +34,12 @@
       ]
     },
     {
+      "root": "subpinyin",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "拼音听写" } }
+      ]
+    },
+    {
       "root": "subsolar",
       "pages": [
         {
@@ -53,7 +59,7 @@
   ],
   "preloadRule": {
     "pages/home/index": { "network": "all", "packages": ["subpages"] },
-    "subpages/toolbox/index": { "network": "wifi", "packages": ["subsolar"] }
+    "subpages/toolbox/index": { "network": "wifi", "packages": ["subpinyin", "subsolar"] }
   },
   "globalStyle": {
     "navigationStyle": "custom",

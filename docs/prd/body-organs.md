@@ -115,7 +115,7 @@
 
 - 首次进入每个标签有操作引导，「?」可以重看，做法和几何体、单位换算一样。
 - 所有文案用 `t('中文')`，英文写进 `en.ts`；器官名字中英文对照，可以顺便学英文单词。
-- 分享标题和分享图（`static/share/body.jpg`），工具箱图标（`static/tools/body.png`）都用脚本生成。
+- 分享标题和分享图（`cloud-storage/share/body.jpg`），工具箱图标（`static/tools/body.png`）都用脚本生成。
 
 ## 6. 内容与安全
 

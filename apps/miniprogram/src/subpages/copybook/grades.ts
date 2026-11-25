@@ -1,4 +1,5 @@
 /** 统编小学语文写字表（会写的字），按册排列。i18n 检查会跳过这个文件。
+ * 字帖分包和拼音听写分包各有一份。分包之间不能互相引用，只被分包用到的文件放进主包会被代码质量扫描判成「主包未使用的 JS」。改字表时两份一起改。
  * 字符取自 2026-10 仍在使用的部编版写字表：十二册 2500 个字次，去重 2344 字。
  * 只收汉字，不含课文、组词和笔顺说明。一年级与 2024 年审定、2026 学年仍在用的统编教材写字表一致。
  * 教材若再修订，以手头课本为准。
@@ -19,6 +20,23 @@ export const GRADE_CHARS = {
 } as const
 
 export type GradeId = keyof typeof GRADE_CHARS
+
+/** 年级下拉的选项，字帖、听写、打印题共用。 */
+export const GRADE_CHOICES: Array<{ id: GradeId | 'all'; label: string }> = [
+  { id: 'all', label: '全部年级' },
+  { id: '1a', label: '一年级上册' },
+  { id: '1b', label: '一年级下册' },
+  { id: '2a', label: '二年级上册' },
+  { id: '2b', label: '二年级下册' },
+  { id: '3a', label: '三年级上册' },
+  { id: '3b', label: '三年级下册' },
+  { id: '4a', label: '四年级上册' },
+  { id: '4b', label: '四年级下册' },
+  { id: '5a', label: '五年级上册' },
+  { id: '5b', label: '五年级下册' },
+  { id: '6a', label: '六年级上册' },
+  { id: '6b', label: '六年级下册' },
+]
 
 const ALL = [...new Set(Object.values(GRADE_CHARS).join(''))]
 
