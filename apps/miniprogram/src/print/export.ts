@@ -57,16 +57,23 @@ function exportJpeg(canvas: Offscreen, quality: number) {
   })
 }
 
-/** 逐页画到离屏画布，返回可预览的临时图片。 */
+/**
+ * 逐页画布，返回可预览的临时图片。
+ * 默认每页一张新的离屏画布。传入 create 时反复使用同一张画布（手机上自定义字体只能画进页面里的 canvas）。
+ */
 export async function renderPages(
   count: number,
   draw: (pen: SheetPen, index: number) => void,
   quality = 0.92,
   prepare?: (canvas: Offscreen) => void,
+  create?: () => Promise<Offscreen>,
 ) {
   const files: string[] = []
+  const shared = create ? await create() : null
   for (let index = 0; index < count; index += 1) {
-    const canvas = createCanvas()
+    const canvas = shared ?? createCanvas()
+    canvas.width = PAGE_W
+    canvas.height = PAGE_H
     prepare?.(canvas)
     draw(canvas.getContext('2d'), index)
     files.push(await exportJpeg(canvas, quality))

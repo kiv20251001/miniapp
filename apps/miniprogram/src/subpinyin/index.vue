@@ -96,7 +96,7 @@ function vibrate(type: 'light' | 'medium' | 'heavy') {
 
 // ---- 声音 ----
 const voiceTip = computed(() => {
-  if (voice.status === 'loading') return t('声音下载中 {n}%', { n: voice.progress })
+  if (voice.status === 'loading') return voice.progress ? t('声音下载中 {n}%', { n: voice.progress }) : t('正在下载读音…')
   if (voice.status === 'error') return t('声音没下载好，点这里重试')
   if (voice.status === 'off') return t('这个版本没有配置声音')
   return ''
@@ -108,11 +108,12 @@ function retryVoice() {
 
 function play(keys: string[] | string) {
   const list = Array.isArray(keys) ? keys : [keys]
-  if (voice.status !== 'ready') {
-    prepareVoice()
-    return Promise.resolve(false)
-  }
-  return say(list)
+  return say(list).then((ok) => {
+    if (!ok && (voice.status === 'error' || voice.status === 'off')) {
+      uni.showToast({ title: voice.status === 'off' ? t('这个版本没有配置声音') : t('声音没下载好，点这里重试'), icon: 'none' })
+    }
+    return ok
+  })
 }
 
 // ---- 探索 ----
@@ -746,7 +747,11 @@ onReady(() => {
       <text class="seg-item" :class="{ active: tab === 'print' }" @click="setTab('print')">{{ t('打印题目') }}</text>
     </view>
 
-    <view v-if="voiceTip && tab !== 'print'" class="voice-tip press" :class="voice.status" @click="retryVoice">
+    <view v-if="voice.status === 'loading'" class="voice-bar">
+      <view class="voice-bar-fill" :class="{ unknown: !voice.progress }" :style="voice.progress ? { width: `${voice.progress}%` } : {}" />
+      <text class="voice-bar-text">{{ voiceTip }}</text>
+    </view>
+    <view v-else-if="voiceTip && tab !== 'print'" class="voice-tip press" :class="voice.status" @click="retryVoice">
       <view class="voice-dot" />
       <text>{{ voiceTip }}</text>
     </view>
@@ -1224,6 +1229,14 @@ onReady(() => {
 .theme-dark .seg.small { border-color: transparent; background: var(--surface-2); box-shadow: none; }
 .theme-dark .seg.small .seg-indicator { background: var(--paper); }
 
+.voice-bar { position: relative; overflow: hidden; height: 36px; margin: -4px 0 12px; border-radius: 12px; background: var(--surface-2); }
+.voice-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(255, 122, 69, 0.28); }
+.voice-bar-fill.unknown { width: 38%; animation: voice-slide 1.1s ease-in-out infinite; }
+.voice-bar-text { position: relative; z-index: 1; display: block; color: var(--ink); font-size: 13px; font-weight: 700; line-height: 36px; text-align: center; }
+@keyframes voice-slide {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
 .voice-tip { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 650; }
 .voice-tip.error { background: rgba(241, 90, 54, 0.12); color: #d9482a; }
 .voice-dot { width: 8px; height: 8px; border-radius: 50%; background: #ffb08d; animation: breathe 1.2s ease-in-out infinite; }

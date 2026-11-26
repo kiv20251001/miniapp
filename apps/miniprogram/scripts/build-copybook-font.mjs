@@ -1,5 +1,6 @@
-// 生成字帖用的楷体字体子集 cloud-storage/fonts/copybook-kai.woff，再上传到云存储（见 docs/miniprogram-backend-settings.md）。
-// 字体用霞鹜文楷 GB（SIL OFL 1.1，可免费商用、可随软件分发），只保留 GB2312 6763 字 + 写字表 + 标点，约 2MB。
+// 生成字帖用的楷体字体子集 cloud-storage/fonts/copybook-kai.ttf，再上传到云存储（见 docs/miniprogram-backend-settings.md）。
+// 字体用霞鹜文楷 GB（SIL OFL 1.1，可免费商用、可随软件分发），只保留 GB2312 6763 字 + 写字表 + 标点。
+// 手机画布不吃 WOFF，所以输出 TTF。OFL 把霞鹜、LXGW 列为保留名称，子集是派生字体，家族名改成 UdayKai。
 // 依赖 Python 的 fonttools：pip3 install fonttools。用法：node scripts/build-copybook-font.mjs
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -9,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = path.join(root, 'fonts')
 const source = path.join(outDir, 'LXGWWenKaiGB-Regular.ttf')
-const output = path.join(root, 'cloud-storage/fonts/copybook-kai.woff')
+const output = path.join(root, 'cloud-storage/fonts/copybook-kai.ttf')
 const SOURCE_URL = 'https://github.com/lxgw/LxgwWenkaiGB/releases/latest/download/LXGWWenKaiGB-Regular.ttf'
 
 mkdirSync(outDir, { recursive: true })
@@ -42,7 +43,6 @@ try {
     source,
     `--text-file=${textFile}`,
     `--output-file=${output}`,
-    '--flavor=woff',
     '--no-hinting',
     '--desubroutinize',
     // 保留字体里的版权和 OFL 许可声明，OFL 要求随字体一起分发
@@ -55,4 +55,13 @@ try {
   console.error('需要 fonttools：pip3 install fonttools（或用 PYFTSUBSET=路径 指定 pyftsubset）')
   throw error
 }
+execFileSync('python3', ['-c', `
+from fontTools.ttLib import TTFont
+font = TTFont(${JSON.stringify(output)})
+name = font['name']
+for lang in (0x409, 0x804):
+    for name_id, text in ((1, 'UdayKai'), (2, 'Regular'), (4, 'UdayKai'), (6, 'UdayKai-Regular'), (16, 'UdayKai'), (17, 'Regular')):
+        name.setName(text, name_id, 3, 1, lang)
+font.save(${JSON.stringify(output)})
+`], { stdio: 'inherit' })
 console.log(`已生成 ${path.relative(root, output)}，共 ${chars.size} 个字符。把 cloud-storage/ 原样上传到两个云环境的存储。`)

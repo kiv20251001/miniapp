@@ -99,18 +99,18 @@
 
 **云存储文件（字帖楷体）**
 
-手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。字体约 2MB，超过分包上限，只能放云存储。仓库里按云存储的目录结构放在 `apps/miniprogram/cloud-storage/`，现在有 `fonts/copybook-kai.woff` 和下面的 `body/body-v1.bin`。
+手机上没有楷体，模拟器能用 Mac 自带的华文楷体，真机会退回宋体或黑体，字帖就成了印刷体。字体约 3.4MB，超过分包上限，只能放云存储。仓库里按云存储的目录结构放在 `apps/miniprogram/cloud-storage/`，现在有 `fonts/copybook-kai.ttf` 和下面的 `body/body-v1.bin`。
 
 步骤：
 
-1. 云开发控制台 →「存储」→「存储管理」，在**测试和正式两个环境**里各新建 `fonts` 文件夹，上传 `cloud-storage/fonts/copybook-kai.woff`。文件夹名和文件名要和仓库里一样。
+1. 云开发控制台 →「存储」→「存储管理」，在**测试和正式两个环境**里各新建 `fonts` 文件夹，上传 `cloud-storage/fonts/copybook-kai.ttf`。文件夹名和文件名要和仓库里一样。如果以前传过 `copybook-kai.woff`，那个文件手机画布用不上，换成这个 ttf。
 2. 在该环境里点这个文件，复制 File ID（`cloud://` 开头），填进 `.env`：测试环境的填 `VITE_CLOUD_STORAGE_DEV=`，正式环境的填 `VITE_CLOUD_STORAGE_PROD=`。代码只取 `cloud://环境.桶` 这一段，后面的路径不影响。只建了一个环境就两项填同一个。
 3. 重新打包。打包输出里不再有「没有填写 VITE_CLOUD_STORAGE_…」的警告就对了。
 4. 存储权限保持默认的「所有用户可读，仅创建者可读写」即可。
 
-字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时把这份本地文件读成 Data URL，用 `wx.loadFontFace` 注册（`scopes` 包含 `native`）。不要把 `wxfile` 路径直接传给 `loadFontFace`，那个调用在真机上经常不回调，页面会误报下载超时。Data URL 失败时再用云存储临时 https 链接。离屏画布按注册的字体名来写。基础库 3.17 的离屏画布没有 `loadFont`。
+字体用 `node scripts/build-copybook-font.mjs` 生成（需要 `pip3 install fonttools`），是霞鹜文楷 GB（SIL OFL 1.1，可免费商用），只保留 GB2312 的 6763 个字和写字表里的字，输出 TTF，家族名改成 `UdayKai`（OFL 不许派生字体继续叫霞鹜或 LXGW）。下载的 25MB 源字体放在不入库的 `fonts/`。小程序第一次打开字帖页时用 `wx.cloud.downloadFile` 在后台下载，存到用户目录，之后不再下载，不需要配置下载域名。生成时把这份本地文件读成 Data URL，用 `wx.loadFontFace` 注册（`scopes` 先用 `native`）。不要把 `wxfile` 路径直接传给 `loadFontFace`，那个调用在真机上经常不回调。Data URL 失败时再用云存储临时 https 链接。注册之后用新画布画「永」和系统字体比像素，对得上才算楷体生效；带引号和不带引号的字体名都会试。基础库 3.17 的离屏画布没有 `loadFont`，而且不吃 WOFF，所以必须是 TTF。离屏画布仍然不用这套字体时，改画页面里那张隐藏的 canvas。还是失败就退回系统字体，并提示想用楷体请用电脑版微信打开再生成。
 
-没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响；开发版、体验版点「生成」会弹窗写明是哪一步失败，正式版不弹。
+没填 `VITE_CLOUD_STORAGE_*`、文件没上传或下载失败时，字帖退回手机系统字体，功能不受影响。生成前如果楷体没挂上，会提示用电脑版微信再生成，也可以继续用系统字体生成。
 
 **云存储文件（3D 人体模型）**
 
@@ -120,7 +120,7 @@
 
 **云存储文件（拼音读音）**
 
-「拼音听写」的读音是 `cloud-storage/pinyin/pinyin-v1.bin`（412 个音节各 5 个声调的 MP3 打包在一起，Kokoro-82M 离线合成，Apache-2.0），同样在**测试和正式两个环境**里各新建 `pinyin` 文件夹上传，文件夹名和文件名不要改。打开工具时下载一次存到用户目录，页面顶部显示下载进度；没上传或下载失败时探索、测验、打印都能用，只是没有声音，听写按钮会提示重试。用 `node scripts/build-pinyin-audio.mjs` 重新生成（要先按脚本开头的说明在 `.cache/tts` 装好模型和 Python 依赖）；改了声音要换文件名（`pinyin-v2.bin`，同时改 `src/subpinyin/voice.ts` 里的 `FILE`）。
+「拼音听写」的读音是 `cloud-storage/pinyin/pinyin-v2.bin`（Chen Wang 录的标准音节，CC BY-SA，`node scripts/build-pinyin-audio.mjs` 打包），同样在**测试和正式两个环境**里各新建 `pinyin` 文件夹上传，文件夹名和文件名不要改。如果云上还是旧的 `pinyin-v1.bin`，要再传这个 v2，否则手机还会放以前合成的声音。打开工具或点播放时下载一次，页面上有进度条；下完存到用户目录，之后直接读。没上传或下载失败时探索、测验、打印都能用，只是没有声音，点播放会提示重试。改了声音要换文件名（`pinyin-v3.bin`，同时改 `src/subpinyin/voice.ts` 里的 `FILE`）。
 
 **云存储文件（工具分享图）**
 
@@ -174,7 +174,7 @@
 - [ ] 数据库集合权限是「所有用户不可读写」
 - [ ] 订阅消息模板已选用，字段和 `remind.config.json` 一致
 - [ ] 隐私指引已勾选「用户信息」「剪切板」「相册（仅写入）」，且审核通过
-- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.woff`，`.env` 已填 `VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`
+- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.ttf` 和 `pinyin/pinyin-v2.bin`，`.env` 已填 `VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`
 - [ ] 基础库最低版本 ≥ 2.32.3
 - [ ] 服务类目是不需要资质的工具类
 - [ ] 真机试过：登录选头像昵称、复制邀请码、设置提醒、生成字帖是楷体、保存练习图片、保存 PDF、3D 太阳系能拖动旋转、双指缩放、点星球能看到文字讲解；3D 几何体能拖动旋转、点棱和顶点会计数、每种几何体都能拖滑块展开、离开「打印题目」回来画面还在、打印题目能保存

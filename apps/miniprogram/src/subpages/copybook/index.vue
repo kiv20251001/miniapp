@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance, nextTick, ref, watch } from 'vue'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onReady, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { TOOL_SHARE_TITLES, toolMoments, toolShare, useSearchTitle } from '@/utils/share'
 import { useFamilyPage } from '@/composables/useFamilyPage'
 import { usePageBackground, useThemePage } from '@/utils/wx-theme'
@@ -11,8 +11,7 @@ import { formTip } from '@/utils/form'
 import { GRADE_CHOICES, randomGradeText } from './grades'
 import { englishWords, isEnglishText, layoutSheet, MAX_PAGES, type GridStyle } from './render'
 import { renderSheetFiles } from './export'
-import { kaiFontIssue, loadKaiFont } from './font'
-import { WX_ENV_VERSION } from '@/config'
+import { bindKaiCanvas, kaiFontIssue, loadKaiFont } from './font'
 import { saveSheetImages, saveSheetPdf } from '@/print/save'
 import { scrollToFirstSheet } from '@/print/scroll'
 
@@ -24,7 +23,17 @@ useSearchTitle(() => t(TOOL_SHARE_TITLES.copybook))
 const pageBg = usePageBackground()
 const instance = getCurrentInstance()
 const MAX_SLOTS = 12
-loadKaiFont()
+bindKaiCanvas(() => new Promise((resolve) => {
+  const ask = (left: number) => {
+    uni.createSelectorQuery().in(instance?.proxy).select('#kai-sheet').fields({ node: true, size: true }, () => {}).exec((res) => {
+      const node = (res?.[0] as { node?: { width: number; height: number; getContext: (kind: '2d') => unknown } } | undefined)?.node ?? null
+      if (node || left <= 0) resolve(node as never)
+      else setTimeout(() => ask(left - 1), 80)
+    })
+  }
+  ask(8)
+}))
+onReady(() => { loadKaiFont() })
 
 const STYLES: Array<{ value: GridStyle; label: string }> = [
   { value: 'tian', label: '田字格' },
@@ -162,9 +171,20 @@ async function generate() {
   rendering.value = true
   uni.showLoading({ title: '正在加载楷体…', mask: true })
   try {
-    if (!english.value && !(await loadKaiFont()) && WX_ENV_VERSION !== 'release' && kaiFontIssue) {
+    if (!english.value && !(await loadKaiFont())) {
       uni.hideLoading()
-      await new Promise((resolve) => uni.showModal({ title: 'Kai font (dev only)', content: kaiFontIssue, showCancel: false, complete: resolve }))
+      console.warn('[copybook] kai font', kaiFontIssue)
+      const goOn = await new Promise<boolean>((resolve) => {
+        uni.showModal({
+          title: t('这次没能用上楷体'),
+          content: t('手机上没能把楷体画进字帖，打出来会是系统字体，不适合描红。想用楷体，请用电脑版微信打开这个小程序再生成。'),
+          confirmText: t('继续生成'),
+          cancelText: t('先不生成'),
+          success: (result) => resolve(Boolean(result.confirm)),
+          fail: () => resolve(false),
+        })
+      })
+      if (!goOn) return
     }
     uni.showLoading({ title: '正在排版…', mask: true })
     images.value = await renderSheetFiles(sheet)
@@ -204,6 +224,7 @@ async function savePdf() {
   <page-meta :page-style="pageBg.style" :background-color="pageBg.bg" :background-color-top="pageBg.bg" :background-color-bottom="pageBg.bg" :root-background-color="pageBg.bg" :background-text-style="pageBg.text" />
   <view class="theme-root page sub copybook" :class="[themeClass, { 'has-pages': images.length }]">
     <PageHeader safe show-back :title="t('字帖生成')" :caption="t('按 A4 排版，可保存图片或 PDF')" />
+    <canvas id="kai-sheet" type="2d" class="kai-sheet" />
 
     <view class="card">
       <view class="field">
@@ -506,4 +527,5 @@ async function savePdf() {
   background: var(--dock-bg);
 }
 .save-dock .btn { flex: 1; }
+.kai-sheet { position: fixed; left: 0; top: -8px; width: 1px; height: 1px; pointer-events: none; }
 </style>

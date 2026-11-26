@@ -1,5 +1,5 @@
 import { drawSheet, layoutSheet, type SheetOptions } from './render'
-import { mountKaiFont } from './font'
+import { kaiUsesScreen, mountKaiFont, takeKaiCanvas } from './font'
 import { renderPages } from '@/print/export'
 
 export { openSheetPdf, persistSheetImage } from '@/print/export'
@@ -12,5 +12,6 @@ export function renderSheetFiles(options: SheetOptions) {
     (pen, index) => drawSheet(pen, pages[index], index, pages.length, options),
     0.92,
     mountKaiFont,
+    kaiUsesScreen() ? () => takeKaiCanvas() as never : undefined,
   )
 }

@@ -95,7 +95,7 @@ const status = computed(() => {
 const progressStyle = computed(() => ({ width: `${((cursor.value + 1) / Math.max(1, queue.value.length)) * 100}%` }))
 const voiceReady = computed(() => voice.status === 'ready')
 const startLabel = computed(() => {
-  if (voice.status === 'loading') return t('声音下载中 {n}%', { n: voice.progress })
+  if (voice.status === 'loading') return voice.progress ? t('声音下载中 {n}%', { n: voice.progress }) : t('正在下载读音…')
   if (voice.status === 'off') return t('这个版本没有配置声音')
   if (voice.status === 'error') return t('声音没下载好，点这里重试')
   return t('开始听写')
@@ -197,18 +197,15 @@ function begin(list: Item[]) {
   setTimeout(playCurrent, 400)
 }
 
-function start() {
-  if (voice.status === 'error') {
-    prepareVoice()
-    return
-  }
+async function start() {
   if (!items.value.length) {
     formTip('请先输入听写的词语，或按年级随机生成')
     return
   }
+  if (voice.status === 'off') return
   if (!voiceReady.value) {
-    prepareVoice()
-    return
+    const ok = await prepareVoice()
+    if (!ok) return
   }
   if (allItems.value.length > MAX_ITEMS) formTip(t('一次最多 {n} 个，只听写前 {n} 个', { n: MAX_ITEMS }))
   begin(items.value)
@@ -309,7 +306,7 @@ onUnmounted(halt)
         </view>
       </view>
 
-      <button hover-class="press-on" hover-stay-time="80" class="btn block start" :disabled="voice.status === 'loading' || voice.status === 'off'" @click="start">{{ startLabel }}</button>
+      <button hover-class="press-on" hover-stay-time="80" class="btn block start" :disabled="voice.status === 'off'" @click="start">{{ startLabel }}</button>
     </template>
 
     <!-- 报词 -->

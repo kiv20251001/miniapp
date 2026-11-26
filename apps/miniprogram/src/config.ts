@@ -34,7 +34,7 @@ export const CLOUD_ENV =
 const CLOUD_STORAGE =
   ((APP_ENV === 'prod' ? import.meta.env.VITE_CLOUD_STORAGE_PROD : import.meta.env.VITE_CLOUD_STORAGE_DEV) || '').match(/^cloud:\/\/[^/]+/)?.[0] ?? ''
 
-/** 云存储里文件的 File ID，例如 cloudFile('fonts/copybook-kai.woff')。没配置云存储时返回空字符串。 */
+/** 云存储里文件的 File ID，例如 cloudFile('fonts/copybook-kai.ttf')。没配置云存储时返回空字符串。 */
 export function cloudFile(path: string) {
   return CLOUD_STORAGE ? `${CLOUD_STORAGE}/${path}` : ''
 }

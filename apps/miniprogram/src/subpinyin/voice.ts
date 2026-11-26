@@ -1,5 +1,5 @@
 /**
- * 拼音的声音：scripts/build-pinyin-audio.mjs 离线合成的音节包 pinyin-v1.bin，放云存储（cloud-storage/pinyin）。
+ * 拼音的声音：scripts/build-pinyin-audio.mjs 打包的真人音节录音 pinyin-v2.bin，放云存储（cloud-storage/pinyin）。
  * 第一次用时下载并存在本地，之后直接读。播放一个词时把几个音节的 MP3 片段接成一个文件再放。
  *
  * 文件格式：'UPY1' + u32 文件头长度 + JSON 文件头（items: { ma1: [偏移, 长度] }）+ MP3 数据，偏移从数据开头算。
@@ -8,13 +8,13 @@ import { reactive } from 'vue'
 import { cloudFile } from '@/config'
 import { parse, soundKey, type Tone } from './pinyin'
 
-const FILE = 'pinyin/pinyin-v1.bin'
+const FILE = 'pinyin/pinyin-v2.bin'
 const SOURCE = cloudFile(FILE)
-/** 32kbps 单声道，一秒 4000 字节，用来估算放完要多久 */
-const BYTES_PER_SECOND = 4000
+/** 64kbps 左右。估短了会提前停，所以按更低的码率留出余量。 */
+const BYTES_PER_SECOND = 5000
 
 type Fail = (err: { errMsg?: string }) => void
-type DownloadTask = { onProgressUpdate?: (listener: (res: { progress: number }) => void) => void }
+type DownloadTask = { onProgressUpdate?: (listener: (res: { progress: number; totalBytesWritten: number; totalBytesExpectedToWrite: number }) => void) => void }
 type FileApi = {
   getFileSystemManager: () => {
     access: (options: { path: string; success?: () => void; fail?: Fail }) => void
@@ -44,7 +44,7 @@ function hash(value: string) {
   return (h >>> 0).toString(36)
 }
 
-const cachePath = () => `${api().env.USER_DATA_PATH}/pinyin-v1-${hash(SOURCE)}.bin`
+const cachePath = () => `${api().env.USER_DATA_PATH}/pinyin-v2-${hash(SOURCE)}.bin`
 
 function exists(path: string) {
   return new Promise<boolean>((resolve) => api().getFileSystemManager().access({ path, success: () => resolve(true), fail: () => resolve(false) }))
@@ -66,7 +66,9 @@ function download() {
       fail: (err) => reject(new Error(err?.errMsg || 'download')),
     })
     task?.onProgressUpdate?.((res) => {
-      voice.progress = res.progress
+      const expected = res.totalBytesExpectedToWrite
+      const percent = res.progress || (expected ? Math.min(99, Math.round((res.totalBytesWritten / expected) * 100)) : 0)
+      if (percent) voice.progress = percent
     })
   })
 }
@@ -195,9 +197,20 @@ export function stopVoice() {
   settle()
 }
 
-/** 依次读出这几个音节（'ma1'），读完 resolve。没有声音时立刻 resolve(false)。 */
+/** 轻声没有单独录音时，用同一个音节的一声，避免这个字被跳过不读。 */
+function soundFor(key: string) {
+  if (hasSound(key)) return key
+  if (key.endsWith('5') && hasSound(`${key.slice(0, -1)}1`)) return `${key.slice(0, -1)}1`
+  return ''
+}
+
+/** 依次读出这几个音节（'ma1'）。声音还在下载时先等下载完再放。没有声音时 resolve(false)。 */
 export async function say(keys: string[], tag = keys.join(' ')) {
-  const list = keys.filter(hasSound)
+  if (!bytes) {
+    const ok = await prepareVoice()
+    if (!ok) return false
+  }
+  const list = keys.map(soundFor).filter(Boolean)
   if (!list.length) return false
   stopVoice()
   const { path, size } = await fileFor(list)
