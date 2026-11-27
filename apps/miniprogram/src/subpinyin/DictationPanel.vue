@@ -7,6 +7,7 @@ import { prepareVoice, say, stopVoice, voice, wordKeys } from './voice'
 import Stepper from './Stepper.vue'
 import Toggle from './Toggle.vue'
 import WordInput from './WordInput.vue'
+import SpeakerIcon from './SpeakerIcon.vue'
 
 const STORE_KEY = 'uday-pinyin-dictation-v1'
 const MAX_ITEMS = 50
@@ -321,10 +322,8 @@ onUnmounted(halt)
       <view class="speaker-wrap press" hover-class="press-on" hover-stay-time="80" @click="playCurrent">
         <view v-if="voice.playing" class="ripple r1" />
         <view v-if="voice.playing" class="ripple r2" />
-        <view class="speaker-btn" :class="{ playing: voice.playing }">
-          <view class="speaker-cone" />
-          <view class="wave w1" />
-          <view class="wave w2" />
+        <view class="speaker-btn" :class="{ playing: !!voice.cue }">
+          <SpeakerIcon size="lg" :live="!!voice.cue" />
         </view>
       </view>
       <text class="run-round" :class="{ urgent: countLeft > 0 && countLeft <= 3 }">{{ status }}</text>
@@ -366,7 +365,7 @@ onUnmounted(halt)
             </view>
           </view>
           <view class="answer-say press" hover-class="press-on" hover-stay-time="80" @click="replay(item)">
-            <view class="mini-speaker" />
+            <SpeakerIcon size="sm" :live="voice.cue === item.word" />
           </view>
           <view class="answer-mark press" hover-class="press-on" hover-stay-time="80" @click="toggleWrong(index)">
             <text>{{ wrong[index] ? '✗' : '✓' }}</text>
@@ -424,15 +423,8 @@ onUnmounted(halt)
 .speaker-wrap { position: relative; display: flex; width: 180px; height: 180px; align-items: center; justify-content: center; margin: 34px 0 12px; }
 .ripple { position: absolute; inset: 20px; border-radius: 50%; background: rgba(255, 122, 69, 0.18); animation: ripple 1.6s ease-out infinite; }
 .ripple.r2 { animation-delay: 0.8s; }
-.speaker-btn { position: relative; display: flex; width: 132px; height: 132px; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, #ffb45c 0%, #ff7a45 48%, #f15a36 100%); box-shadow: 0 18px 36px -16px rgba(241, 90, 54, 0.7); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.speaker-btn { position: relative; display: flex; width: 132px; height: 132px; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, #ffb45c 0%, #ff7a45 48%, #f15a36 100%); color: #fff; box-shadow: 0 18px 36px -16px rgba(241, 90, 54, 0.7); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .speaker-btn.playing { transform: scale(1.06); }
-.speaker-cone { position: relative; width: 22px; height: 26px; margin-left: -26px; border-radius: 4px 0 0 4px; background: #fff; }
-.speaker-cone::after { content: ''; position: absolute; top: -12px; left: 14px; border-top: 25px solid transparent; border-bottom: 25px solid transparent; border-right: 22px solid #fff; transform: scaleX(-1); }
-.wave { position: absolute; top: 50%; border: 4px solid #fff; border-color: transparent #fff transparent transparent; border-radius: 50%; transform: translateY(-50%); opacity: 0.9; }
-.wave.w1 { left: 62px; width: 26px; height: 26px; }
-.wave.w2 { left: 60px; width: 44px; height: 44px; opacity: 0.6; }
-.speaker-btn.playing .wave { animation: wave 0.9s ease-in-out infinite; }
-.speaker-btn.playing .wave.w2 { animation-delay: 0.2s; }
 .run-round { color: var(--ink); font-size: 16px; font-weight: 750; transition: color 0.25s ease; }
 .run-round.urgent { color: #f15a36; }
 .count-track { align-self: stretch; height: 8px; margin: 12px 8px 0; overflow: hidden; border-radius: 4px; background: var(--track); opacity: 0; transition: opacity 0.3s ease; }
@@ -461,9 +453,7 @@ onUnmounted(halt)
 .answer-row.wrong { border-color: #f15a36; background: rgba(241, 90, 54, 0.08); }
 .answer-no { width: 22px; color: var(--muted); font-size: 12px; font-weight: 750; text-align: center; }
 .answer-row .ruby-word { flex: 1; }
-.answer-say { display: flex; width: 34px; height: 34px; flex: none; align-items: center; justify-content: center; border-radius: 12px; background: var(--surface-2); }
-.mini-speaker { position: relative; width: 8px; height: 10px; margin-left: -6px; border-radius: 2px 0 0 2px; background: var(--accent-text); }
-.mini-speaker::after { content: ''; position: absolute; top: -4px; left: 5px; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 9px solid var(--accent-text); transform: scaleX(-1); }
+.answer-say { display: flex; width: 34px; height: 34px; flex: none; align-items: center; justify-content: center; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); }
 .answer-mark { display: flex; width: 34px; height: 34px; flex: none; align-items: center; justify-content: center; border-radius: 50%; background: rgba(52, 199, 123, 0.14); color: #1f9d5c; font-size: 16px; font-weight: 800; transition: background 0.25s ease, color 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .answer-row.wrong .answer-mark { background: #f15a36; color: #fff; transform: scale(1.08); }
 .answer-actions { display: flex; gap: 10px; margin-top: 10px; }
@@ -486,9 +476,5 @@ onUnmounted(halt)
 @keyframes ripple {
   0% { transform: scale(0.8); opacity: 0.9; }
   100% { transform: scale(1.35); opacity: 0; }
-}
-@keyframes wave {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
 }
 </style>

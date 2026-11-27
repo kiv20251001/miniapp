@@ -92,7 +92,7 @@ export const FIND_WHOLE: Text = { zh: '把整体认读音节都找出来', en: '
 export const FIND_DONE: Text = { zh: '全找到啦！', en: 'Found them all!' }
 
 export const SPELL_RHYME: Text = { zh: '前音轻短后音重，两音相连猛一碰', en: 'First sound short and light, then bump into the next' }
-export const THREE_RHYME: Text = { zh: '声介合母要连读', en: 'Initial, glide and final, read in one breath' }
+export const THREE_RHYME: Text = { zh: '声短介快韵母响，三音连读很顺当', en: 'Short initial, quick glide, loud final, then say them together' }
 export const SPELL_NOTES = {
   none: { zh: '普通话里没有这个音，换一个试试', en: 'No such syllable in Mandarin. Try another.' },
   dots: DOT_RULE,
@@ -206,7 +206,7 @@ export const GUIDES: Record<Mode, GuideStep[]> = {
     {
       target: 'guide-formula',
       title: { zh: '听拼读过程', en: 'Hear the blend' },
-      text: { zh: '点算式，会先念声母，再念韵母，最后连起来。规则变化会在下面提醒。', en: 'Tap the formula: initial, then final, then the whole syllable. Spelling changes are noted below.' },
+      text: { zh: '点算式。两拼先念声母再念韵母；三拼按声母、介母、韵母分开念，最后连起来。', en: 'Tap the formula. Two parts: initial then final. Three parts: initial, glide, then final, and then the whole syllable.' },
     },
     QUIZ_STEP,
   ],

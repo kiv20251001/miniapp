@@ -120,7 +120,7 @@
 
 **云存储文件（拼音读音）**
 
-「拼音听写」的读音是 `cloud-storage/pinyin/pinyin-v2.bin`（Chen Wang 录的标准音节，CC BY-SA，`node scripts/build-pinyin-audio.mjs` 打包），同样在**测试和正式两个环境**里各新建 `pinyin` 文件夹上传，文件夹名和文件名不要改。如果云上还是旧的 `pinyin-v1.bin`，要再传这个 v2，否则手机还会放以前合成的声音。打开工具或点播放时下载一次，页面上有进度条；下完存到用户目录，之后直接读。没上传或下载失败时探索、测验、打印都能用，只是没有声音，点播放会提示重试。改了声音要换文件名（`pinyin-v3.bin`，同时改 `src/subpinyin/voice.ts` 里的 `FILE`）。
+「拼音听写」的读音是 `cloud-storage/pinyin/pinyin-v3.bin`（Chen Wang 录的标准音节，CC BY-SA，`node scripts/build-pinyin-audio.mjs` 打包）。录音里没有单独的 ong，v3 用 hong 去掉开头的 h 当作 ong。同样在**测试和正式两个环境**里各新建 `pinyin` 文件夹上传，文件夹名和文件名不要改。如果云上还是旧的 `pinyin-v1.bin` 或 `pinyin-v2.bin`，要再传这个 v3，否则手机还会放以前的声音。打开工具或点播放时下载一次，页面上有进度条；下完存到用户目录，之后直接读。没上传或下载失败时探索、测验、打印都能用，只是没有声音，点播放会提示重试。改了声音要换文件名（`pinyin-v4.bin`，同时改 `src/subpinyin/voice.ts` 里的 `FILE`）。
 
 **云存储文件（工具分享图）**
 
@@ -174,7 +174,7 @@
 - [ ] 数据库集合权限是「所有用户不可读写」
 - [ ] 订阅消息模板已选用，字段和 `remind.config.json` 一致
 - [ ] 隐私指引已勾选「用户信息」「剪切板」「相册（仅写入）」，且审核通过
-- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.ttf` 和 `pinyin/pinyin-v2.bin`，`.env` 已填 `VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`
+- [ ] 两个云环境的存储里都有 `fonts/copybook-kai.ttf` 和 `pinyin/pinyin-v3.bin`，`.env` 已填 `VITE_CLOUD_STORAGE_DEV`、`VITE_CLOUD_STORAGE_PROD`
 - [ ] 基础库最低版本 ≥ 2.32.3
 - [ ] 服务类目是不需要资质的工具类
 - [ ] 真机试过：登录选头像昵称、复制邀请码、设置提醒、生成字帖是楷体、保存练习图片、保存 PDF、3D 太阳系能拖动旋转、双指缩放、点星球能看到文字讲解；3D 几何体能拖动旋转、点棱和顶点会计数、每种几何体都能拖滑块展开、离开「打印题目」回来画面还在、打印题目能保存

@@ -9,6 +9,7 @@ import { isEn, t } from '@/i18n'
 import { windowHeight } from '@/utils/system'
 import DictationPanel from './DictationPanel.vue'
 import PinyinPrint from './PinyinPrint.vue'
+import SpeakerIcon from './SpeakerIcon.vue'
 import { mouthArt, nasalArt, toneArt } from './art'
 import {
   ASPIRATED,
@@ -19,8 +20,8 @@ import {
   INITIAL_ROWS,
   INITIAL_SOUND,
   LAB_FINALS,
-  MEDIAL_FINALS,
   NASAL_PAIRS,
+  THREE_PART,
   WHOLE,
   WHOLE_SET,
   display,
@@ -28,10 +29,13 @@ import {
   groupOf,
   mark,
   markPlace,
+  parse,
   soundKey,
   spell,
   type Tone,
 } from './pinyin'
+import { toPinyin } from './convert'
+import { GRADE_WORDS } from './grade-words'
 import {
   DOT_KEEP,
   DOT_OFF,
@@ -81,10 +85,12 @@ onLoad((query) => {
 const QUESTIONS = 5
 
 let timers: Array<ReturnType<typeof setTimeout>> = []
+let follow = 0
 function later(fn: () => void, ms: number) {
   timers.push(setTimeout(fn, ms))
 }
 function clearTimers() {
+  follow += 1
   timers.forEach(clearTimeout)
   timers = []
   blending.value = false
@@ -142,6 +148,7 @@ const initialTags = computed(() => {
 const isAspirated = computed(() => ASPIRATED.has(curInitial.value))
 
 function tapInitial(item: string) {
+  clearTimers()
   curInitial.value = item
   initialBump.value += 1
   vibrate('light')
@@ -155,6 +162,7 @@ const mirrorLetter = computed(() => (stickDown.value ? (stickRight.value ? 'q' :
 const mirrorBump = ref(0)
 
 function flipStick(kind: 'side' | 'dir') {
+  clearTimers()
   if (kind === 'side') stickRight.value = !stickRight.value
   else stickDown.value = !stickDown.value
   mirrorBump.value += 1
@@ -166,17 +174,16 @@ function flipStick(kind: 'side' | 'dir') {
 const TONGUE_PAIRS: Array<[string, string]> = [['z', 'zh'], ['c', 'ch'], ['s', 'sh']]
 const tongueOn = ref('')
 
-function playPair(pair: [string, string]) {
+async function playPair(pair: [string, string]) {
   clearTimers()
+  const run = follow
   tongueOn.value = pair[0]
-  play(INITIAL_SOUND[pair[0]])
-  later(() => {
-    tongueOn.value = pair[1]
-    play(INITIAL_SOUND[pair[1]])
-  }, 900)
-  later(() => {
-    tongueOn.value = ''
-  }, 1900)
+  const first = await play(INITIAL_SOUND[pair[0]])
+  if (!first || run !== follow) return
+  tongueOn.value = pair[1]
+  const second = await play(INITIAL_SOUND[pair[1]])
+  if (!second || run !== follow) return
+  tongueOn.value = ''
 }
 
 // 韵母
@@ -194,6 +201,7 @@ const finalNote = computed(() => {
 })
 
 function tapFinal(item: string) {
+  clearTimers()
   curFinal.value = item
   finalBump.value += 1
   vibrate('light')
@@ -204,17 +212,18 @@ function tapFinal(item: string) {
 const nasalPair = ref(-1)
 const nasalSide = ref<'' | 'front' | 'back'>('')
 
-function playNasal(index: number) {
+async function playNasal(index: number) {
   clearTimers()
+  const run = follow
   nasalPair.value = index
   const [front, back] = NASAL_PAIRS[index]
   nasalSide.value = 'front'
-  play(FINAL_SOUND[front])
-  later(() => {
-    nasalSide.value = 'back'
-    play(FINAL_SOUND[back])
-  }, 1000)
-  later(() => passGuide('pair'), 1300)
+  const first = await play(FINAL_SOUND[front])
+  if (!first || run !== follow) return
+  nasalSide.value = 'back'
+  const second = await play(FINAL_SOUND[back])
+  if (!second || run !== follow) return
+  passGuide('pair')
 }
 
 const DOT_INITIALS = ['j', 'q', 'x', 'y', 'n', 'l']
@@ -227,6 +236,7 @@ const dotResult = computed(() => {
 })
 
 function tapDot(item: string) {
+  clearTimers()
   dotPick.value = item
   dotRun.value += 1
   vibrate('light')
@@ -240,6 +250,7 @@ const wholeTone = ref<Tone>(1)
 const wholeBump = ref(0)
 
 function tapWhole(item: string) {
+  clearTimers()
   curWhole.value = item
   wholeTone.value = 1
   wholeBump.value += 1
@@ -249,6 +260,7 @@ function tapWhole(item: string) {
 }
 
 function tapWholeTone(tone: Tone) {
+  clearTimers()
   wholeTone.value = tone
   wholeBump.value += 1
   play(soundKey(curWhole.value, tone))
@@ -280,6 +292,7 @@ function newFind() {
 newFind()
 
 function tapFind(item: string) {
+  clearTimers()
   if (found.value.includes(item) || findDone.value) return
   if (WHOLE_SET.has(item)) {
     found.value = [...found.value, item]
@@ -307,18 +320,22 @@ const blending = ref(false)
 const blendStep = ref(-1)
 const labSpell = computed(() => spell(labInitial.value, labFinal.value))
 const labSyllable = computed(() => (labSpell.value ? mark(labSpell.value.base, labTone.value) : ''))
-const labThree = computed(() => Boolean(labInitial.value) && MEDIAL_FINALS.has(labFinal.value) && Boolean(labSpell.value))
+const labSplit = computed(() => (labInitial.value ? THREE_PART[labFinal.value] : undefined))
+const labThree = computed(() => Boolean(labSplit.value && labSpell.value))
 type Part = { text: string; role: 'i' | 'm' | 'f' }
 const labParts = computed<Part[]>(() => {
-  const final = labSpell.value && labInitial.value ? labSpell.value.base.slice(labInitial.value.length) : labFinal.value
   const parts: Part[] = labInitial.value ? [{ text: labInitial.value, role: 'i' }] : []
-  if (labThree.value) parts.push({ text: display(final[0]), role: 'm' }, { text: mark(final.slice(1), labTone.value), role: 'f' })
-  else parts.push({ text: mark(final, labTone.value), role: 'f' })
+  const split = labSplit.value
+  if (split && labSpell.value) parts.push({ text: display(split[0]), role: 'm' }, { text: mark(split[1], labTone.value), role: 'f' })
+  else {
+    const final = labSpell.value && labInitial.value ? labSpell.value.base.slice(labInitial.value.length) : labFinal.value
+    parts.push({ text: mark(final, labTone.value), role: 'f' })
+  }
   return parts
 })
-/** 拼读时亮起的部分：第 0 步声母，第 1 步韵母（三拼时介母和韵母一起亮） */
+/** 拼读时亮起的部分：0 声母，1 介母，2 韵母 */
 function partLit(part: Part) {
-  return (blendStep.value === 0 && part.role === 'i') || (blendStep.value === 1 && part.role !== 'i')
+  return (blendStep.value === 0 && part.role === 'i') || (blendStep.value === 1 && part.role === 'm') || (blendStep.value === 2 && part.role === 'f')
 }
 
 const labNotes = computed(() => {
@@ -333,6 +350,7 @@ const labNotes = computed(() => {
 })
 
 function labChanged() {
+  clearTimers()
   labRun.value += 1
   if (labSpell.value) {
     vibrate('light')
@@ -371,27 +389,41 @@ function randomLab() {
   }
 }
 
-/** 拼读过程：先念声母，再念韵母，最后连起来 */
+function medialKey(medial: string) {
+  if (medial === 'i') return 'yi1'
+  if (medial === 'u') return 'wu1'
+  return 'yu1'
+}
+
+/** 两拼：声母、韵母、整音节。三拼：声母、介母、韵母、整音节（声短、介快、韵母响）。 */
 function blend() {
   const done = labSpell.value
   if (!done || blending.value) return
   clearTimers()
   blending.value = true
-  const finalAlone = spell('', labFinal.value)
-  const steps: string[] = []
-  if (labInitial.value) steps.push(INITIAL_SOUND[labInitial.value])
-  steps.push(finalAlone ? soundKey(finalAlone.base, labTone.value) : FINAL_SOUND[labFinal.value])
-  steps.push(soundKey(done.base, labTone.value))
-  steps.forEach((key, index) => {
+  const steps: Array<{ key: string; step: number }> = []
+  if (labInitial.value) steps.push({ key: INITIAL_SOUND[labInitial.value], step: 0 })
+  const split = labSplit.value
+  if (split) {
+    const alone = spell('', split[1])
+    steps.push({ key: medialKey(split[0]), step: 1 })
+    steps.push({ key: alone ? soundKey(alone.base, labTone.value) : soundKey(split[1], labTone.value), step: 2 })
+  } else {
+    const alone = spell('', labFinal.value)
+    steps.push({ key: alone ? soundKey(alone.base, labTone.value) : FINAL_SOUND[labFinal.value], step: 2 })
+  }
+  steps.push({ key: soundKey(done.base, labTone.value), step: 3 })
+  const times = !labInitial.value ? [0, 900] : split ? [0, 420, 760, 1680] : [0, 700, 1600]
+  steps.forEach((item, index) => {
     later(() => {
-      blendStep.value = labInitial.value ? index : index + 1
-      play(key)
-    }, index * 900)
+      blendStep.value = item.step
+      play(item.key)
+    }, times[index] ?? index * 800)
   })
   later(() => {
     blending.value = false
     blendStep.value = -1
-  }, steps.length * 900 + 200)
+  }, (times[times.length - 1] ?? 0) + 1100)
 }
 
 // 声调
@@ -409,6 +441,7 @@ function soundForBase(base: string, tone: Tone) {
 }
 
 function tapTone(tone: Tone) {
+  clearTimers()
   curTone.value = tone
   toneRun.value += 1
   vibrate('light')
@@ -421,10 +454,28 @@ function pickToneBase(base: string) {
   if (curTone.value) tapTone(curTone.value as Tone)
 }
 
-const markAt = ref(0)
+type MarkItem = { base: string; tone: Tone; char: string }
+function buildMarkPool(): MarkItem[] {
+  const seen = new Set<string>()
+  const out: MarkItem[] = []
+  for (const glyph of toPinyin(Object.values(GRADE_WORDS).join(' '))) {
+    const parsed = parse(glyph.py)
+    if (!parsed || parsed.tone === 5 || parsed.base.length < 2) continue
+    if (!/[aoeiuv]/.test(parsed.base)) continue
+    const key = `${parsed.base}${parsed.tone}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({ base: parsed.base, tone: parsed.tone, char: glyph.char })
+  }
+  if (out.length < 8) return MARK_SAMPLES.map(([base, tone]) => ({ base, tone, char: '' }))
+  return shuffle(out)
+}
+const markPool = buildMarkPool()
+const markAt = ref(Math.floor(Math.random() * markPool.length))
 const markPicked = ref(-1)
 const markState = ref<'' | 'right' | 'wrong'>('')
-const markSample = computed(() => MARK_SAMPLES[markAt.value % MARK_SAMPLES.length])
+const markItem = computed(() => markPool[markAt.value] ?? markPool[0])
+const markSample = computed(() => [markItem.value.base, markItem.value.tone] as [string, Tone])
 const markLetters = computed(() => [...markSample.value[0]].map((char) => display(char)))
 const markTarget = computed(() => markPlace(markSample.value[0]).index)
 const markRule = computed(() => markPlace(markSample.value[0]).rule)
@@ -461,8 +512,9 @@ function tapLetter(index: number) {
 
 function nextMark() {
   clearTimers()
+  if (markPool.length < 2) return
   let next = markAt.value
-  while (next === markAt.value) next = Math.floor(Math.random() * MARK_SAMPLES.length)
+  while (next === markAt.value) next = Math.floor(Math.random() * markPool.length)
   markAt.value = next
   markPicked.value = -1
   markState.value = ''
@@ -527,6 +579,29 @@ function nextQuestion() {
 
 function replayQuestion() {
   if (question.value?.sound) play(question.value.sound)
+}
+
+/** 四种题型都从全部年级的词语里另抽一道。答完一轮再点，就重新开一轮。 */
+function shuffleQuestion() {
+  clearAdvance()
+  vibrate('light')
+  if (finished.value || !question.value) {
+    index.value = 0
+    score.value = 0
+    results.value = Array.from({ length: QUESTIONS }, () => null)
+    finished.value = false
+    answer.value = ''
+    picked.value = -1
+    question.value = makeQuestion(quizMode.value, 'all')
+    if (question.value.mode === 'listen') setTimeout(replayQuestion, 300)
+    return
+  }
+  if (answer.value === 'right') score.value = Math.max(0, score.value - 1)
+  results.value[index.value] = null
+  answer.value = ''
+  picked.value = -1
+  question.value = makeQuestion(quizMode.value, 'all', question.value)
+  if (question.value.mode === 'listen') setTimeout(replayQuestion, 300)
 }
 
 function newRound() {
@@ -767,7 +842,12 @@ onReady(() => {
 
       <view class="card stage">
         <view class="stage-top">
-          <text :key="mode" class="stage-hint fade-up">{{ pick(HINTS[mode], en) }}</text>
+          <view class="stage-hint-row">
+            <view v-if="voice.cue" class="tap-horn">
+              <SpeakerIcon size="sm" live />
+            </view>
+            <text :key="mode" class="stage-hint fade-up">{{ pick(HINTS[mode], en) }}</text>
+          </view>
           <view class="tools">
             <view v-if="canReset" class="tool press" hover-class="press-on" hover-stay-time="80" @click="resetStage">
               <text class="tool-glyph">↻</text>
@@ -781,7 +861,10 @@ onReady(() => {
         <!-- 声母 -->
         <template v-if="mode === 'initial'">
           <view class="focus">
-            <view :key="`i-${initialBump}`" class="focus-letter bump">{{ curInitial }}</view>
+            <view :key="`i-${initialBump}`" class="focus-letter bump">
+              {{ curInitial }}
+              <view v-if="voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
+            </view>
             <view class="focus-side">
               <text class="focus-rhyme">{{ pick(INITIAL_RHYME[curInitial], en) }}</text>
               <view class="tags">
@@ -804,7 +887,10 @@ onReady(() => {
                 hover-class="press-on"
                 hover-stay-time="80"
                 @click="tapInitial(item)"
-              >{{ item }}</view>
+              >
+                <text>{{ item }}</text>
+                <view v-if="curInitial === item && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
+              </view>
             </view>
           </view>
         </template>
@@ -812,7 +898,10 @@ onReady(() => {
         <!-- 韵母 -->
         <template v-else-if="mode === 'final'">
           <view class="focus">
-            <view :key="`f-${finalBump}`" class="focus-letter bump" :class="finalGroup">{{ display(curFinal) }}</view>
+            <view :key="`f-${finalBump}`" class="focus-letter bump" :class="finalGroup">
+              {{ display(curFinal) }}
+              <view v-if="voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
+            </view>
             <view class="focus-side">
               <text class="tag strong" :class="finalGroup">{{ pick(GROUP_NAMES[finalGroup], en) }}</text>
               <text :key="`fn-${finalBump}`" class="focus-rhyme fade-up">{{ finalNote }}</text>
@@ -840,7 +929,10 @@ onReady(() => {
                   hover-class="press-on"
                   hover-stay-time="80"
                   @click="tapFinal(item)"
-                >{{ display(item) }}</view>
+                >
+                  <text>{{ display(item) }}</text>
+                  <view v-if="curFinal === item && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
+                </view>
               </view>
             </view>
           </view>
@@ -851,10 +943,11 @@ onReady(() => {
           <view class="focus whole-focus">
             <view class="whole-ring">
               <text :key="`w-${wholeBump}`" class="whole-big bump">{{ mark(curWhole, wholeTone) }}</text>
+              <view v-if="voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
             </view>
             <view class="focus-side">
               <text class="tag strong whole">{{ pick(WHOLE_NOTE, en) }}</text>
-              <view class="tone-chips">
+              <view class="tone-chips grid">
                 <text v-for="tone in TONES" :key="tone" class="tone-chip press" :class="{ on: wholeTone === tone }" hover-class="press-on" hover-stay-time="80" @click="tapWholeTone(tone)">{{ mark(curWhole, tone) }}</text>
               </view>
             </view>
@@ -868,20 +961,24 @@ onReady(() => {
               hover-class="press-on"
               hover-stay-time="80"
               @click="tapWhole(item)"
-            >{{ item }}</view>
+            >
+              <text>{{ item }}</text>
+              <view v-if="curWhole === item && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
+            </view>
           </view>
         </template>
 
         <!-- 拼一拼 -->
         <template v-else-if="mode === 'spell'">
           <view id="guide-formula" class="formula press" :class="{ none: !labSpell }" @click="blend">
+            <view v-if="voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
             <view :key="`lab-${labRun}`" class="formula-row">
               <template v-for="(part, at) in labParts" :key="at">
                 <text v-if="at > 0" class="formula-plus">+</text>
                 <text class="formula-part" :class="[part.role, { lit: partLit(part) }]">{{ part.text }}</text>
               </template>
               <text class="formula-eq">→</text>
-              <text class="formula-result" :class="{ lit: blendStep === 2 }">{{ labSyllable || '?' }}</text>
+              <text class="formula-result" :class="{ lit: blendStep === 3 }">{{ labSyllable || '?' }}</text>
             </view>
             <text class="formula-rhyme">{{ pick(labThree ? THREE_RHYME : SPELL_RHYME, en) }}</text>
           </view>
@@ -911,7 +1008,7 @@ onReady(() => {
               v-for="item in LAB_FINALS"
               :key="item"
               class="lab-chip small press"
-              :class="{ on: labFinal === item, medial: MEDIAL_FINALS.has(item), off: !spell(labInitial, item) }"
+              :class="{ on: labFinal === item, medial: Boolean(THREE_PART[item]), off: !spell(labInitial, item) }"
               hover-class="press-on"
               hover-stay-time="80"
               @click="pickLabFinal(item)"
@@ -947,6 +1044,7 @@ onReady(() => {
               <view v-for="tone in TONES" :key="tone" class="tone-btn press" :class="{ on: curTone === tone }" hover-class="press-on" hover-stay-time="80" @click="tapTone(tone)">
                 <text class="tone-btn-py">{{ mark(toneBase, tone) }}</text>
                 <text class="tone-btn-name">{{ pick(TONE_NAMES[tone - 1], en) }}</text>
+                <view v-if="curTone === tone && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
               </view>
             </view>
             <text v-if="curTone" :key="`s-${toneRun}`" class="tone-story fade-up">{{ pick(TONE_STORY[curTone - 1], en) }}</text>
@@ -987,20 +1085,25 @@ onReady(() => {
 
       <view v-if="mode === 'final'" id="guide-nasal" class="card panel">
         <text class="panel-title">{{ t('前鼻音和后鼻音') }}</text>
-        <view class="nasal-row">
-          <view class="nasal-side" :class="{ lit: nasalSide === 'front' }">
-            <view class="art nasal small" :style="{ backgroundImage: nasalArt('front') }" />
-            <text class="nasal-name">{{ pick(GROUP_NAMES.front, en) }}</text>
-          </view>
-          <view class="nasal-side" :class="{ lit: nasalSide === 'back' }">
-            <view class="art nasal small" :style="{ backgroundImage: nasalArt('back') }" />
-            <text class="nasal-name">{{ pick(GROUP_NAMES.back, en) }}</text>
-          </view>
-        </view>
-        <view class="pair-row">
-          <view v-for="(pair, at) in NASAL_PAIRS" :key="pair[0]" class="pair press" :class="{ on: nasalPair === at }" hover-class="press-on" hover-stay-time="80" @click="playNasal(at)">
-            <text class="pair-a" :class="{ lit: nasalPair === at && nasalSide === 'front' }">{{ pair[0] }}</text>
-            <text class="pair-b" :class="{ lit: nasalPair === at && nasalSide === 'back' }">{{ pair[1] }}</text>
+        <text class="tip nasal-tip">{{ t('每个按钮点一下，会先读前鼻音，再读后鼻音。正在读的那边会亮。') }}</text>
+        <view class="nasal-list">
+          <view v-for="(pair, at) in NASAL_PAIRS" :key="pair[0]" class="nasal-btn press" :class="{ on: nasalPair === at }" hover-class="press-on" hover-stay-time="80" @click="playNasal(at)">
+            <view class="nasal-half" :class="{ lit: nasalPair === at && nasalSide === 'front' }">
+              <view class="art nasal small" :style="{ backgroundImage: nasalArt('front') }" />
+              <view class="nasal-copy">
+                <text class="nasal-py">{{ pair[0] }}</text>
+                <text class="nasal-name">{{ pick(GROUP_NAMES.front, en) }}</text>
+              </view>
+            </view>
+            <text class="nasal-arrow">→</text>
+            <view class="nasal-half" :class="{ lit: nasalPair === at && nasalSide === 'back' }">
+              <view class="art nasal small" :style="{ backgroundImage: nasalArt('back') }" />
+              <view class="nasal-copy">
+                <text class="nasal-py">{{ pair[1] }}</text>
+                <text class="nasal-name">{{ pick(GROUP_NAMES.back, en) }}</text>
+              </view>
+            </view>
+            <view v-if="nasalPair === at && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
           </view>
         </view>
       </view>
@@ -1023,10 +1126,11 @@ onReady(() => {
             <text class="dots-plus">+</text>
             <view class="dots-u">
               <text class="u-body">u</text>
-              <view class="u-dots" :class="{ fly: dotDrop }"><view /><view /></view>
+              <view class="u-dots" :class="{ fly: dotDrop, stay: dotPick && !dotDrop }"><view /><view /></view>
             </view>
             <text class="dots-eq">→</text>
-            <text class="dots-result" :class="{ pop: dotPick }">{{ dotResult || '?' }}</text>
+            <text class="dots-result" :class="{ pop: dotPick, drop: dotDrop }">{{ dotResult || '?' }}</text>
+            <view v-if="dotPick && voice.cue" class="tap-horn"><SpeakerIcon size="sm" live /></view>
           </view>
         </view>
         <text class="tip">{{ pick(DOT_RULE, en) }}；{{ pick(DOT_KEEP, en) }}</text>
@@ -1068,6 +1172,7 @@ onReady(() => {
           <text class="panel-title">{{ t('声调标在哪') }}</text>
           <text class="shuffle press" @click="nextMark">{{ t('换一个') }}</text>
         </view>
+        <text class="mark-from">{{ markItem.char }} · {{ t('年级词语里的字') }}</text>
         <text class="mark-ask">{{ pick(MARK_ASK, en) }} · {{ pick(TONE_NAMES[markSample[1] - 1], en) }}</text>
         <view :key="`mk-${markAt}`" class="mark-word fade-up">
           <view
@@ -1096,16 +1201,21 @@ onReady(() => {
       </view>
       <view class="level-row">
         <text class="level-label">{{ t('难度') }}</text>
-        <view class="chip-row tight">
-          <text
-            v-for="item in LEVELS"
-            :key="item.value"
-            class="chip press"
-            :class="{ active: level === item.value }"
-            hover-class="press-on"
-            hover-stay-time="80"
-            @click="setLevel(item.value)"
-          >{{ t(item.label) }}</text>
+        <view class="level-tools">
+          <view class="chip-row tight">
+            <text
+              v-for="item in LEVELS"
+              :key="item.value"
+              class="chip press"
+              :class="{ active: level === item.value }"
+              hover-class="press-on"
+              hover-stay-time="80"
+              @click="setLevel(item.value)"
+            >{{ t(item.label) }}</text>
+          </view>
+          <view class="dice press" hover-class="press-on" hover-stay-time="80" @click="shuffleQuestion">
+            <view class="dice-face"><view /><view /><view /><view /></view>
+          </view>
         </view>
       </view>
 
@@ -1115,8 +1225,9 @@ onReady(() => {
           <text class="progress-text">{{ t('第 {n}/{total} 题 · 得分 {score}', { n: index + 1, total: QUESTIONS, score }) }}</text>
         </view>
         <text :key="question.id" class="prompt fade-up">{{ pick(question.ask, en) }}</text>
-        <view v-if="question.mode === 'listen'" class="listen-btn press" :class="{ playing: voice.playing }" hover-class="press-on" hover-stay-time="80" @click="replayQuestion">
-          <view class="speaker" />
+        <text v-if="question.from" class="quiz-from">{{ question.from }}</text>
+        <view v-if="question.mode === 'listen'" class="listen-btn press" :class="{ playing: !!voice.cue }" hover-class="press-on" hover-stay-time="80" @click="replayQuestion">
+          <SpeakerIcon size="md" :live="!!voice.cue" />
           <text>{{ t('再听一遍') }}</text>
         </view>
         <view v-else-if="question.show" :key="`s-${question.id}`" class="quiz-show bump" :class="question.mode">
@@ -1244,6 +1355,7 @@ onReady(() => {
 
 .stage { padding: 14px 14px 18px; border-radius: 28px; }
 .stage-top { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+.stage-hint-row { display: flex; align-items: center; min-width: 0; }
 .stage-hint { color: var(--muted); font-size: 13px; }
 .tools { display: flex; gap: 8px; }
 .tool { display: flex; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 16px; font-weight: 800; }
@@ -1251,7 +1363,7 @@ onReady(() => {
 
 /* 上半部分：当前选中的字母和讲解 */
 .focus { display: flex; align-items: center; gap: 12px; margin: 12px 0 14px; padding: 14px; min-height: 96px; border-radius: 22px; background: var(--surface-2); }
-.focus-letter { min-width: 84px; color: #ff6a33; font-size: 58px; font-weight: 800; line-height: 1; text-align: center; letter-spacing: -0.02em; }
+.focus-letter { position: relative; min-width: 84px; color: #ff6a33; font-size: 58px; font-weight: 800; line-height: 1; text-align: center; letter-spacing: -0.02em; }
 .focus-letter.compound { color: #8a5cf6; }
 .focus-letter.front { color: #1f9d5c; }
 .focus-letter.back { color: #2f86f6; }
@@ -1278,6 +1390,7 @@ onReady(() => {
 .letter-row.wrap { justify-content: flex-start; }
 .letter-row.wrap { flex-wrap: wrap; }
 .letter {
+  position: relative;
   display: flex;
   width: calc((100% - 24px) / 4);
   height: 52px;
@@ -1320,9 +1433,11 @@ onReady(() => {
 .er-curl { color: #ff6a33; font-size: 40px; font-weight: 800; animation: curl 1.4s ease; }
 
 /* 整体认读 */
-.whole-ring { display: flex; width: 108px; height: 108px; flex: none; align-items: center; justify-content: center; border: 3px dashed #f2a93b; border-radius: 50%; animation: spin-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.whole-ring { position: relative; display: flex; width: 108px; height: 108px; flex: none; align-items: center; justify-content: center; border: 3px dashed #f2a93b; border-radius: 50%; animation: spin-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .whole-big { color: var(--ink); font-size: 32px; font-weight: 800; }
 .tone-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tone-chips.grid { display: flex; flex-wrap: wrap; width: 168px; gap: 8px; }
+.tone-chips.grid .tone-chip { box-sizing: border-box; width: calc(50% - 4px); padding: 0; font-size: 20px; line-height: 44px; text-align: center; }
 .tone-chips.wide { gap: 8px; }
 .tone-chip { padding: 0 10px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 15px; font-weight: 700; line-height: 30px; transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease; }
 .tone-chip.on { background: #ff7a45; color: #fff; transform: translateY(-2px); }
@@ -1330,7 +1445,7 @@ onReady(() => {
 .tone-chips.wide .tone-chip.on { background: #ff7a45; }
 
 /* 拼一拼 */
-.formula { margin: 12px 0 8px; padding: 18px 12px 12px; border-radius: 22px; background: var(--surface-2); transition: background 0.25s ease; }
+.formula { position: relative; margin: 12px 0 8px; padding: 18px 12px 12px; border-radius: 22px; background: var(--surface-2); transition: background 0.25s ease; }
 .formula.none { background: rgba(241, 90, 54, 0.08); }
 .formula-row { display: flex; align-items: center; justify-content: center; gap: 6px; animation: merge 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .formula-part { min-width: 44px; padding: 6px 8px; border-radius: 14px; background: var(--paper); color: var(--ink); font-size: 26px; font-weight: 800; text-align: center; box-shadow: 0 6px 14px -10px rgba(40, 52, 88, 0.5); transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease; }
@@ -1370,11 +1485,11 @@ onReady(() => {
 .tone-ball.t2 { animation-name: tone2; }
 .tone-ball.t3 { animation-name: tone3; }
 .tone-ball.t4 { animation-name: tone4; }
-.tone-buttons { display: flex; gap: 8px; }
-.tone-btn { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0 8px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease; }
+.tone-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.tone-btn { position: relative; display: flex; width: calc(50% - 5px); box-sizing: border-box; flex: none; flex-direction: column; align-items: center; gap: 2px; padding: 16px 0 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease; }
 .tone-btn.on { border-color: #ff9a6b; background: var(--accent-soft); transform: translateY(-2px); }
-.tone-btn-py { color: var(--ink); font-size: 24px; font-weight: 800; }
-.tone-btn-name { color: var(--muted); font-size: 11px; font-weight: 650; }
+.tone-btn-py { color: var(--ink); font-size: 32px; font-weight: 800; }
+.tone-btn-name { color: var(--muted); font-size: 14px; font-weight: 650; }
 .tone-story { display: block; margin-top: 10px; color: var(--muted); font-size: 13px; text-align: center; }
 
 /* 面板 */
@@ -1403,22 +1518,31 @@ onReady(() => {
 .pair.on { border-color: #ff9a6b; background: var(--accent-soft); }
 .pair-a, .pair-b { color: var(--ink); transition: color 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .pair-a.lit, .pair-b.lit { color: #ff6a33; transform: scale(1.3); }
-.nasal-row { display: flex; gap: 10px; margin-bottom: 12px; }
-.nasal-side { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; border-radius: 18px; background: var(--surface-2); transition: background 0.25s ease, transform 0.25s ease; }
-.nasal-side.lit { background: var(--accent-soft); transform: translateY(-2px); }
-.nasal-name { color: var(--ink); font-size: 12px; font-weight: 700; }
+.nasal-tip { margin-top: 0; margin-bottom: 10px; }
+.nasal-list { display: flex; flex-direction: column; gap: 8px; }
+.nasal-btn { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.nasal-btn.on { border-color: #ff9a6b; background: var(--accent-soft); }
+.nasal-half { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; padding: 6px 8px; border-radius: 14px; transition: background 0.25s ease, transform 0.25s ease; }
+.nasal-half.lit { background: var(--paper); transform: translateY(-1px); }
+.nasal-py { color: var(--ink); font-size: 20px; font-weight: 800; line-height: 1.1; }
+.nasal-name { color: var(--muted); font-size: 11px; font-weight: 700; }
+.nasal-copy { display: flex; flex-direction: column; min-width: 0; }
+.nasal-arrow { flex: none; color: var(--muted); font-size: 16px; font-weight: 700; }
+.nasal-half .art.nasal.small { width: 42px; height: 32px; flex: none; }
 
 .dots-stage { display: flex; flex-direction: column; gap: 12px; }
 .dots-pick { display: flex; gap: 8px; }
 .dots-pick .lab-chip { flex: 1; min-width: 0; }
-.dots-show { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 0; border-radius: 18px; background: var(--surface-2); font-size: 30px; font-weight: 800; color: var(--ink); }
+.dots-show { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 0; border-radius: 18px; background: var(--surface-2); font-size: 30px; font-weight: 800; color: var(--ink); }
 .dots-plus, .dots-eq { color: var(--muted); font-size: 22px; }
 .dots-u { position: relative; color: #ff6a33; }
 .u-dots { position: absolute; top: 2px; left: 50%; display: flex; gap: 6px; transform: translateX(-50%); }
 .u-dots view { width: 6px; height: 6px; border-radius: 50%; background: #ff6a33; }
-.u-dots.fly { animation: fly-off 0.9s ease forwards; }
+.u-dots.fly { animation: fly-off 0.85s cubic-bezier(0.2, 0.7, 0.3, 1) forwards; }
+.u-dots.stay { animation: dot-stay 0.55s ease; }
 .dots-result { min-width: 56px; text-align: center; }
-.dots-result.pop { animation: bump 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both; color: #1f9d5c; }
+.dots-result.pop { animation: bump 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); color: #1f9d5c; }
+.dots-result.drop { animation: bump 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s both; }
 
 .find-count { color: var(--accent-text); font-size: 13px; font-weight: 750; }
 .find-grid { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1430,6 +1554,7 @@ onReady(() => {
 .rule-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .rule-line { padding: 6px 12px; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 650; line-height: 1.5; transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease; }
 .rule-line.lit { background: rgba(52, 199, 123, 0.14); color: #1f9d5c; transform: translateX(4px); }
+.mark-from { display: block; margin-bottom: 2px; color: var(--ink); font-size: 22px; font-weight: 800; }
 .mark-ask { display: block; color: var(--muted); font-size: 12px; }
 .mark-word { display: flex; justify-content: center; gap: 6px; margin: 16px 0 6px; }
 .mark-letter { position: relative; display: flex; width: 46px; height: 64px; align-items: flex-end; justify-content: center; padding-bottom: 6px; border: 1px solid var(--line); border-radius: 14px; box-sizing: border-box; background: var(--paper); transition: border-color 0.25s ease, background 0.25s ease; }
@@ -1442,6 +1567,11 @@ onReady(() => {
 
 /* 小测验 */
 .level-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.level-tools { display: flex; align-items: center; gap: 8px; }
+.dice { display: flex; width: 34px; height: 34px; flex: none; align-items: center; justify-content: center; border-radius: 12px; background: var(--accent-soft); }
+.dice-face { display: flex; width: 14px; height: 14px; flex-wrap: wrap; align-content: space-between; justify-content: space-between; }
+.dice-face view { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-text); }
+.quiz-from { display: block; margin-top: 8px; color: var(--ink); font-size: 28px; font-weight: 800; text-align: center; }
 .level-label { color: var(--ink); font-size: 14px; font-weight: 650; }
 .question { display: flex; flex-direction: column; align-items: center; }
 .progress { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
@@ -1452,9 +1582,6 @@ onReady(() => {
 .progress-text { margin-left: 6px; color: var(--muted); font-size: 12px; }
 .prompt { margin-top: 14px; color: var(--ink); font-size: 17px; font-weight: 700; }
 .listen-btn { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 12px 22px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-size: 15px; font-weight: 750; }
-.listen-btn.playing .speaker { animation: breathe 0.6s ease-in-out infinite; }
-.speaker { position: relative; width: 14px; height: 14px; border-radius: 3px 0 0 3px; background: currentColor; }
-.speaker::after { content: ''; position: absolute; top: -4px; left: 8px; border-top: 11px solid transparent; border-bottom: 11px solid transparent; border-right: 12px solid currentColor; transform: scaleX(-1); }
 .quiz-show { display: flex; flex-direction: column; align-items: center; margin-top: 12px; color: var(--ink); font-size: 44px; font-weight: 800; line-height: 1.2; }
 .quiz-show.char { font-size: 64px; }
 .quiz-tone { margin-top: 2px; padding: 0 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-size: 13px; line-height: 24px; }
@@ -1591,9 +1718,30 @@ onReady(() => {
   100% { left: 96%; top: 90%; }
 }
 @keyframes fly-off {
-  0% { transform: translate(-50%, 0); opacity: 1; }
-  100% { transform: translate(40%, -40px) rotate(40deg); opacity: 0; }
+  0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  35% { transform: translate(8%, -26px) scale(1.35) rotate(-18deg); opacity: 1; }
+  100% { transform: translate(80%, -52px) scale(0.35) rotate(48deg); opacity: 0; }
 }
+@keyframes dot-stay {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, -8px) scale(1.45); }
+}
+.tap-horn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  display: flex;
+  height: 22px;
+  padding: 0 6px 0 7px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: #ff7a45;
+  color: #fff;
+  pointer-events: none;
+}
+.stage-top .tap-horn { position: static; flex: none; margin-right: 8px; }
 @keyframes drop {
   0% { transform: translateY(-24px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }

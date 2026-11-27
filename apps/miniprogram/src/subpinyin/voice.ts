@@ -1,5 +1,5 @@
 /**
- * 拼音的声音：scripts/build-pinyin-audio.mjs 打包的真人音节录音 pinyin-v2.bin，放云存储（cloud-storage/pinyin）。
+ * 拼音的声音：scripts/build-pinyin-audio.mjs 打包的真人音节录音 pinyin-v3.bin，放云存储（cloud-storage/pinyin）。
  * 第一次用时下载并存在本地，之后直接读。播放一个词时把几个音节的 MP3 片段接成一个文件再放。
  *
  * 文件格式：'UPY1' + u32 文件头长度 + JSON 文件头（items: { ma1: [偏移, 长度] }）+ MP3 数据，偏移从数据开头算。
@@ -8,7 +8,7 @@ import { reactive } from 'vue'
 import { cloudFile } from '@/config'
 import { parse, soundKey, type Tone } from './pinyin'
 
-const FILE = 'pinyin/pinyin-v2.bin'
+const FILE = 'pinyin/pinyin-v3.bin'
 const SOURCE = cloudFile(FILE)
 /** 64kbps 左右。估短了会提前停，所以按更低的码率留出余量。 */
 const BYTES_PER_SECOND = 5000
@@ -31,7 +31,7 @@ type FileApi = {
 const api = () => wx as unknown as FileApi
 
 export type VoiceStatus = 'idle' | 'loading' | 'ready' | 'off' | 'error'
-export const voice = reactive({ status: (SOURCE ? 'idle' : 'off') as VoiceStatus, progress: 0, playing: '' })
+export const voice = reactive({ status: (SOURCE ? 'idle' : 'off') as VoiceStatus, progress: 0, playing: '', cue: '' })
 
 let bytes: Uint8Array | null = null
 let items: Record<string, [number, number]> = {}
@@ -44,7 +44,7 @@ function hash(value: string) {
   return (h >>> 0).toString(36)
 }
 
-const cachePath = () => `${api().env.USER_DATA_PATH}/pinyin-v2-${hash(SOURCE)}.bin`
+const cachePath = () => `${api().env.USER_DATA_PATH}/pinyin-v3-${hash(SOURCE)}.bin`
 
 function exists(path: string) {
   return new Promise<boolean>((resolve) => api().getFileSystemManager().access({ path, success: () => resolve(true), fail: () => resolve(false) }))
@@ -135,6 +135,9 @@ export function hasSound(key: string) {
 let player: UniApp.InnerAudioContext | null = null
 let finish: (() => void) | null = null
 let guard: ReturnType<typeof setTimeout> | null = null
+let generation = 0
+/** stop() 触发的 onStop 如果晚到，不能把新的播放清掉 */
+let ignoreStops = 0
 const files = new Map<string, string>()
 let fileCount = 0
 
@@ -143,7 +146,13 @@ function audio() {
     api().setInnerAudioOption?.({ obeyMuteSwitch: false, mixWithOther: false })
     player = uni.createInnerAudioContext()
     player.onEnded(() => settle())
-    player.onStop(() => settle())
+    player.onStop(() => {
+      if (ignoreStops > 0) {
+        ignoreStops -= 1
+        return
+      }
+      settle()
+    })
     player.onError(() => settle())
   }
   return player
@@ -193,7 +202,10 @@ function fileFor(keys: string[]) {
 }
 
 export function stopVoice() {
-  if (player && finish) player.stop()
+  if (player && finish) {
+    ignoreStops += 1
+    player.stop()
+  }
   settle()
 }
 
@@ -204,22 +216,39 @@ function soundFor(key: string) {
   return ''
 }
 
-/** 依次读出这几个音节（'ma1'）。声音还在下载时先等下载完再放。没有声音时 resolve(false)。 */
+/** 依次读出这几个音节（'ma1'）。一点击就亮喇叭；声音还在下载时先等下载完再放。被新的点击打断时 resolve(false)。 */
 export async function say(keys: string[], tag = keys.join(' ')) {
+  const mine = ++generation
+  voice.cue = tag
   if (!bytes) {
     const ok = await prepareVoice()
-    if (!ok) return false
+    if (mine !== generation) return false
+    if (!ok) {
+      voice.cue = ''
+      return false
+    }
   }
   const list = keys.map(soundFor).filter(Boolean)
-  if (!list.length) return false
+  if (!list.length) {
+    if (mine === generation) voice.cue = ''
+    return false
+  }
   stopVoice()
+  if (mine !== generation) return false
+  voice.cue = tag
   const { path, size } = await fileFor(list)
+  if (mine !== generation) return false
   const length = size || list.reduce((sum, key) => sum + items[key][1], 0)
   const context = audio()
   voice.playing = tag
   return new Promise<boolean>((resolve) => {
-    finish = () => resolve(true)
-    guard = setTimeout(settle, (length / BYTES_PER_SECOND) * 1000 + 1500)
+    finish = () => {
+      if (mine === generation) voice.cue = ''
+      resolve(mine === generation)
+    }
+    guard = setTimeout(() => {
+      if (mine === generation) settle()
+    }, (length / BYTES_PER_SECOND) * 1000 + 1500)
     context.src = path
     context.play()
   })

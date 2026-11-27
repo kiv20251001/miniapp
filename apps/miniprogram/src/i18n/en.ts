@@ -1307,6 +1307,8 @@ export const EN: Record<string, string> = {
   '平舌和翘舌': 'Flat or curled tongue',
   '加了 h，舌尖就要翘起来。点一对，听听有什么不同。': 'With an h, curl the tongue up. Tap a pair to hear the difference.',
   '前鼻音和后鼻音': 'Front and back nasals',
+  '每个按钮点一下，会先读前鼻音，再读后鼻音。正在读的那边会亮。': 'Tap a button once. It reads the front nasal, then the back nasal. The side being read lights up.',
+  '年级词语里的字': 'A character from the grade word list',
   'ü 的两点': 'The dots on ü',
   '再来一组': 'Another set',
   '拼写的小规则': 'Spelling rules',

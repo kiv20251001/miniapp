@@ -66,7 +66,12 @@ export const LAB_FINALS = [
   'ia', 'ua', 'uo', 'uai', 'iao', 'ian', 'uan', 'van', 'iang', 'uang', 'iong',
 ]
 /** 三拼音节：声母 + 介母（i u ü）+ 韵母 */
-export const MEDIAL_FINALS = new Set(['ia', 'ua', 'uo', 'uai', 'iao', 'ian', 'uan', 'van', 'iang', 'uang', 'iong'])
+/** 三拼音节拆成介母 + 韵母。iu、ui、un 是省写，拆开是 ou、ei、en。 */
+export const THREE_PART: Record<string, [string, string]> = {
+  ia: ['i', 'a'], iao: ['i', 'ao'], iu: ['i', 'ou'], ian: ['i', 'an'], iang: ['i', 'ang'], iong: ['i', 'ong'],
+  ua: ['u', 'a'], uo: ['u', 'o'], uai: ['u', 'ai'], ui: ['u', 'ei'], uan: ['u', 'an'], un: ['u', 'en'], uang: ['u', 'ang'],
+  van: ['v', 'an'],
+}
 
 export function display(text: string) {
   return text.replace(/v/g, 'ü')

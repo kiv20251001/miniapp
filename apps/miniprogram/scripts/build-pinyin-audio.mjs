@@ -1,13 +1,13 @@
 // 生成「拼音听写」的音节声音：node scripts/build-pinyin-audio.mjs
 //
-// 输出 cloud-storage/pinyin/pinyin-v2.bin（上传到云存储同名路径）和 src/subpinyin/syllables.ts（合法音节表）。
+// 输出 cloud-storage/pinyin/pinyin-v3.bin（上传到云存储同名路径）和 src/subpinyin/syllables.ts（合法音节表）。
 // 声音用 audio-cmn 的真人音节录音（Chen Wang，CC BY-SA），不是语音合成。
 // 录音在不入库的 .cache/pinyin-src/64k/syllabs（cmn-ma1.mp3 这种文件名）。
 // 还没有这份录音时：
 //   cd apps/miniprogram/.cache
 //   git clone --depth 1 --filter=blob:none --sparse https://github.com/hugolpz/audio-cmn.git pinyin-src
 //   cd pinyin-src && git sparse-checkout set 64k/syllabs
-// 换了声音要换文件名（pinyin-v3.bin），同时改 src/subpinyin/voice.ts 里的 FILE。
+// 换了声音要换文件名（pinyin-v4.bin），同时改 src/subpinyin/voice.ts 里的 FILE。
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,7 +15,7 @@ import { pinyin } from 'pinyin-pro'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const audioDir = join(root, '.cache/pinyin-src/64k/syllabs')
-const output = join(root, 'cloud-storage/pinyin/pinyin-v2.bin')
+const output = join(root, 'cloud-storage/pinyin/pinyin-v3.bin')
 const tableFile = join(root, 'src/subpinyin/syllables.ts')
 
 /** pinyin-pro 的数字调：ü 写成 v，轻声是 0 */
@@ -94,8 +94,52 @@ for (const base of list) {
   }
 }
 
+/** 这套录音没有单独的 ong。hong 开头约 300ms 是 h，后面才是 ong，按帧砍掉再当韵母用。 */
+function frameBytes(data, at) {
+  const version = (data[at + 1] >> 3) & 3
+  const layer = (data[at + 1] >> 1) & 3
+  const bitrateIndex = (data[at + 2] >> 4) & 0xf
+  const sampleIndex = (data[at + 2] >> 2) & 3
+  const padding = (data[at + 2] >> 1) & 1
+  const bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+  const rates = [44100, 48000, 32000]
+  if (version !== 3 || layer !== 1 || !bitrates[bitrateIndex] || rates[sampleIndex] == null) return 0
+  return Math.floor((144 * bitrates[bitrateIndex] * 1000) / rates[sampleIndex]) + padding
+}
+
+function dropHead(data, ms) {
+  let at = 0
+  let passed = 0
+  while (at + 4 <= data.length && passed < ms) {
+    if (data[at] !== 0xff || (data[at + 1] & 0xe0) !== 0xe0) {
+      at += 1
+      continue
+    }
+    const size = frameBytes(data, at)
+    if (size < 4 || at + size > data.length) break
+    const sample = [44100, 48000, 32000][(data[at + 2] >> 2) & 3] || 48000
+    passed += (1152 / sample) * 1000
+    at += size
+  }
+  return data.subarray(at)
+}
+
+for (const tone of [1, 2, 3, 4]) {
+  const key = `ong${tone}`
+  if (items[key]) continue
+  const file = files.get(`hong${tone}`)
+  if (!file) continue
+  const data = dropHead(frames(file), 300)
+  if (data.length < 8) continue
+  items[key] = [offset, data.length]
+  parts.push(data)
+  offset += data.length
+  const missingAt = missing.indexOf(key)
+  if (missingAt >= 0) missing.splice(missingAt, 1)
+}
+
 const header = Buffer.from(JSON.stringify({
-  credit: 'Syllable recordings by Chen Wang, CC BY-SA 3.0. Source: https://github.com/hugolpz/audio-cmn 64k/syllabs. Packed by Uday, ID3 tags removed.',
+  credit: 'Syllable recordings by Chen Wang, CC BY-SA 3.0. Source: https://github.com/hugolpz/audio-cmn 64k/syllabs. Packed by Uday, ID3 tags removed. ong1–ong4 are the same recordings as hong1–hong4 with the opening h trimmed off, because this set has no standalone ong.',
   items,
 }))
 const body = Buffer.concat(parts)
